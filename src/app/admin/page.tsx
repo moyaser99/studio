@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, PlusCircle, ShoppingCart, ExternalLink } from 'lucide-react';
+import { Loader2, PlusCircle, ExternalLink } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CATEGORIES } from '@/lib/data';
@@ -34,6 +34,16 @@ export default function AdminPage() {
     e.preventDefault();
     if (!db) return;
     
+    // Safety check for URL protocol
+    if (formData.imageUrl && !formData.imageUrl.startsWith('http')) {
+      toast({ 
+        variant: "destructive", 
+        title: "خطأ في الرابط", 
+        description: "يرجى استخدام رابط يبدأ بـ https (رابط التحميل المباشر)." 
+      });
+      return;
+    }
+
     setSaving(true);
     const categoryObj = CATEGORIES.find(c => c.slug === formData.category);
     
@@ -140,15 +150,16 @@ export default function AdminPage() {
                   </div>
 
                   <div className="space-y-3 text-right">
-                    <Label htmlFor="image" className="text-base font-semibold">رابط الصورة</Label>
+                    <Label htmlFor="image" className="text-base font-semibold">رابط الصورة (https)</Label>
                     <Input
                       id="image"
-                      placeholder="https://images.unsplash.com/..."
+                      placeholder="https://firebasestorage.googleapis.com/..."
                       required
                       className="rounded-full h-14 px-8 text-right bg-muted/30 border-none focus-visible:ring-primary/30"
                       value={formData.imageUrl}
                       onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                     />
+                    <p className="text-xs text-muted-foreground pr-4">يرجى استخدام "رابط التحميل المباشر" من Firebase وليس رابط gs://</p>
                   </div>
 
                   <Button 
@@ -199,7 +210,6 @@ export default function AdminPage() {
                         </Button>
                       </TableCell>
                     </TableRow>
-                    {/* Placeholder for no real data yet */}
                     <TableRow>
                       <TableCell colSpan={4} className="h-24 text-center text-muted-foreground italic">
                         لا توجد طلبات جديدة حالياً...

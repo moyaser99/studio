@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -6,7 +5,7 @@ import Image from 'next/image';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
-import { MessageCircle, CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
+import { MessageCircle, Loader2, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useFirestore, useDoc } from '@/firebase';
@@ -54,7 +53,9 @@ export default function ProductPage() {
     );
   }
 
-  // Exact WhatsApp link format requested in Arabic
+  const isValidUrl = product.imageUrl && (product.imageUrl.startsWith('http://') || product.imageUrl.startsWith('https://'));
+  const displayImage = isValidUrl ? product.imageUrl : 'https://picsum.photos/seed/placeholder/800/800';
+
   const message = `مرحباً YourGroceriesUSA، أود طلب منتج: ${product.name}`;
   const whatsappUrl = `https://wa.me/YOUR_NUMBER?text=${encodeURIComponent(message)}`;
 
@@ -65,7 +66,7 @@ export default function ProductPage() {
         <div className="grid gap-12 lg:grid-cols-2 items-start">
           <div className="relative aspect-square overflow-hidden rounded-3xl bg-muted shadow-sm ring-1 ring-muted">
             <Image
-              src={product.imageUrl}
+              src={displayImage}
               alt={product.name}
               fill
               className="object-cover"
