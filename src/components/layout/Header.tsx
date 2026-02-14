@@ -18,8 +18,12 @@ export default function Header() {
 
   const handleLogout = async () => {
     if (!auth) return;
-    await signOut(auth);
-    router.push('/');
+    try {
+      await signOut(auth);
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   return (
@@ -59,7 +63,7 @@ export default function Header() {
 
             {user ? (
               <div className="flex items-center gap-2">
-                <Button variant="ghost" onClick={handleLogout} className="text-xs rounded-full">خروج</Button>
+                <Button variant="ghost" onClick={handleLogout} className="text-sm rounded-full bg-muted hover:bg-muted/80">خروج</Button>
                 <Link href="/profile-completion">
                    <Button variant="ghost" size="icon" className="rounded-full">
                     <User className="h-5 w-5" />
@@ -102,6 +106,11 @@ export default function Header() {
                     <Link href="/admin" className="text-lg font-bold text-primary py-2 border-b border-muted">
                       لوحة التحكم
                     </Link>
+                  )}
+                  {user && (
+                    <Button variant="outline" onClick={handleLogout} className="w-full rounded-full mt-4">
+                      تسجيل الخروج
+                    </Button>
                   )}
                 </nav>
               </SheetContent>
