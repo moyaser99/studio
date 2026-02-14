@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useUser } from '@/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -26,6 +26,13 @@ export default function ProfileCompletionPage() {
     address: '',
   });
 
+  // Safe redirection logic handled in an effect
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, authLoading, router]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!db || !user) return;
@@ -49,10 +56,12 @@ export default function ProfileCompletionPage() {
       .finally(() => setSaving(false));
   };
 
-  if (authLoading) return null;
-  if (!user) {
-    router.push('/login');
-    return null;
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
