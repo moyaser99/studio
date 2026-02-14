@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -8,23 +9,41 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow';
-import { Loader2, Sparkles, LayoutDashboard, ShoppingCart, Settings, Eye } from 'lucide-react';
+import { Loader2, Sparkles, LayoutDashboard, ShoppingCart, Settings, Eye, PlusCircle } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { CATEGORIES } from '@/lib/data';
+import { useFirestore } from '@/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function AdminPage() {
+  const db = useFirestore();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [aiResult, setAiResult] = useState('');
+  
   const [formData, setFormData] = useState({
     productName: '',
     category: '',
+    price: '',
+    imageUrl: '',
+    description: '',
     keyFeatures: '',
   });
 
-  const handleGenerate = async (e: React.FormEvent) => {
+  const handleGenerate = async (e: React.MouseEvent) => {
     e.preventDefault();
+    if (!formData.productName || !formData.category) {
+      toast({ variant: "destructive", title: "تنبيه", description: "يرجى إدخال الاسم والقسم أولاً." });
+      return;
+    }
     setLoading(true);
     try {
       const result = await generateProductDescription({
@@ -33,6 +52,7 @@ export default function AdminPage() {
         keyFeatures: formData.keyFeatures.split(',').map((f) => f.trim()),
       });
       setAiResult(result.description);
+      setFormData(prev => ({ ...prev, description: result.description }));
     } catch (error) {
       console.error(error);
     } finally {
@@ -40,8 +60,49 @@ export default function AdminPage() {
     }
   };
 
+  const handleAddProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!db) return;
+    
+    setSaving(true);
+    const categoryObj = CATEGORIES.find(c => c.slug === formData.category);
+    
+    const productData = {
+      name: formData.productName,
+      category: formData.category,
+      categoryName: categoryObj?.name || formData.category,
+      price: parseFloat(formData.price),
+      imageUrl: formData.imageUrl,
+      description: formData.description,
+      createdAt: serverTimestamp(),
+    };
+
+    addDoc(collection(db, 'products'), productData)
+      .then(() => {
+        toast({ title: "تم النجاح", description: "تم إضافة المنتج بنجاح إلى المتجر." });
+        setFormData({
+          productName: '',
+          category: '',
+          price: '',
+          imageUrl: '',
+          description: '',
+          keyFeatures: '',
+        });
+        setAiResult('');
+      })
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: 'products',
+          operation: 'create',
+          requestResourceData: productData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      })
+      .finally(() => setSaving(false));
+  };
+
   return (
-    <div className="flex min-h-screen flex-col bg-muted/20">
+    <div className="flex min-h-screen flex-col bg-muted/20" dir="rtl">
       <Header />
       <main className="flex-1 container mx-auto px-4 py-12 md:px-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4 text-right">
@@ -49,27 +110,145 @@ export default function AdminPage() {
             <h1 className="text-4xl font-bold font-headline text-foreground">لوحة التحكم</h1>
             <p className="text-muted-foreground mt-1">إدارة عمليات YourGroceriesUSA والمخزون.</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="gap-2 rounded-full"><LayoutDashboard className="h-4 w-4" /> لوحة القيادة</Button>
-            <Button variant="outline" size="sm" className="gap-2 rounded-full"><Settings className="h-4 w-4" /> الإعدادات</Button>
-          </div>
         </div>
 
-        <Tabs defaultValue="orders" className="space-y-8" dir="rtl">
-          <TabsList className="bg-white border p-1 rounded-full w-full max-w-md mx-auto flex">
+        <Tabs defaultValue="add-product" className="space-y-8">
+          <TabsList className="bg-white border p-1 rounded-full w-full max-w-lg mx-auto flex">
+            <TabsTrigger value="add-product" className="flex-1 gap-2 rounded-full data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
+              <PlusCircle className="h-4 w-4" /> إضافة منتج
+            </TabsTrigger>
             <TabsTrigger value="orders" className="flex-1 gap-2 rounded-full data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
               <ShoppingCart className="h-4 w-4" /> الطلبات
             </TabsTrigger>
-            <TabsTrigger value="ai-tool" className="flex-1 gap-2 rounded-full data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
-              <Sparkles className="h-4 w-4" /> أدوات الذكاء الاصطناعي
-            </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="add-product">
+            <div className="grid gap-8 lg:grid-cols-2">
+              <Card className="border-none shadow-sm rounded-3xl text-right">
+                <CardHeader>
+                  <CardTitle>إضافة منتج جديد</CardTitle>
+                  <CardDescription>أدخل تفاصيل المنتج ليتم عرضه في المتجر.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleAddProduct} className="space-y-5">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>اسم المنتج</Label>
+                        <Input
+                          placeholder="مثال: سيروم الورد"
+                          required
+                          className="rounded-full px-5 h-12 text-right"
+                          value={formData.productName}
+                          onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>السعر ($)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          required
+                          className="rounded-full px-5 h-12 text-right"
+                          value={formData.price}
+                          onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>القسم</Label>
+                      <Select 
+                        value={formData.category} 
+                        onValueChange={(value) => setFormData({ ...formData, category: value })}
+                      >
+                        <SelectTrigger className="rounded-full h-12 text-right">
+                          <SelectValue placeholder="اختر القسم" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CATEGORIES.map(cat => (
+                            <SelectItem key={cat.id} value={cat.slug}>{cat.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>رابط الصورة</Label>
+                      <Input
+                        placeholder="https://example.com/image.jpg"
+                        required
+                        className="rounded-full px-5 h-12 text-right"
+                        value={formData.imageUrl}
+                        onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center mb-1">
+                        <Label>وصف المنتج</Label>
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-primary gap-1 h-8 rounded-full"
+                          onClick={handleGenerate}
+                          disabled={loading}
+                        >
+                          {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                          توليد بالذكاء الاصطناعي
+                        </Button>
+                      </div>
+                      <Textarea
+                        placeholder="اكتب وصفاً جذاباً أو استخدم الذكاء الاصطناعي..."
+                        required
+                        className="rounded-3xl p-5 min-h-[120px] text-right"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      />
+                    </div>
+
+                    <Button disabled={saving} type="submit" className="w-full h-12 text-lg rounded-full">
+                      {saving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PlusCircle className="mr-2 h-5 w-5" />}
+                      حفظ المنتج
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+
+              <Card className="border-none shadow-sm bg-secondary/10 rounded-3xl overflow-hidden relative text-right flex flex-col">
+                <CardHeader>
+                  <CardTitle>معاينة المنتج</CardTitle>
+                  <CardDescription>كيف سيظهر المنتج للعملاء.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1 flex flex-col items-center justify-center p-8">
+                  {formData.imageUrl ? (
+                    <div className="w-full max-w-[300px] bg-white rounded-3xl overflow-hidden shadow-lg">
+                      <div className="aspect-square relative bg-muted">
+                        <img src={formData.imageUrl} alt="Preview" className="object-cover w-full h-full" />
+                      </div>
+                      <div className="p-4 text-right">
+                        <Badge className="mb-2">{CATEGORIES.find(c => c.slug === formData.category)?.name || 'القسم'}</Badge>
+                        <h3 className="font-bold text-lg">{formData.productName || 'اسم المنتج'}</h3>
+                        <p className="text-primary font-bold text-xl">${formData.price || '0.00'}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center text-muted-foreground">
+                      <Eye className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                      <p>أضف رابط صورة للمعاينة</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
           <TabsContent value="orders">
             <Card className="border-none shadow-sm overflow-hidden rounded-3xl">
               <CardHeader className="bg-white px-8 pt-8 text-right">
-                <CardTitle className="text-2xl font-bold">تاريخ طلبات واتساب</CardTitle>
-                <CardDescription>استفسارات الطلبات المستلمة حديثاً من العملاء.</CardDescription>
+                <CardTitle className="text-2xl font-bold">تاريخ الطلبات</CardTitle>
+                <CardDescription>إدارة الطلبات المستلمة من العملاء.</CardDescription>
               </CardHeader>
               <CardContent className="px-8 pb-8">
                 <Table>
@@ -80,117 +259,18 @@ export default function AdminPage() {
                       <TableHead className="font-bold text-right">المنتج</TableHead>
                       <TableHead className="font-bold text-right">السعر</TableHead>
                       <TableHead className="font-bold text-right">الحالة</TableHead>
-                      <TableHead className="text-left font-bold">الإجراء</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {[
-                      { id: '#YG-9021', customer: 'سارة ميلر', product: 'سيروم الورد المرطب', amount: '$45.00', status: 'قيد الانتظار', date: '12 مايو 2024' },
-                      { id: '#YG-9020', customer: 'أحمد علي', product: 'كريم أساس بلمسة حريرية', amount: '$32.00', status: 'في محادثة', date: '11 مايو 2024' },
-                      { id: '#YG-9019', customer: 'إيما ويلسون', product: 'حقيبة يد كلاسيكية', amount: '$120.00', status: 'تم التأكيد', date: '10 مايو 2024' },
-                      { id: '#YG-9018', customer: 'ديفيد تشين', product: 'فيتامينات يومية', amount: '$19.99', status: 'مكتمل', date: '09 مايو 2024' },
-                    ].map((order) => (
-                      <TableRow key={order.id} className="bg-white hover:bg-muted/30 transition-colors">
-                        <TableCell className="font-mono text-sm text-muted-foreground text-right">{order.id}</TableCell>
-                        <TableCell className="font-medium text-right">{order.customer}</TableCell>
-                        <TableCell className="text-right">{order.product}</TableCell>
-                        <TableCell className="font-bold text-primary text-right">{order.amount}</TableCell>
-                        <TableCell className="text-right">
-                          <Badge variant="secondary" className={`
-                            ${order.status === 'مكتمل' ? 'bg-green-100 text-green-700' :
-                              order.status === 'تم التأكيد' ? 'bg-blue-100 text-blue-700' :
-                              order.status === 'في محادثة' ? 'bg-purple-100 text-purple-700' : 'bg-orange-100 text-orange-700'}
-                          `}>
-                            {order.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-left">
-                          <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                        لا توجد طلبات حقيقية بعد. سيتم ربطها قريباً.
+                      </TableCell>
+                    </TableRow>
                   </TableBody>
                 </Table>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="ai-tool">
-            <div className="grid gap-8 md:grid-cols-2">
-              <Card className="border-none shadow-sm rounded-3xl text-right">
-                <CardHeader>
-                  <CardTitle>مولد وصف المنتجات</CardTitle>
-                  <CardDescription>أنشئ نصوصاً تسويقية فاخرة بمساعدة الذكاء الاصطناعي.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleGenerate} className="space-y-5">
-                    <div className="space-y-2">
-                      <Label>اسم المنتج</Label>
-                      <Input
-                        placeholder="مثال: كريم الليل الفاخر بالورد"
-                        required
-                        className="rounded-full px-5 h-12 text-right"
-                        value={formData.productName}
-                        onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>القسم</Label>
-                      <Input
-                        placeholder="مثال: العناية بالبشرة"
-                        required
-                        className="rounded-full px-5 h-12 text-right"
-                        value={formData.category}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>المميزات الأساسية (مفصولة بفاصلة)</Label>
-                      <Textarea
-                        placeholder="مثال: مضاد للشيخوخة، مرطب، زيوت طبيعية"
-                        required
-                        className="rounded-3xl p-5 min-h-[120px] text-right"
-                        value={formData.keyFeatures}
-                        onChange={(e) => setFormData({ ...formData, keyFeatures: e.target.value })}
-                      />
-                    </div>
-                    <Button disabled={loading} type="submit" className="w-full h-12 text-lg rounded-full">
-                      {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}
-                      توليد النص
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-
-              <Card className="border-none shadow-sm bg-secondary/30 rounded-3xl overflow-hidden relative text-right">
-                <div className="absolute top-0 left-0 p-8 opacity-10">
-                   <Sparkles className="h-32 w-32" />
-                </div>
-                <CardHeader>
-                  <CardTitle>المعاينة والنتيجة</CardTitle>
-                  <CardDescription>راجع وانسخ النص المولد أدناه.</CardDescription>
-                </CardHeader>
-                <CardContent className="h-full">
-                  {aiResult ? (
-                    <div className="space-y-4">
-                      <div className="p-6 bg-white rounded-3xl border border-primary/20 prose prose-pink max-w-none shadow-inner">
-                        <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/80 italic">{aiResult}</p>
-                      </div>
-                      <Button variant="outline" className="w-full rounded-full border-primary text-primary font-bold" onClick={() => navigator.clipboard.writeText(aiResult)}>
-                        نسخ النص
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="h-[400px] flex flex-col items-center justify-center border-2 border-dashed border-primary/20 rounded-3xl text-muted-foreground bg-white/50">
-                      <Sparkles className="h-12 w-12 mb-4 text-primary/30" />
-                      <p className="text-center px-8">املأ النموذج لتوليد أوصاف أنيقة للمنتجات.</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
           </TabsContent>
         </Tabs>
       </main>

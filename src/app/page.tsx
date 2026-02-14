@@ -1,22 +1,37 @@
+
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ProductCard from '@/components/product/ProductCard';
-import { CATEGORIES, PRODUCTS } from '@/lib/data';
+import { CATEGORIES } from '@/lib/data';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
+import { useFirestore, useCollection } from '@/firebase';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 
 export default function Home() {
+  const db = useFirestore();
+  
+  const productsQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(8));
+  }, [db]);
+
+  const { data: products, loading } = useCollection(productsQuery);
+
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col" dir="rtl">
       <Header />
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative w-full py-12 md:py-24 lg:py-32 bg-muted/50 overflow-hidden">
           <div className="container mx-auto px-4 md:px-6">
             <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px] items-center">
-              <div className="flex flex-col justify-center space-y-4">
+              <div className="flex flex-col justify-center space-y-4 text-right">
                 <div className="space-y-2">
                   <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none text-foreground font-headline">
                     ارتقِ بأساسياتك اليومية
@@ -25,15 +40,15 @@ export default function Home() {
                     اكتشف مجموعة مختارة من المكياج الفاخر والعناية بالبشرة وإكسسوارات نمط الحياة. الجودة تلتقي بالأناقة في YourGroceriesUSA.
                   </p>
                 </div>
-                <div className="flex flex-col gap-2 min-[400px]:flex-row">
+                <div className="flex flex-col gap-2 min-[400px]:flex-row justify-start">
                   <Link href="/category/makeup">
-                    <Button size="lg" className="bg-primary hover:bg-primary/90 text-white px-8">
+                    <Button size="lg" className="bg-primary hover:bg-primary/90 text-white px-8 rounded-full">
                       تسوق الآن
                     </Button>
                   </Link>
                   <Link href="/admin">
-                    <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary/10 px-8">
-                      اكتشف المزيد
+                    <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary/10 px-8 rounded-full">
+                      لوحة التحكم
                     </Button>
                   </Link>
                 </div>
@@ -86,11 +101,35 @@ export default function Home() {
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-2xl font-bold tracking-tight md:text-3xl font-headline">أحدث المنتجات</h2>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {PRODUCTS.slice(0, 4).map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            {loading ? (
+              <div className="flex justify-center items-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : products && products.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                {products.map((product: any) => (
+                  <ProductCard 
+                    key={product.id} 
+                    product={{
+                      id: product.id,
+                      name: product.name,
+                      price: product.price,
+                      category: product.category,
+                      categoryName: product.categoryName,
+                      description: product.description,
+                      image: product.imageUrl,
+                    }} 
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed">
+                <p className="text-muted-foreground">لا توجد منتجات حالياً. أضف منتجات من لوحة التحكم.</p>
+                <Link href="/admin">
+                   <Button className="mt-4 rounded-full">إضافة منتج</Button>
+                </Link>
+              </div>
+            )}
           </div>
         </section>
       </main>

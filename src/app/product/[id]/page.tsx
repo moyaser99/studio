@@ -1,23 +1,55 @@
+
 'use client';
 
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
-import { PRODUCTS } from '@/lib/data';
 import { Button } from '@/components/ui/button';
-import { MessageCircle, CheckCircle2 } from 'lucide-react';
+import { MessageCircle, CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { useFirestore, useDoc } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { useMemoFirebase } from '@/firebase/use-memo-firebase';
+import Link from 'next/link';
 
 export default function ProductPage() {
   const { id } = useParams();
-  const product = PRODUCTS.find((p) => p.id === id);
+  const db = useFirestore();
+  
+  const productRef = useMemoFirebase(() => {
+    if (!db || !id) return null;
+    return doc(db, 'products', id as string);
+  }, [db, id]);
+
+  const { data: product, loading } = useDoc(productRef);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col" dir="rtl">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>المنتج غير موجود.</p>
+      <div className="min-h-screen flex flex-col" dir="rtl">
+        <Header />
+        <main className="flex-1 flex flex-col items-center justify-center space-y-4">
+          <p className="text-xl">المنتج غير موجود.</p>
+          <Link href="/">
+            <Button variant="outline" className="rounded-full gap-2">
+              <ArrowRight className="h-4 w-4" /> العودة للرئيسية
+            </Button>
+          </Link>
+        </main>
+        <Footer />
       </div>
     );
   }
@@ -27,13 +59,13 @@ export default function ProductPage() {
   const whatsappUrl = `https://wa.me/YOUR_NUMBER?text=${encodeURIComponent(message)}`;
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col" dir="rtl">
       <Header />
       <main className="flex-1 container mx-auto px-4 py-12 md:px-6">
         <div className="grid gap-12 lg:grid-cols-2 items-start">
           <div className="relative aspect-square overflow-hidden rounded-3xl bg-muted shadow-sm ring-1 ring-muted">
             <Image
-              src={product.image}
+              src={product.imageUrl}
               alt={product.name}
               fill
               className="object-cover"
@@ -49,7 +81,7 @@ export default function ProductPage() {
                 {product.name}
               </h1>
               <p className="text-3xl font-bold text-primary">
-                ${product.price.toFixed(2)}
+                ${product.price?.toFixed(2)}
               </p>
             </div>
             
@@ -57,24 +89,10 @@ export default function ProductPage() {
             
             <div className="space-y-4">
               <h3 className="font-semibold text-xl">عن المنتج</h3>
-              <p className="text-muted-foreground text-lg leading-relaxed">
+              <p className="text-muted-foreground text-lg leading-relaxed whitespace-pre-wrap">
                 {product.description}
               </p>
             </div>
-
-            {product.features && (
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg">المميزات</h3>
-                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {product.features.map((feature, i) => (
-                    <li key={i} className="flex items-center gap-3 text-sm text-muted-foreground bg-muted/30 p-3 rounded-2xl flex-row-reverse justify-end">
-                      <CheckCircle2 className="h-5 w-5 text-primary" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
 
             <div className="pt-8">
               <Button 

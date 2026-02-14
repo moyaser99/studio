@@ -1,20 +1,26 @@
+
 import Image from 'next/image';
 import Link from 'next/link';
-import { Product } from '@/lib/data';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 interface ProductCardProps {
-  product: Product;
+  product: {
+    id: string;
+    name: string;
+    price: number;
+    categoryName: string;
+    image: string;
+  };
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
   return (
     <Link href={`/product/${product.id}`}>
-      <Card className="group overflow-hidden transition-all hover:shadow-lg border-none bg-secondary/10">
+      <Card className="group overflow-hidden transition-all hover:shadow-lg border-none bg-secondary/10 rounded-3xl h-full">
         <div className="relative aspect-square overflow-hidden">
           <Image
-            src={product.image}
+            src={product.image || 'https://picsum.photos/seed/placeholder/600/600'}
             alt={product.name}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -24,12 +30,12 @@ export default function ProductCard({ product }: ProductCardProps) {
             {product.categoryName}
           </Badge>
         </div>
-        <CardContent className="p-4 text-right">
-          <h3 className="line-clamp-1 font-medium text-foreground group-hover:text-primary transition-colors">
+        <CardContent className="p-5 text-right flex flex-col justify-between h-auto">
+          <h3 className="line-clamp-2 font-bold text-foreground group-hover:text-primary transition-colors text-lg leading-snug">
             {product.name}
           </h3>
-          <p className="mt-1 text-lg font-bold text-primary">
-            ${product.price.toFixed(2)}
+          <p className="mt-2 text-xl font-bold text-primary">
+            ${product.price?.toFixed(2)}
           </p>
         </CardContent>
       </Card>

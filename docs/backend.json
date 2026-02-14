@@ -1,0 +1,58 @@
+
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "A product available in the store",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the product"
+        },
+        "price": {
+          "type": "number",
+          "description": "The price of the product"
+        },
+        "category": {
+          "type": "string",
+          "description": "The category slug (e.g., makeup, skincare)"
+        },
+        "categoryName": {
+          "type": "string",
+          "description": "The display name of the category"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "The URL of the product image"
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the product"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the product was added"
+        }
+      },
+      "required": [
+        "name",
+        "price",
+        "category",
+        "imageUrl"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "google.com"
+    ]
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Collection of products in the store"
+    }
+  }
+}
