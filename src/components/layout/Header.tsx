@@ -1,8 +1,8 @@
-
 import Link from 'next/link';
 import { ShoppingBag, Search, User, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CATEGORIES } from '@/lib/data';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 export default function Header() {
   return (
@@ -15,8 +15,8 @@ export default function Header() {
                 YourGroceriesUSA
               </span>
             </Link>
-            <nav className="hidden md:flex gap-6">
-              {CATEGORIES.slice(0, 4).map((cat) => (
+            <nav className="hidden lg:flex gap-6">
+              {CATEGORIES.map((cat) => (
                 <Link
                   key={cat.id}
                   href={`/category/${cat.slug}`}
@@ -28,20 +28,41 @@ export default function Header() {
             </nav>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="hidden sm:flex">
+            <Button variant="ghost" size="icon" className="hidden sm:flex rounded-full">
               <Search className="h-5 w-5" />
             </Button>
             <Link href="/admin">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="rounded-full">
                 <User className="h-5 w-5" />
               </Button>
             </Link>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" className="rounded-full">
               <ShoppingBag className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="md:hidden">
-              <Menu className="h-5 w-5" />
-            </Button>
+            
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="lg:hidden rounded-full">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right">
+                <SheetHeader>
+                  <SheetTitle className="text-primary text-left">YourGroceriesUSA</SheetTitle>
+                </SheetHeader>
+                <nav className="flex flex-col gap-4 mt-8">
+                  {CATEGORIES.map((cat) => (
+                    <Link
+                      key={cat.id}
+                      href={`/category/${cat.slug}`}
+                      className="text-lg font-medium hover:text-primary py-2 border-b border-muted transition-colors"
+                    >
+                      {cat.name}
+                    </Link>
+                  ))}
+                </nav>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>
