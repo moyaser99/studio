@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -11,10 +10,12 @@ import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
 export default function Header() {
-  const { user } = useUser();
+  const { user, loading } = useUser();
   const auth = useAuth();
   const router = useRouter();
-  const isAdmin = user?.email === 'mohammad.dd.my@gmail.com';
+  
+  // Strict admin check: Only true if loading is finished AND email matches
+  const isAdmin = !loading && user?.email === 'mohammad.dd.my@gmail.com';
 
   const handleLogout = async () => {
     if (!auth) return;
@@ -53,9 +54,10 @@ export default function Header() {
               <Search className="h-5 w-5" />
             </Button>
             
+            {/* Admin-only settings icon: Completely removed from DOM if not admin */}
             {isAdmin && (
               <Link href="/admin">
-                <Button variant="ghost" size="icon" className="rounded-full text-primary">
+                <Button variant="ghost" size="icon" className="rounded-full text-primary hover:bg-primary/10 transition-colors">
                   <Settings className="h-5 w-5" />
                 </Button>
               </Link>
@@ -102,6 +104,7 @@ export default function Header() {
                       {cat.name}
                     </Link>
                   ))}
+                  {/* Admin-only link in mobile menu */}
                   {isAdmin && (
                     <Link href="/admin" className="text-lg font-bold text-primary py-2 border-b border-muted">
                       لوحة التحكم

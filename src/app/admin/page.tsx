@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, PlusCircle, Trash2, LayoutDashboard, Sparkles } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -53,19 +52,18 @@ export default function AdminPage() {
     description: '',
   });
 
+  // Strict Role-Based Redirect
   useEffect(() => {
     if (!authLoading) {
-      if (!user) {
-        router.push('/login');
-      } else if (user.email !== ADMIN_EMAIL) {
-        router.push('/');
+      if (!user || user.email !== ADMIN_EMAIL) {
+        // Use replace to prevent the restricted page from staying in history
+        router.replace('/');
       }
     }
   }, [user, authLoading, router]);
 
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
-    // Limit to prevent huge lists from timing out the browser
     return query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(50));
   }, [db]);
 
@@ -136,7 +134,7 @@ export default function AdminPage() {
       const result = await generateProductDescription({
         productName: formData.name,
         category: formData.category,
-        keyFeatures: [], // Can be extended to allow tags input
+        keyFeatures: [],
       });
       setFormData(prev => ({ ...prev, description: result.description }));
       toast({ title: "تم التوليد", description: "تم إنشاء وصف المنتج بواسطة الذكاء الاصطناعي." });
@@ -159,6 +157,7 @@ export default function AdminPage() {
     );
   }
 
+  // Final safety check to ensure non-admins see nothing while the redirect happens
   if (!user || user.email !== ADMIN_EMAIL) return null;
 
   return (
