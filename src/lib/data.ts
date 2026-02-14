@@ -1,4 +1,3 @@
-
 export interface Category {
   id: string;
   name: string;
@@ -11,69 +10,76 @@ export interface Product {
   name: string;
   price: number;
   category: string;
+  categoryName: string;
   description: string;
   image: string;
   features?: string[];
 }
 
 export const CATEGORIES: Category[] = [
-  { id: '1', name: 'Makeup', slug: 'makeup', image: 'https://picsum.photos/seed/makeup/400/500' },
-  { id: '2', name: 'Skincare', slug: 'skincare', image: 'https://picsum.photos/seed/skincare/400/500' },
-  { id: '3', name: 'Haircare', slug: 'haircare', image: 'https://picsum.photos/seed/haircare/400/500' },
-  { id: '4', name: 'Vitamins', slug: 'vitamins', image: 'https://picsum.photos/seed/vitamins/400/500' },
-  { id: '5', name: 'Bags', slug: 'bags', image: 'https://picsum.photos/seed/bags/400/500' },
-  { id: '6', name: 'Watches', slug: 'watches', image: 'https://picsum.photos/seed/watches/400/500' },
+  { id: '1', name: 'المكياج', slug: 'makeup', image: 'https://picsum.photos/seed/makeup/400/500' },
+  { id: '2', name: 'العناية بالبشرة', slug: 'skincare', image: 'https://picsum.photos/seed/skincare/400/500' },
+  { id: '3', name: 'العناية بالشعر', slug: 'haircare', image: 'https://picsum.photos/seed/haircare/400/500' },
+  { id: '4', name: 'الفيتامينات', slug: 'vitamins', image: 'https://picsum.photos/seed/vitamins/400/500' },
+  { id: '5', name: 'الحقائب', slug: 'bags', image: 'https://picsum.photos/seed/bags/400/500' },
+  { id: '6', name: 'الساعات', slug: 'watches', image: 'https://picsum.photos/seed/watches/400/500' },
 ];
 
 export const PRODUCTS: Product[] = [
   {
     id: 'p1',
-    name: 'Silk Finish Foundation',
+    name: 'كريم أساس بلمسة حريرية',
     price: 32.00,
     category: 'makeup',
-    description: 'A lightweight foundation that provides a natural silk-like finish for all-day wear.',
+    categoryName: 'المكياج',
+    description: 'كريم أساس خفيف الوزن يوفر لمسة نهائية حريرية طبيعية تدوم طوال اليوم.',
     image: 'https://picsum.photos/seed/found/600/600',
-    features: ['Long-lasting', 'SPF 15', 'Full coverage']
+    features: ['يدوم طويلاً', 'معامل حماية SPF 15', 'تغطية كاملة']
   },
   {
     id: 'p2',
-    name: 'Hydrating Rose Serum',
+    name: 'سيروم الورد المرطب',
     price: 45.00,
     category: 'skincare',
-    description: 'Infused with real rose petals, this serum deeply hydrates and brightens your complexion.',
+    categoryName: 'العناية بالبشرة',
+    description: 'غني ببتلات الورد الطبيعية، هذا السيروم يرطب البشرة بعمق ويمنحها إشراقة مميزة.',
     image: 'https://picsum.photos/seed/rose/600/600',
-    features: ['Vegan', 'Paraben-free', 'Organic']
+    features: ['نباتي', 'خالٍ من البارابين', 'عضوي']
   },
   {
     id: 'p3',
-    name: 'Nourishing Hair Mask',
+    name: 'ماسك الشعر المغذي',
     price: 28.00,
     category: 'haircare',
-    description: 'Intense repair mask for dry and damaged hair. Restores shine and softness in one use.',
+    categoryName: 'العناية بالشعر',
+    description: 'قناع إصلاح مكثف للشعر الجاف والتالف. يعيد اللمعان والنعومة من أول استخدام.',
     image: 'https://picsum.photos/seed/hairmask/600/600'
   },
   {
     id: 'p4',
-    name: 'Daily Multivitamin',
+    name: 'فيتامينات يومية متعددة',
     price: 19.99,
     category: 'vitamins',
-    description: 'A complete daily supplement containing all essential nutrients for vitality.',
+    categoryName: 'الفيتامينات',
+    description: 'مكمل يومي كامل يحتوي على جميع العناصر الغذائية الضرورية للحيوية.',
     image: 'https://picsum.photos/seed/vitprod/600/600'
   },
   {
     id: 'p5',
-    name: 'Classic Leather Tote',
+    name: 'حقيبة يد جلدية كلاسيكية',
     price: 120.00,
     category: 'bags',
-    description: 'Handcrafted premium leather tote bag, perfect for everyday essentials.',
+    categoryName: 'الحقائب',
+    description: 'حقيبة يد مصنوعة يدوياً من الجلد الفاخر، مثالية للأساسيات اليومية.',
     image: 'https://picsum.photos/seed/bagprod/600/600'
   },
   {
     id: 'p6',
-    name: 'Minimalist Rose Gold Watch',
+    name: 'ساعة روز جولد بسيطة',
     price: 85.00,
     category: 'watches',
-    description: 'Elegant rose gold timepiece with a minimalist dial and mesh strap.',
+    categoryName: 'الساعات',
+    description: 'ساعة أنيقة باللون الروز جولد مع ميناء بسيط وسوار شبكي.',
     image: 'https://picsum.photos/seed/watchprod/600/600'
   }
 ];

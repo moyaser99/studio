@@ -1,8 +1,7 @@
-
 import Image from 'next/image';
 import Link from 'next/link';
 import { Product } from '@/lib/data';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 interface ProductCardProps {
@@ -21,11 +20,11 @@ export default function ProductCard({ product }: ProductCardProps) {
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             data-ai-hint="product photo"
           />
-          <Badge className="absolute left-2 top-2 bg-primary/90">
-            {product.category}
+          <Badge className="absolute right-2 top-2 bg-primary/90 rounded-full px-3">
+            {product.categoryName}
           </Badge>
         </div>
-        <CardContent className="p-4">
+        <CardContent className="p-4 text-right">
           <h3 className="line-clamp-1 font-medium text-foreground group-hover:text-primary transition-colors">
             {product.name}
           </h3>

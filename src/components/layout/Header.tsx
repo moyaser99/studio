@@ -48,14 +48,14 @@ export default function Header() {
               </SheetTrigger>
               <SheetContent side="right">
                 <SheetHeader>
-                  <SheetTitle className="text-primary text-left">YourGroceriesUSA</SheetTitle>
+                  <SheetTitle className="text-primary text-right">YourGroceriesUSA</SheetTitle>
                 </SheetHeader>
                 <nav className="flex flex-col gap-4 mt-8">
                   {CATEGORIES.map((cat) => (
                     <Link
                       key={cat.id}
                       href={`/category/${cat.slug}`}
-                      className="text-lg font-medium hover:text-primary py-2 border-b border-muted transition-colors"
+                      className="text-lg font-medium hover:text-primary py-2 border-b border-muted transition-colors text-right"
                     >
                       {cat.name}
                     </Link>
