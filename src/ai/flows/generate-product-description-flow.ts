@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI agent for generating compelling product descriptions.
@@ -9,6 +10,8 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+
+export const maxDuration = 60; // Increase max duration for this server action
 
 const GenerateProductDescriptionInputSchema = z.object({
   productName: z.string().describe('The name of the product.'),
@@ -44,6 +47,7 @@ const prompt = ai.definePrompt({
 Your task is to create a compelling and optimized product description based on the provided details.
 The description should be engaging, highlight key benefits, and encourage customers to purchase.
 Focus on a modern, clean, and elegant tone consistent with beauty store aesthetics.
+Please respond in Arabic.
 
 Product Name: {{{productName}}}
 Category: {{{category}}}

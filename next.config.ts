@@ -10,6 +10,13 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   serverExternalPackages: ['wav'],
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
+  },
+  // Increase timeout for server actions (especially AI generation)
+  serverActionTimeout: 120,
   images: {
     remotePatterns: [
       {
