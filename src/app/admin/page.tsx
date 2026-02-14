@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -9,8 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, PlusCircle, ShoppingCart } from 'lucide-react';
+import { Loader2, PlusCircle, ShoppingCart, ExternalLink } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CATEGORIES } from '@/lib/data';
 import { useFirestore } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -43,11 +43,10 @@ export default function AdminPage() {
       categoryName: categoryObj?.name || formData.category,
       price: parseFloat(formData.price),
       imageUrl: formData.imageUrl,
-      description: '', // Optional: can be added back if needed
+      description: '', 
       createdAt: serverTimestamp(),
     };
 
-    // Mutation without await as per guidelines
     addDoc(collection(db, 'products'), productData)
       .then(() => {
         toast({ title: "تم بنجاح", description: "تمت إضافة المنتج إلى المتجر بنجاح." });
@@ -75,7 +74,7 @@ export default function AdminPage() {
       <main className="flex-1 container mx-auto px-4 py-12 md:px-6">
         <div className="mb-10 text-right">
           <h1 className="text-4xl font-bold font-headline text-foreground">لوحة التحكم</h1>
-          <p className="text-muted-foreground mt-2">إدارة متجر YourGroceriesUSA وإضافة المنتجات.</p>
+          <p className="text-muted-foreground mt-2">إدارة متجر YourGroceriesUSA وتتبع الطلبات.</p>
         </div>
 
         <Tabs defaultValue="add" className="w-full">
@@ -170,10 +169,45 @@ export default function AdminPage() {
           </TabsContent>
           
           <TabsContent value="orders">
-            <Card className="border-none shadow-xl rounded-3xl p-20 text-center bg-white">
-              <ShoppingCart className="h-20 w-20 mx-auto mb-6 text-primary/20" />
-              <h3 className="text-2xl font-bold mb-3 text-foreground">لا توجد طلبات بعد</h3>
-              <p className="text-muted-foreground text-lg">بمجرد قيام العملاء بالطلب عبر واتساب، ستتمكن من تتبع المبيعات هنا.</p>
+            <Card className="border-none shadow-xl rounded-3xl overflow-hidden bg-white">
+              <CardHeader className="bg-primary/5 border-b border-primary/10 py-8">
+                <CardTitle className="text-right text-2xl">سجل الطلبات</CardTitle>
+                <CardDescription className="text-right">هنا يمكنك متابعة الطلبات المستلمة عبر واتساب.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader className="bg-muted/50">
+                    <TableRow>
+                      <TableHead className="text-right">المنتج</TableHead>
+                      <TableHead className="text-right">التاريخ</TableHead>
+                      <TableHead className="text-right">الحالة</TableHead>
+                      <TableHead className="text-right">الإجراء</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="text-right font-medium">سيروم الورد المرطب</TableCell>
+                      <TableCell className="text-right text-muted-foreground">أمس، 10:30 م</TableCell>
+                      <TableCell className="text-right">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          تم التواصل
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" className="gap-2 text-primary">
+                          <ExternalLink className="h-4 w-4" /> عرض التفاصيل
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                    {/* Placeholder for no real data yet */}
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-24 text-center text-muted-foreground italic">
+                        لا توجد طلبات جديدة حالياً...
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
