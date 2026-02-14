@@ -10,17 +10,28 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, PlusCircle, Trash2, LayoutDashboard, Package } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, LayoutDashboard, Sparkles } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { CATEGORIES } from '@/lib/data';
 import { useFirestore, useUser, useCollection } from '@/firebase';
-import { collection, addDoc, serverTimestamp, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, deleteDoc, doc, query, orderBy, limit } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
+import { generateProductDescription } from '@/ai/flows/generate-product-description-flow';
 import Image from 'next/image';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
@@ -31,6 +42,8 @@ export default function AdminPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -41,7 +54,6 @@ export default function AdminPage() {
   });
 
   useEffect(() => {
-    // Robust redirection for non-admins
     if (!authLoading) {
       if (!user) {
         router.push('/login');
@@ -53,7 +65,8 @@ export default function AdminPage() {
 
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
-    return query(collection(db, 'products'), orderBy('createdAt', 'desc'));
+    // Limit to prevent huge lists from timing out the browser
+    return query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(50));
   }, [db]);
 
   const { data: products, loading: productsLoading } = useCollection(productsQuery);
@@ -91,21 +104,51 @@ export default function AdminPage() {
       .finally(() => setSaving(false));
   };
 
-  const handleDeleteProduct = (id: string) => {
-    if (!db) return;
-    if (!confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
+  const handleDeleteProduct = () => {
+    if (!db || !deleteId) return;
 
-    deleteDoc(doc(db, 'products', id))
+    deleteDoc(doc(db, 'products', deleteId))
       .then(() => {
         toast({ title: "تم الحذف", description: "تم حذف المنتج بنجاح." });
       })
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
-          path: `products/${id}`,
+          path: `products/${deleteId}`,
           operation: 'delete',
         });
         errorEmitter.emit('permission-error', permissionError);
+      })
+      .finally(() => setDeleteId(null));
+  };
+
+  const handleGenerateDescription = async () => {
+    if (!formData.name || !formData.category) {
+      toast({ 
+        variant: "destructive", 
+        title: "بيانات ناقصة", 
+        description: "يرجى إدخال اسم المنتج والقسم أولاً." 
       });
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const result = await generateProductDescription({
+        productName: formData.name,
+        category: formData.category,
+        keyFeatures: [], // Can be extended to allow tags input
+      });
+      setFormData(prev => ({ ...prev, description: result.description }));
+      toast({ title: "تم التوليد", description: "تم إنشاء وصف المنتج بواسطة الذكاء الاصطناعي." });
+    } catch (error) {
+      toast({ 
+        variant: "destructive", 
+        title: "خطأ", 
+        description: "فشل توليد الوصف. يرجى المحاولة لاحقاً." 
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   if (authLoading) {
@@ -206,10 +249,23 @@ export default function AdminPage() {
                   </div>
 
                   <div className="space-y-2 text-right">
-                    <Label htmlFor="description" className="text-base font-semibold">وصف المنتج</Label>
+                    <div className="flex items-center justify-between">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleGenerateDescription}
+                        disabled={isGenerating}
+                        className="text-primary hover:text-primary/80 flex items-center gap-2"
+                      >
+                        {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                        توليد بالذكاء الاصطناعي
+                      </Button>
+                      <Label htmlFor="description" className="text-base font-semibold">وصف المنتج</Label>
+                    </div>
                     <Textarea
                       id="description"
-                      placeholder="اكتب وصفاً جذاباً يتضمن المميزات..."
+                      placeholder="اكتب وصفاً جذاباً أو استخدم مساعد الذكاء الاصطناعي..."
                       className="rounded-2xl min-h-[150px] px-6 py-4 text-right border-none bg-muted/30 resize-none"
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -233,7 +289,7 @@ export default function AdminPage() {
             <Card className="border-none shadow-xl rounded-3xl overflow-hidden bg-white">
               <CardHeader className="bg-primary/5 border-b border-primary/10 py-8">
                 <CardTitle className="text-right text-2xl">المنتجات الحالية</CardTitle>
-                <CardDescription className="text-right">يمكنك مراجعة أو حذف المنتجات من هنا.</CardDescription>
+                <CardDescription className="text-right">مراجعة المخزون وإدارة المعروض.</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <Table>
@@ -258,7 +314,13 @@ export default function AdminPage() {
                           <TableCell className="text-right font-medium">
                             <div className="flex items-center gap-3">
                               <div className="relative h-12 w-12 rounded-xl overflow-hidden border shadow-sm">
-                                <Image src={p.imageUrl?.startsWith('http') ? p.imageUrl : 'https://picsum.photos/seed/placeholder/100/100'} alt={p.name} fill className="object-cover" unoptimized />
+                                <Image 
+                                  src={p.imageUrl?.startsWith('http') ? p.imageUrl : 'https://picsum.photos/seed/placeholder/100/100'} 
+                                  alt={p.name} 
+                                  fill 
+                                  className="object-cover" 
+                                  unoptimized 
+                                />
                               </div>
                               <span className="font-bold">{p.name}</span>
                             </div>
@@ -269,7 +331,7 @@ export default function AdminPage() {
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              onClick={() => handleDeleteProduct(p.id)}
+                              onClick={() => setDeleteId(p.id)}
                               className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full"
                             >
                               <Trash2 className="h-4 w-4 ml-1" /> حذف
@@ -292,6 +354,26 @@ export default function AdminPage() {
         </Tabs>
       </main>
       <Footer />
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent className="rounded-[2rem] text-right" dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>هل أنت متأكد من الحذف؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              سيتم حذف المنتج نهائياً من المتجر ولا يمكن التراجع عن هذا الإجراء.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogAction 
+              onClick={handleDeleteProduct}
+              className="bg-destructive hover:bg-destructive/90 rounded-full"
+            >
+              نعم، احذف
+            </AlertDialogAction>
+            <AlertDialogCancel className="rounded-full">إلغاء</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
