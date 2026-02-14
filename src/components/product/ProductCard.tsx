@@ -16,8 +16,6 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  // next/image requires http or https protocols. 
-  // We fall back to a placeholder if the provided URL is invalid (e.g., gs:// links).
   const isValidUrl = product.image && (product.image.startsWith('http://') || product.image.startsWith('https://'));
   const displayImage = isValidUrl ? product.image : 'https://picsum.photos/seed/placeholder/600/600';
 

@@ -156,7 +156,14 @@ export default function AdminPage() {
               <p className="text-xs text-muted-foreground">{user.email}</p>
             </div>
             {user.photoURL && (
-              <Image src={user.photoURL} alt="Profile" width={40} height={40} className="rounded-full" />
+              <Image 
+                src={user.photoURL} 
+                alt="Profile" 
+                width={40} 
+                height={40} 
+                className="rounded-full"
+                unoptimized
+              />
             )}
           </div>
         </div>
@@ -233,6 +240,7 @@ export default function AdminPage() {
                       value={formData.imageUrl}
                       onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                     />
+                    <p className="text-xs text-muted-foreground mt-1">تأكد من استخدام رابط يبدأ بـ https://</p>
                   </div>
 
                   <div className="space-y-2 text-right">
@@ -287,30 +295,35 @@ export default function AdminPage() {
                         </TableCell>
                       </TableRow>
                     ) : products && products.length > 0 ? (
-                      products.map((p: any) => (
-                        <TableRow key={p.id}>
-                          <TableCell className="text-right font-medium">
-                            <div className="flex items-center gap-3">
-                              <div className="relative h-10 w-10 rounded-lg overflow-hidden border">
-                                <Image src={p.imageUrl} alt={p.name} fill className="object-cover" />
+                      products.map((p: any) => {
+                        const isValidUrl = p.imageUrl && (p.imageUrl.startsWith('http://') || p.imageUrl.startsWith('https://'));
+                        const displayImage = isValidUrl ? p.imageUrl : 'https://picsum.photos/seed/placeholder/100/100';
+                        
+                        return (
+                          <TableRow key={p.id}>
+                            <TableCell className="text-right font-medium">
+                              <div className="flex items-center gap-3">
+                                <div className="relative h-10 w-10 rounded-lg overflow-hidden border">
+                                  <Image src={displayImage} alt={p.name} fill className="object-cover" />
+                                </div>
+                                <span>{p.name}</span>
                               </div>
-                              <span>{p.name}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right text-muted-foreground">{p.categoryName}</TableCell>
-                          <TableCell className="text-right font-bold">${p.price?.toFixed(2)}</TableCell>
-                          <TableCell className="text-right">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => handleDeleteProduct(p.id)}
-                              className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full"
-                            >
-                              <Trash2 className="h-4 w-4 ml-1" /> حذف
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                            </TableCell>
+                            <TableCell className="text-right text-muted-foreground">{p.categoryName}</TableCell>
+                            <TableCell className="text-right font-bold">${p.price?.toFixed(2)}</TableCell>
+                            <TableCell className="text-right">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => handleDeleteProduct(p.id)}
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full"
+                              >
+                                <Trash2 className="h-4 w-4 ml-1" /> حذف
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
                     ) : (
                       <TableRow>
                         <TableCell colSpan={4} className="h-32 text-center text-muted-foreground italic">
