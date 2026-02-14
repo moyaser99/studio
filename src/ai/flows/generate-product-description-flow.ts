@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI agent for generating compelling product descriptions.
@@ -10,8 +9,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-
-export const maxDuration = 60; // Increase max duration for this server action
 
 const GenerateProductDescriptionInputSchema = z.object({
   productName: z.string().describe('The name of the product.'),
