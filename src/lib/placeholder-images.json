@@ -1,3 +1,52 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-makeup",
+      "description": "Elegant makeup collection",
+      "imageUrl": "https://images.unsplash.com/photo-1627260126103-f6299a5b39e7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxtYWtldXAlMjBjb3NtZXRpY3N8ZW58MHx8fHwxNzcxMDk3NTUzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "makeup cosmetics"
+    },
+    {
+      "id": "cat-makeup",
+      "description": "Makeup category",
+      "imageUrl": "https://images.unsplash.com/photo-1709477542145-868afa3d298b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxsaXBzdGljayUyMG1ha2V1cHxlbnwwfHx8fDE3NzEwOTc1NTN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "lipstick makeup"
+    },
+    {
+      "id": "cat-skincare",
+      "description": "Skincare category",
+      "imageUrl": "https://images.unsplash.com/photo-1620916297397-a4a5402a3c6c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxza2luY2FyZSUyMHNlcnVtfGVufDB8fHx8MTc3MTA5NzU1M3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "skincare serum"
+    },
+    {
+      "id": "cat-haircare",
+      "description": "Haircare category",
+      "imageUrl": "https://images.unsplash.com/photo-1544717304-a2db4a7b16ee?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8aGFpciUyMGNhcmV8ZW58MHx8fHwxNzcxMDk3NTUzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "hair care"
+    },
+    {
+      "id": "cat-vitamins",
+      "description": "Vitamins category",
+      "imageUrl": "https://images.unsplash.com/photo-1763668331599-487470fb85b2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx2aXRhbWlucyUyMHN1cHBsZW1lbnRzfGVufDB8fHx8MTc3MTA5NzU1M3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "vitamins supplements"
+    },
+    {
+      "id": "cat-bags",
+      "description": "Bags category",
+      "imageUrl": "https://images.unsplash.com/photo-1590739225287-bd31519780c3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bHV4dXJ5JTIwaGFuZGJhZ3xlbnwwfHx8fDE3NzEwOTc1NTN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "luxury handbag"
+    },
+    {
+      "id": "cat-watches",
+      "description": "Watches category",
+      "imageUrl": "https://images.unsplash.com/photo-1579543768549-96d37c1df78f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHx3cmlzdCUyMHdhdGNofGVufDB8fHx8MTc3MTAzNDUwMnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "wrist watch"
+    },
+    {
+      "id": "prod-lipstick",
+      "description": "Matte Lipstick",
+      "imageUrl": "https://images.unsplash.com/photo-1593939202577-6bf5b21cb507?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxsaXBzdGlja3xlbnwwfHx8fDE3NzEwOTc1NTN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "lipstick"
+    }
+  ]
 }
