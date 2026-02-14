@@ -42,17 +42,42 @@
         "category",
         "imageUrl"
       ]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Additional information for customers",
+      "type": "object",
+      "properties": {
+        "phoneNumber": {
+          "type": "string",
+          "description": "Customer phone number"
+        },
+        "address": {
+          "type": "string",
+          "description": "Delivery address"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
     }
   },
   "auth": {
     "providers": [
-      "google.com"
+      "google.com",
+      "password",
+      "phone"
     ]
   },
   "firestore": {
     "/products/{productId}": {
       "schema": "Product",
       "description": "Collection of products in the store"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Customer profiles and delivery information"
     }
   }
 }

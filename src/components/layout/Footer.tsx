@@ -1,4 +1,8 @@
+
+'use client';
+
 import Link from 'next/link';
+import { CATEGORIES } from '@/lib/data';
 
 export default function Footer() {
   return (
@@ -10,30 +14,39 @@ export default function Footer() {
               YourGroceriesUSA
             </Link>
             <p className="mt-4 text-sm text-muted-foreground max-w-xs">
-              وجهتك لمنتجات التجميل والعافية والأساسيات الفاخرة. مختارة بعناية للأناقة والجودة.
+              وجهتك لمنتجات التجميل والعافية والأساسيات الفاخرة. مختارة بعناية للأناقة والجودة من أمريكا إليك مباشرة.
             </p>
           </div>
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider">تسوق</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">الأقسام</h3>
             <ul className="mt-4 space-y-2">
-              <li><Link href="/category/makeup" className="text-sm text-muted-foreground hover:text-primary">المكياج</Link></li>
-              <li><Link href="/category/skincare" className="text-sm text-muted-foreground hover:text-primary">العناية بالبشرة</Link></li>
-              <li><Link href="/category/haircare" className="text-sm text-muted-foreground hover:text-primary">العناية بالشعر</Link></li>
+              {CATEGORIES.slice(0, 3).map(cat => (
+                <li key={cat.id}>
+                  <Link href={`/category/${cat.slug}`} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                    {cat.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider">الدعم</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">باقي الأقسام</h3>
             <ul className="mt-4 space-y-2">
-              <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary">اتصل بنا</Link></li>
-              <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary">معلومات الشحن</Link></li>
-              <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary">المرتجعات</Link></li>
+              {CATEGORIES.slice(3).map(cat => (
+                <li key={cat.id}>
+                  <Link href={`/category/${cat.slug}`} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                    {cat.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider">الشركة</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">الدعم</h3>
             <ul className="mt-4 space-y-2">
-              <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary">من نحن</Link></li>
-              <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary">سياسة الخصوصية</Link></li>
+              <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">تواصل معنا</Link></li>
+              <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">الشحن والتوصيل</Link></li>
+              <li><Link href="/admin" className="text-sm text-muted-foreground hover:text-primary transition-colors">الإدارة</Link></li>
             </ul>
           </div>
         </div>
