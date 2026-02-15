@@ -1,14 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingBag, Search, User, Menu, Settings, Loader2, X } from 'lucide-react';
+import { ShoppingBag, Search, User, Menu, Settings, Loader2, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CATEGORIES } from '@/lib/data';
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
@@ -20,17 +19,11 @@ export default function Header() {
   
   const isAdmin = !loading && !!user && (user.email === ADMIN_EMAIL || user.phoneNumber === ADMIN_PHONE);
 
-  useEffect(() => {
-    if (!loading) {
-      console.log('Admin Detection Status:', isAdmin);
-    }
-  }, [isAdmin, loading]);
-
   const handleLogout = async () => {
     if (!auth) return;
     try {
       await signOut(auth);
-      router.replace('/login');
+      router.push('/');
     } catch (error) {
       console.error('Logout failed:', error);
     }
@@ -47,42 +40,53 @@ export default function Header() {
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[350px] bg-white border-l-primary/10">
+              <SheetContent side="right" className="w-[300px] sm:w-[350px] bg-white border-l-primary/10 flex flex-col">
                 <SheetHeader className="pb-6 border-b">
                   <SheetTitle className="text-primary text-right font-headline text-2xl font-black">
                     YourGroceriesUSA
                   </SheetTitle>
                 </SheetHeader>
-                <nav className="flex flex-col gap-2 mt-8 text-right">
+                
+                <nav className="flex flex-col gap-2 mt-8 text-right flex-1">
                   <p className="text-xs font-bold text-muted-foreground mb-4 uppercase tracking-widest">تسوق حسب القسم</p>
                   {CATEGORIES.map((cat) => (
-                    <Link
-                      key={cat.id}
-                      href={`/category/${cat.slug}`}
-                      className="text-lg font-bold hover:text-primary py-3 px-4 rounded-2xl hover:bg-primary/5 transition-all flex items-center justify-between group"
-                    >
-                      <span>{cat.name}</span>
-                      <span className="opacity-0 group-hover:opacity-100 transition-opacity">←</span>
-                    </Link>
+                    <SheetClose asChild key={cat.id}>
+                      <Link
+                        href={`/category/${cat.slug}`}
+                        className="text-lg font-bold hover:text-primary py-3 px-4 rounded-2xl hover:bg-primary/5 transition-all flex items-center justify-between group"
+                      >
+                        <span>{cat.name}</span>
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity">←</span>
+                      </Link>
+                    </SheetClose>
                   ))}
                   
                   {isAdmin && (
                     <div className="mt-8 pt-8 border-t">
                       <p className="text-xs font-bold text-primary mb-4 uppercase tracking-widest">الإدارة</p>
-                      <Link href="/admin" className="text-lg font-black text-primary py-3 px-4 rounded-2xl bg-primary/5 flex items-center gap-2 justify-end">
-                        لوحة التحكم <Settings className="h-5 w-5" />
-                      </Link>
-                    </div>
-                  )}
-                  
-                  {user && (
-                    <div className="mt-auto pt-8">
-                      <Button variant="outline" onClick={handleLogout} className="w-full rounded-full border-primary text-primary h-12 font-bold">
-                        تسجيل الخروج
-                      </Button>
+                      <SheetClose asChild>
+                        <Link 
+                          href="/admin" 
+                          className="text-lg font-black text-primary py-3 px-4 rounded-2xl bg-primary/5 flex items-center gap-2 justify-end hover:bg-primary/10 transition-colors"
+                        >
+                          لوحة التحكم <Settings className="h-5 w-5" />
+                        </Link>
+                      </SheetClose>
                     </div>
                   )}
                 </nav>
+
+                {user && (
+                  <div className="mt-auto pt-6 border-t">
+                    <Button 
+                      variant="outline" 
+                      onClick={handleLogout} 
+                      className="w-full rounded-full border-primary text-primary hover:bg-primary hover:text-white h-12 font-bold gap-2"
+                    >
+                      <LogOut className="h-4 w-4" /> تسجيل الخروج
+                    </Button>
+                  </div>
+                )}
               </SheetContent>
             </Sheet>
 
