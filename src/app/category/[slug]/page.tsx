@@ -5,7 +5,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ProductCard from '@/components/product/ProductCard';
 import { CATEGORIES } from '@/lib/data';
-import { useFirestore, useCollection, useUser } from '@/firebase';
+import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import { Loader2, ArrowRight } from 'lucide-react';
@@ -15,19 +15,17 @@ import { Button } from '@/components/ui/button';
 export default function CategoryPage() {
   const { slug } = useParams();
   const db = useFirestore();
-  const { loading: authLoading } = useUser();
   
   const category = CATEGORIES.find(c => c.slug === slug);
 
-  // Updated to wait for authLoading to prevent permission flutters
   const productsQuery = useMemoFirebase(() => {
-    if (!db || !slug || authLoading) return null;
+    if (!db || !slug) return null;
     return query(
       collection(db, 'products'),
       where('category', '==', slug),
       orderBy('createdAt', 'desc')
     );
-  }, [db, slug, authLoading]);
+  }, [db, slug]);
 
   const { data: products, loading } = useCollection(productsQuery);
 
@@ -52,7 +50,6 @@ export default function CategoryPage() {
     <div className="flex min-h-screen flex-col" dir="rtl">
       <Header />
       <main className="flex-1">
-        {/* Category Header */}
         <section className="bg-primary/5 py-12 md:py-20 border-b">
           <div className="container mx-auto px-4 text-right">
             <h1 className="text-4xl md:text-5xl font-bold font-headline mb-4">{category.name}</h1>
@@ -62,10 +59,9 @@ export default function CategoryPage() {
           </div>
         </section>
 
-        {/* Product Grid */}
         <section className="py-12 md:py-24">
           <div className="container mx-auto px-4 md:px-6">
-            {(loading || authLoading) ? (
+            {loading ? (
               <div className="flex justify-center items-center py-20">
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
               </div>

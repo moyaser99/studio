@@ -40,14 +40,25 @@ export const FirebaseProvider: React.FC<{
       // Detailed logging for debugging
       if (error instanceof FirestorePermissionError) {
         console.error(`[Firestore Permission Denied] Path: ${error.context.path}, Operation: ${error.context.operation}`);
+        
+        // Suppress UI Toast for public data paths that might flutter during auth state changes
+        const isPublicPath = 
+          error.context.path.includes('products') || 
+          error.context.path.includes('siteSettings') ||
+          error.context.operation === 'list' || 
+          error.context.operation === 'get';
+
+        if (isPublicPath) {
+          return; // Don't show toast for public read operations
+        }
       } else {
         console.error("[Firebase Error]", error);
       }
 
       toast({
         variant: "destructive",
-        title: "خطأ في قاعدة البيانات",
-        description: "لا تملك الصلاحية للقيام بهذا الإجراء أو جاري التحقق من الهوية.",
+        title: "خطأ في الصلاحيات",
+        description: "لا تملك الصلاحية للقيام بهذا الإجراء. يرجى تسجيل الدخول بحساب المشرف.",
       });
     };
 

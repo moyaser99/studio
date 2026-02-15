@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -17,22 +16,18 @@ import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
 
-/**
- * CategoryImage component fetches the latest product image for a specific category.
- */
 function CategoryImage({ category }: { category: Category }) {
   const db = useFirestore();
-  const { loading: authLoading } = useUser();
   
   const categoryProductQuery = useMemoFirebase(() => {
-    if (!db || authLoading) return null;
+    if (!db) return null;
     return query(
       collection(db, 'products'),
       where('category', '==', category.slug),
       orderBy('createdAt', 'desc'),
       limit(1)
     );
-  }, [db, category.slug, authLoading]);
+  }, [db, category.slug]);
 
   const { data: products, loading } = useCollection(categoryProductQuery);
 
@@ -72,20 +67,17 @@ export default function Home() {
   const isAdmin = !authLoading && !!user && 
     (user.email === ADMIN_EMAIL && user.phoneNumber === ADMIN_PHONE);
 
-  // Dynamic Hero Section Fetch
   const heroRef = useMemoFirebase(() => {
-    if (!db || authLoading) return null;
+    if (!db) return null;
     return doc(db, 'siteSettings', 'heroSection');
-  }, [db, authLoading]);
+  }, [db]);
   
   const { data: heroDoc, loading: heroLoading } = useDoc(heroRef);
 
-  // Latest Products Query - Strictly wait for authLoading to finish
   const productsQuery = useMemoFirebase(() => {
-    if (!db || authLoading) return null;
-    // Using a simpler query first to ensure it's not a rule/index issue causing flutters
+    if (!db) return null;
     return query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(8));
-  }, [db, authLoading]);
+  }, [db]);
   
   const { data: products, loading: productsLoading, error: productsError } = useCollection(productsQuery);
 
@@ -109,7 +101,6 @@ export default function Home() {
     <div className="flex min-h-screen flex-col" dir="rtl">
       <Header />
       <main className="flex-1">
-        {/* Luxury Hero Banner Section */}
         <section 
           className="relative w-full min-h-[500px] md:min-h-[750px] flex items-center bg-[#F8E8E8] transition-all duration-700"
           style={{
@@ -148,14 +139,13 @@ export default function Home() {
             </div>
           </div>
           
-          {(heroLoading || authLoading) && (
+          {(heroLoading) && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/20 backdrop-blur-sm">
               <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
             </div>
           )}
         </section>
 
-        {/* Dynamic Categories Grid */}
         <section className="py-20 bg-white">
           <div className="container mx-auto px-4 md:px-6">
             <div className="flex items-center justify-between mb-12">
@@ -177,7 +167,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Featured Products */}
         <section className="py-20 bg-secondary/5 border-y">
           <div className="container mx-auto px-4 md:px-6">
             <div className="flex items-center justify-between mb-12">
