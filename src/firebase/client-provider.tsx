@@ -1,24 +1,19 @@
+
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { FirebaseApp } from 'firebase/app';
-import { Firestore } from 'firebase/firestore';
-import { Auth } from 'firebase/auth';
+import React, { useMemo } from 'react';
 import { initializeFirebase } from './index';
 import { FirebaseProvider } from './provider';
 
 export const FirebaseClientProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [instances, setInstances] = useState<{
-    app: FirebaseApp;
-    firestore: Firestore;
-    auth: Auth;
-  } | null>(null);
-
-  useEffect(() => {
-    setInstances(initializeFirebase());
+  // Use useMemo to ensure instances are retrieved once per mount and are stable
+  const instances = useMemo(() => {
+    return initializeFirebase();
   }, []);
 
-  if (!instances) return null;
+  if (!instances.app || !instances.firestore || !instances.auth) {
+    return null;
+  }
 
   return (
     <FirebaseProvider

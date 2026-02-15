@@ -13,34 +13,37 @@ export const firebaseConfig = {
   measurementId: "G-NEBTS4V7CT"
 };
 
-let app: FirebaseApp | undefined;
-let firestore: Firestore | undefined;
-let auth: Auth | undefined;
+// Global cache to prevent re-initialization during HMR
+const globalForFirebase = globalThis as unknown as {
+  app: FirebaseApp | undefined;
+  firestore: Firestore | undefined;
+  auth: Auth | undefined;
+};
 
 export function getFirebaseApp() {
   if (typeof window === 'undefined') return null;
-  if (!app) {
-    app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+  if (!globalForFirebase.app) {
+    globalForFirebase.app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   }
-  return app;
+  return globalForFirebase.app;
 }
 
 export function getFirestoreInstance() {
   if (typeof window === 'undefined') return null;
   const currentApp = getFirebaseApp();
   if (!currentApp) return null;
-  if (!firestore) {
-    firestore = getFirestore(currentApp);
+  if (!globalForFirebase.firestore) {
+    globalForFirebase.firestore = getFirestore(currentApp);
   }
-  return firestore;
+  return globalForFirebase.firestore;
 }
 
 export function getAuthInstance() {
   if (typeof window === 'undefined') return null;
   const currentApp = getFirebaseApp();
   if (!currentApp) return null;
-  if (!auth) {
-    auth = getAuth(currentApp);
+  if (!globalForFirebase.auth) {
+    globalForFirebase.auth = getAuth(currentApp);
   }
-  return auth;
+  return globalForFirebase.auth;
 }
