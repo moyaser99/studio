@@ -107,6 +107,10 @@
     "/hero_images/{heroId}": {
       "schema": "HeroImage",
       "description": "Banners for the main landing page"
+    },
+    "/siteSettings/heroSection": {
+      "schema": "HeroImage",
+      "description": "Global hero section configuration"
     }
   }
 }

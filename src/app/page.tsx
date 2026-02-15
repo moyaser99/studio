@@ -9,8 +9,8 @@ import ProductCard from '@/components/product/ProductCard';
 import { CATEGORIES, Category } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2, Package } from 'lucide-react';
-import { useFirestore, useCollection, useUser } from '@/firebase';
-import { collection, query, orderBy, limit, where } from 'firebase/firestore';
+import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
+import { collection, query, orderBy, limit, where, doc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
@@ -61,16 +61,16 @@ export default function Home() {
   const db = useFirestore();
   const { user, loading: authLoading } = useUser();
   
-  // Strict Dual-Factor Admin Logic
+  // Strict Dual-Factor Admin Logic (Email AND Phone)
   const isAdmin = !authLoading && !!user && 
     (user.email === ADMIN_EMAIL && user.phoneNumber === ADMIN_PHONE);
 
-  // Hero Collection Fetch
-  const heroQuery = useMemoFirebase(() => {
+  // Dynamic Hero Section Fetch from siteSettings/heroSection
+  const heroRef = useMemoFirebase(() => {
     if (!db) return null;
-    return query(collection(db, 'hero_images'), where('active', '==', true), limit(1));
+    return doc(db, 'siteSettings', 'heroSection');
   }, [db]);
-  const { data: heroData } = useCollection(heroQuery);
+  const { data: heroDoc, loading: heroLoading } = useDoc(heroRef);
 
   // Latest Products
   const productsQuery = useMemoFirebase(() => {
@@ -79,7 +79,7 @@ export default function Home() {
   }, [db]);
   const { data: products, loading: productsLoading } = useCollection(productsQuery);
 
-  const heroImage = heroData && heroData.length > 0 ? heroData[0].imageUrl : "https://picsum.photos/seed/luxury-cosm/800/800";
+  const heroImage = heroDoc?.imageUrl;
 
   return (
     <div className="flex min-h-screen flex-col" dir="rtl">
@@ -113,12 +113,22 @@ export default function Home() {
                   )}
                 </div>
               </div>
-              <div className="relative aspect-square lg:aspect-[4/3] rounded-[2.5rem] overflow-hidden shadow-2xl ring-8 ring-white/50">
-                <img
-                  src={heroImage}
-                  alt="Premium Collection"
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
+              <div className="relative aspect-square lg:aspect-[4/3] rounded-[2.5rem] overflow-hidden shadow-2xl ring-8 ring-white/50 bg-[#F8E8E8]">
+                {heroLoading ? (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary/30" />
+                  </div>
+                ) : heroImage ? (
+                  <img
+                    src={heroImage}
+                    alt="Premium Collection"
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-primary/20 font-black text-2xl tracking-tighter">
+                    YourGroceriesUSA
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
               </div>
             </div>
