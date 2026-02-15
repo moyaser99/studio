@@ -9,19 +9,23 @@ import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
+const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
+const ADMIN_PHONE = '+962780334074';
+
 export default function Header() {
   const { user, loading } = useUser();
   const auth = useAuth();
   const router = useRouter();
   
-  // Strict admin check: Only true if loading is finished AND email matches
-  const isAdmin = !loading && user?.email === 'mohammad.dd.my@gmail.com';
+  // Strict Admin Verification
+  const isAdmin = !loading && !!user && (user.email === ADMIN_EMAIL || user.phoneNumber === ADMIN_PHONE);
 
   const handleLogout = async () => {
     if (!auth) return;
     try {
       await signOut(auth);
-      router.push('/login');
+      // Use replace to prevent "Back" button navigation into protected areas
+      router.replace('/login');
     } catch (error) {
       console.error('Logout failed:', error);
     }
@@ -54,8 +58,8 @@ export default function Header() {
               <Search className="h-5 w-5" />
             </Button>
             
-            {/* Admin-only settings icon: Completely removed from DOM if not admin */}
-            {isAdmin && (
+            {/* Strict Admin DOM Cleanup with Loading Guard */}
+            {!loading && isAdmin && (
               <Link href="/admin">
                 <Button variant="ghost" size="icon" className="rounded-full text-primary hover:bg-primary/10 transition-colors">
                   <Settings className="h-5 w-5" />
@@ -63,7 +67,11 @@ export default function Header() {
               </Link>
             )}
 
-            {user ? (
+            {loading ? (
+              <div className="w-10 h-10 flex items-center justify-center opacity-0 transition-opacity">
+                {/* Prevent flicker by keeping space empty during auth check */}
+              </div>
+            ) : user ? (
               <div className="flex items-center gap-2">
                 <Button variant="ghost" onClick={handleLogout} className="text-sm rounded-full bg-muted hover:bg-muted/80">خروج</Button>
                 <Link href="/profile-completion">
@@ -104,8 +112,8 @@ export default function Header() {
                       {cat.name}
                     </Link>
                   ))}
-                  {/* Admin-only link in mobile menu */}
-                  {isAdmin && (
+                  {/* Mobile Admin Link Cleanup */}
+                  {!loading && isAdmin && (
                     <Link href="/admin" className="text-lg font-bold text-primary py-2 border-b border-muted">
                       لوحة التحكم
                     </Link>

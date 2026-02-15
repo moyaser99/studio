@@ -34,6 +34,7 @@ import { generateProductDescription } from '@/ai/flows/generate-product-descript
 import Image from 'next/image';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
+const ADMIN_PHONE = '+962780334074';
 
 export default function AdminPage() {
   const db = useFirestore();
@@ -52,10 +53,11 @@ export default function AdminPage() {
     description: '',
   });
 
-  // Strict Role-Based Redirect
+  // Strict Dual-Factor Admin Redirect
   useEffect(() => {
     if (!authLoading) {
-      if (!user || user.email !== ADMIN_EMAIL) {
+      const isAdmin = user && (user.email === ADMIN_EMAIL || user.phoneNumber === ADMIN_PHONE);
+      if (!isAdmin) {
         // Use replace to prevent the restricted page from staying in history
         router.replace('/');
       }
@@ -158,7 +160,8 @@ export default function AdminPage() {
   }
 
   // Final safety check to ensure non-admins see nothing while the redirect happens
-  if (!user || user.email !== ADMIN_EMAIL) return null;
+  const isAdmin = user && (user.email === ADMIN_EMAIL || user.phoneNumber === ADMIN_PHONE);
+  if (!isAdmin) return null;
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/20" dir="rtl">
