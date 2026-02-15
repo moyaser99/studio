@@ -19,7 +19,6 @@ const ADMIN_PHONE = '+962780334074';
 
 /**
  * CategoryImage component fetches the latest product image for a specific category.
- * Updated to wait for auth state to avoid premature permission errors.
  */
 function CategoryImage({ category }: { category: Category }) {
   const db = useFirestore();
@@ -70,11 +69,10 @@ export default function Home() {
     setMounted(true);
   }, []);
   
-  // Strict Dual-Factor Admin Logic (Email AND Phone)
   const isAdmin = !authLoading && !!user && 
     (user.email === ADMIN_EMAIL && user.phoneNumber === ADMIN_PHONE);
 
-  // Dynamic Hero Section Fetch - Waits for auth state to be stable
+  // Dynamic Hero Section Fetch
   const heroRef = useMemoFirebase(() => {
     if (!db || authLoading) return null;
     return doc(db, 'siteSettings', 'heroSection');
@@ -82,12 +80,14 @@ export default function Home() {
   
   const { data: heroDoc, loading: heroLoading } = useDoc(heroRef);
 
-  // Latest Products - Now waits for authLoading to prevent permission flutters
+  // Latest Products Query - Strictly wait for authLoading to finish
   const productsQuery = useMemoFirebase(() => {
     if (!db || authLoading) return null;
+    // Using a simpler query first to ensure it's not a rule/index issue causing flutters
     return query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(8));
   }, [db, authLoading]);
-  const { data: products, loading: productsLoading } = useCollection(productsQuery);
+  
+  const { data: products, loading: productsLoading, error: productsError } = useCollection(productsQuery);
 
   const heroImage = heroDoc?.imageUrl;
 
@@ -189,6 +189,11 @@ export default function Home() {
             {productsLoading ? (
               <div className="flex justify-center items-center py-24">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              </div>
+            ) : productsError ? (
+              <div className="text-center py-24 bg-white rounded-[3rem] border border-destructive/20">
+                <p className="text-destructive font-medium">عذراً، حدث خطأ أثناء تحميل المنتجات. يرجى إعادة المحاولة.</p>
+                <Button variant="outline" className="mt-4 rounded-full" onClick={() => window.location.reload()}>تحديث الصفحة</Button>
               </div>
             ) : products && products.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">

@@ -98,19 +98,15 @@
   "firestore": {
     "/products/{productId}": {
       "schema": "Product",
-      "description": "Collection of products in the store - Public Read (Anyone can see products), Admin Write (Only mohammad.dd.my@gmail.com can edit)"
+      "description": "PUBLIC_READ: Allow any user (even unauthenticated) to read products. ADMIN_WRITE: Only allow mohammad.dd.my@gmail.com to create, update, or delete products."
     },
     "/users/{userId}": {
       "schema": "UserProfile",
-      "description": "Customer profiles and delivery information - Owner Read/Write"
-    },
-    "/hero_images/{heroId}": {
-      "schema": "HeroImage",
-      "description": "Banners for the main landing page - Public Read"
+      "description": "OWNER_ONLY: Users can only read and write their own profile data."
     },
     "/siteSettings/heroSection": {
       "schema": "HeroImage",
-      "description": "Global hero section configuration - Public Read, Admin Write"
+      "description": "PUBLIC_READ: Allow any user to see the hero section. ADMIN_WRITE: Only allow mohammad.dd.my@gmail.com to modify site settings."
     }
   }
 }
