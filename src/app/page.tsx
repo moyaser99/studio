@@ -9,13 +9,19 @@ import ProductCard from '@/components/product/ProductCard';
 import { CATEGORIES } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { useFirestore, useCollection } from '@/firebase';
+import { useFirestore, useCollection, useUser } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 
+const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
+const ADMIN_PHONE = '+962780334074';
+
 export default function Home() {
   const db = useFirestore();
+  const { user, loading: authLoading } = useUser();
   
+  const isAdmin = !authLoading && !!user && (user.email === ADMIN_EMAIL || user.phoneNumber === ADMIN_PHONE);
+
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(8));
@@ -46,11 +52,14 @@ export default function Home() {
                       تسوق الآن
                     </Button>
                   </Link>
-                  <Link href="/admin">
-                    <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary/10 px-8 rounded-full">
-                      لوحة التحكم
-                    </Button>
-                  </Link>
+                  {/* Strict Admin Shield for Hero Button */}
+                  {!authLoading && isAdmin && (
+                    <Link href="/admin">
+                      <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary/10 px-8 rounded-full">
+                        لوحة التحكم
+                      </Button>
+                    </Link>
+                  )}
                 </div>
               </div>
               <div className="relative aspect-video lg:aspect-square rounded-2xl overflow-hidden shadow-2xl">
@@ -114,9 +123,7 @@ export default function Home() {
                       id: product.id,
                       name: product.name,
                       price: product.price,
-                      category: product.category,
                       categoryName: product.categoryName,
-                      description: product.description,
                       image: product.imageUrl,
                     }} 
                   />
@@ -124,10 +131,15 @@ export default function Home() {
               </div>
             ) : (
               <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed">
-                <p className="text-muted-foreground">لا توجد منتجات حالياً. أضف منتجات من لوحة التحكم.</p>
-                <Link href="/admin">
-                   <Button className="mt-4 rounded-full">إضافة منتج</Button>
-                </Link>
+                <p className="text-muted-foreground">
+                  {isAdmin ? "لا توجد منتجات حالياً. أضف منتجات من لوحة التحكم." : "لا توجد منتجات حالياً. يرجى العودة لاحقاً."}
+                </p>
+                {/* Strict Admin Shield for Empty State Button */}
+                {!authLoading && isAdmin && (
+                  <Link href="/admin">
+                     <Button className="mt-4 rounded-full">إضافة منتج</Button>
+                  </Link>
+                )}
               </div>
             )}
           </div>
