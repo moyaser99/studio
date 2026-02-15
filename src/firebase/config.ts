@@ -1,6 +1,7 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+
+import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { getFirestore, Firestore } from "firebase/firestore";
+import { getAuth, Auth } from "firebase/auth";
 
 export const firebaseConfig = {
   apiKey: "AIzaSyBSddySKMJUmlTCFS3eKIEmkLYM73FzfJA",
@@ -12,14 +13,27 @@ export const firebaseConfig = {
   measurementId: "G-NEBTS4V7CT"
 };
 
+let app: FirebaseApp;
+let firestore: Firestore;
+let auth: Auth;
+
 export function getFirebaseApp() {
-  return getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+  if (!app) {
+    app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+  }
+  return app;
 }
 
 export function getFirestoreInstance() {
-  return getFirestore(getFirebaseApp());
+  if (!firestore) {
+    firestore = getFirestore(getFirebaseApp());
+  }
+  return firestore;
 }
 
 export function getAuthInstance() {
-  return getAuth(getFirebaseApp());
+  if (!auth) {
+    auth = getAuth(getFirebaseApp());
+  }
+  return auth;
 }
