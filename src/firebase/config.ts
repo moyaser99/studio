@@ -13,11 +13,12 @@ export const firebaseConfig = {
   measurementId: "G-NEBTS4V7CT"
 };
 
-let app: FirebaseApp;
-let firestore: Firestore;
-let auth: Auth;
+let app: FirebaseApp | undefined;
+let firestore: Firestore | undefined;
+let auth: Auth | undefined;
 
 export function getFirebaseApp() {
+  if (typeof window === 'undefined') return null as any;
   if (!app) {
     app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   }
@@ -25,15 +26,21 @@ export function getFirebaseApp() {
 }
 
 export function getFirestoreInstance() {
+  if (typeof window === 'undefined') return null as any;
+  const currentApp = getFirebaseApp();
+  if (!currentApp) return null as any;
   if (!firestore) {
-    firestore = getFirestore(getFirebaseApp());
+    firestore = getFirestore(currentApp);
   }
   return firestore;
 }
 
 export function getAuthInstance() {
+  if (typeof window === 'undefined') return null as any;
+  const currentApp = getFirebaseApp();
+  if (!currentApp) return null as any;
   if (!auth) {
-    auth = getAuth(getFirebaseApp());
+    auth = getAuth(currentApp);
   }
   return auth;
 }
