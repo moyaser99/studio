@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -17,14 +18,13 @@ export default function Header() {
   const auth = useAuth();
   const router = useRouter();
   
-  // Strict Admin Verification
+  // Strict Dual-Factor Admin Check
   const isAdmin = !loading && !!user && (user.email === ADMIN_EMAIL || user.phoneNumber === ADMIN_PHONE);
 
   const handleLogout = async () => {
     if (!auth) return;
     try {
       await signOut(auth);
-      // Use replace to prevent "Back" button navigation into protected areas
       router.replace('/login');
     } catch (error) {
       console.error('Logout failed:', error);
@@ -58,7 +58,7 @@ export default function Header() {
               <Search className="h-5 w-5" />
             </Button>
             
-            {/* Strict Admin DOM Cleanup with Loading Guard */}
+            {/* Strict Admin DOM Cleanup */}
             {!loading && isAdmin && (
               <Link href="/admin">
                 <Button variant="ghost" size="icon" className="rounded-full text-primary hover:bg-primary/10 transition-colors">
@@ -68,8 +68,8 @@ export default function Header() {
             )}
 
             {loading ? (
-              <div className="w-10 h-10 flex items-center justify-center opacity-0 transition-opacity">
-                {/* Prevent flicker by keeping space empty during auth check */}
+              <div className="w-10 h-10 flex items-center justify-center">
+                {/* Space holder during auth check */}
               </div>
             ) : user ? (
               <div className="flex items-center gap-2">

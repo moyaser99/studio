@@ -3,8 +3,15 @@
 
 import Link from 'next/link';
 import { CATEGORIES } from '@/lib/data';
+import { useUser } from '@/firebase';
+
+const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
+const ADMIN_PHONE = '+962780334074';
 
 export default function Footer() {
+  const { user, loading } = useUser();
+  const isAdmin = !loading && !!user && (user.email === ADMIN_EMAIL || user.phoneNumber === ADMIN_PHONE);
+
   return (
     <footer className="border-t bg-muted/30">
       <div className="container mx-auto px-4 py-12 md:px-6">
@@ -46,7 +53,10 @@ export default function Footer() {
             <ul className="mt-4 space-y-2">
               <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">تواصل معنا</Link></li>
               <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">الشحن والتوصيل</Link></li>
-              <li><Link href="/admin" className="text-sm text-muted-foreground hover:text-primary transition-colors">الإدارة</Link></li>
+              {/* Admin Shield in Footer */}
+              {!loading && isAdmin && (
+                <li><Link href="/admin" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors">الإدارة</Link></li>
+              )}
             </ul>
           </div>
         </div>

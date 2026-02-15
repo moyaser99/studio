@@ -48,6 +48,10 @@
       "description": "Additional information for customers",
       "type": "object",
       "properties": {
+        "fullName": {
+          "type": "string",
+          "description": "Customer full name"
+        },
         "phoneNumber": {
           "type": "string",
           "description": "Customer phone number"
@@ -55,6 +59,10 @@
         "address": {
           "type": "string",
           "description": "Delivery address"
+        },
+        "email": {
+          "type": "string",
+          "description": "Customer email"
         },
         "updatedAt": {
           "type": "string",
