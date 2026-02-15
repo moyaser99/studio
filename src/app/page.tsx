@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ProductCard from '@/components/product/ProductCard';
 import { CATEGORIES, Category } from '@/lib/data';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, Package } from 'lucide-react';
+import { ArrowLeft, Loader2, Package, Sparkles } from 'lucide-react';
 import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
 import { collection, query, orderBy, limit, where, doc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
@@ -64,8 +63,7 @@ export default function Home() {
     setMounted(true);
   }, []);
   
-  const isAdmin = !authLoading && !!user && 
-    (user.email === ADMIN_EMAIL && user.phoneNumber === ADMIN_PHONE);
+  const isAdmin = !authLoading && !!user && (user.email === ADMIN_EMAIL || user.phoneNumber === ADMIN_PHONE);
 
   const heroRef = useMemoFirebase(() => {
     if (!db) return null;
@@ -79,7 +77,7 @@ export default function Home() {
     return query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(8));
   }, [db]);
   
-  const { data: products, loading: productsLoading, error: productsError } = useCollection(productsQuery);
+  const { data: products, loading: productsLoading } = useCollection(productsQuery);
 
   const heroImage = heroDoc?.imageUrl;
 
@@ -88,7 +86,7 @@ export default function Home() {
       <div className="flex min-h-screen flex-col" dir="rtl">
         <Header />
         <main className="flex-1">
-          <div className="w-full h-[500px] md:h-[750px] bg-[#F8E8E8] flex items-center justify-center">
+          <div className="w-full h-[600px] bg-[#F8E8E8] flex items-center justify-center">
              <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
           </div>
         </main>
@@ -100,38 +98,43 @@ export default function Home() {
   return (
     <div className="flex min-h-screen flex-col" dir="rtl">
       <Header />
-      <main className="flex-1">
+      <main className="flex-1 overflow-x-hidden">
+        {/* Luxury Full-Width Hero Section */}
         <section 
-          className="relative w-full min-h-[500px] md:min-h-[750px] flex items-center bg-[#F8E8E8] transition-all duration-700"
+          className="relative w-full h-[600px] md:h-[800px] flex items-center transition-all duration-700 bg-[#F8E8E8]"
           style={{
             backgroundImage: heroImage ? `url(${heroImage})` : 'none',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-l from-white/95 via-white/70 to-transparent md:from-white/90 md:via-white/50" />
+          <div className="absolute inset-0 bg-gradient-to-l from-white/95 via-white/60 to-transparent md:from-white/80 md:via-white/40" />
           
           <div className="container relative mx-auto px-4 md:px-6 z-10">
-            <div className="max-w-[750px] space-y-8 text-right pr-2 md:pr-10">
-              <div className="space-y-6">
-                <h1 className="text-4xl font-bold tracking-tight sm:text-6xl lg:text-7xl text-foreground font-headline leading-[1.1] animate-in fade-in slide-in-from-right-10 duration-1000">
-                  ارتقِ بأساسياتك اليومية <br/>
-                  <span className="text-primary drop-shadow-sm">بلمسة من الفخامة</span>
+            <div className="max-w-[800px] space-y-8 text-right pr-4 md:pr-12">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 justify-end text-primary font-bold tracking-widest animate-in fade-in slide-in-from-right-5 duration-700">
+                  <Sparkles className="h-5 w-5" /> مجموعة حصرية من أمريكا
+                </div>
+                <h1 className="text-5xl font-bold tracking-tight sm:text-7xl lg:text-8xl text-foreground font-headline leading-[1.1] animate-in fade-in slide-in-from-right-10 duration-1000">
+                  ارتقِ بأساسياتك <br/>
+                  <span className="text-primary">اليومية</span>
                 </h1>
-                <p className="max-w-[550px] text-muted-foreground text-lg md:text-2xl leading-relaxed font-medium animate-in fade-in slide-in-from-right-10 duration-1000 delay-200">
-                  اكتشف مجموعة مختارة من المكياج الفاخر والعناية بالبشرة وإكسسوارات نمط الحياة. الجودة تلتقي بالأناقة في YourGroceriesUSA.
+                <p className="max-w-[600px] text-muted-foreground text-xl md:text-3xl leading-relaxed font-medium animate-in fade-in slide-in-from-right-10 duration-1000 delay-200">
+                  اكتشف مختاراتنا الفاخرة من منتجات العناية والجمال ونمط الحياة الراقي.
                 </p>
               </div>
               <div className="flex flex-wrap gap-5 animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-300">
                 <Link href="/category/makeup">
-                  <Button size="lg" className="bg-primary hover:bg-primary/90 text-white px-12 h-16 rounded-full text-xl font-bold shadow-2xl transition-all hover:scale-105 active:scale-95">
-                    تسوق الآن
+                  <Button size="lg" className="bg-primary hover:bg-primary/90 text-white px-12 h-16 rounded-full text-xl font-bold shadow-2xl transition-all hover:scale-105">
+                    تسوق المجموعة
                   </Button>
                 </Link>
                 {isAdmin && (
                   <Link href="/admin">
-                    <Button variant="outline" size="lg" className="border-primary/50 bg-white/40 backdrop-blur-md text-primary hover:bg-primary/10 px-12 h-16 rounded-full font-bold text-lg shadow-xl">
-                      لوحة التحكم
+                    <Button variant="outline" size="lg" className="border-primary/50 bg-white/50 backdrop-blur-md text-primary hover:bg-primary/10 px-12 h-16 rounded-full font-bold text-lg shadow-xl">
+                      إدارة المتجر
                     </Button>
                   </Link>
                 )}
@@ -139,53 +142,52 @@ export default function Home() {
             </div>
           </div>
           
-          {(heroLoading) && (
+          {heroLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/20 backdrop-blur-sm">
               <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
             </div>
           )}
         </section>
 
-        <section className="py-20 bg-white">
+        {/* Categories Section */}
+        <section className="py-24 bg-white">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="flex items-center justify-between mb-12">
-              <h2 className="text-3xl font-bold tracking-tight font-headline">تسوق حسب القسم</h2>
+            <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-4">
+              <div className="text-right">
+                <h2 className="text-4xl font-bold tracking-tight font-headline mb-4">تسوق حسب القسم</h2>
+                <p className="text-muted-foreground text-lg">مجموعاتنا المختارة بعناية لتناسب ذوقك الرفيع</p>
+              </div>
               <Link href="/category/makeup">
-                <Button variant="ghost" className="text-primary gap-2 hover:bg-primary/5 rounded-full">
-                  عرض جميع الأقسام <ArrowLeft className="h-4 w-4" />
+                <Button variant="ghost" className="text-primary gap-2 hover:bg-primary/5 rounded-full text-lg">
+                  استكشف الكل <ArrowLeft className="h-5 w-5" />
                 </Button>
               </Link>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-10">
               {CATEGORIES.map((category) => (
-                <Link key={category.id} href={`/category/${category.slug}`} className="group space-y-4 text-center">
+                <Link key={category.id} href={`/category/${category.slug}`} className="group space-y-6 text-center">
                   <CategoryImage category={category} />
-                  <span className="block font-bold text-lg group-hover:text-primary transition-colors">{category.name}</span>
+                  <span className="block font-bold text-xl group-hover:text-primary transition-colors">{category.name}</span>
                 </Link>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="py-20 bg-secondary/5 border-y">
+        {/* Latest Products */}
+        <section className="py-24 bg-secondary/5 border-y">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="flex items-center justify-between mb-12">
-              <div className="space-y-1">
-                <h2 className="text-3xl font-bold tracking-tight font-headline">أحدث المنتجات</h2>
-                <p className="text-muted-foreground">اكتشف آخر ما وصل إلينا من ماركات عالمية</p>
-              </div>
+            <div className="text-right mb-16">
+              <h2 className="text-4xl font-bold tracking-tight font-headline mb-4">أحدث المنتجات</h2>
+              <p className="text-muted-foreground text-lg">اكتشف آخر ما وصل إلينا من ماركات عالمية فاخرة</p>
             </div>
+            
             {productsLoading ? (
               <div className="flex justify-center items-center py-24">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
               </div>
-            ) : productsError ? (
-              <div className="text-center py-24 bg-white rounded-[3rem] border border-destructive/20">
-                <p className="text-destructive font-medium">عذراً، حدث خطأ أثناء تحميل المنتجات. يرجى إعادة المحاولة.</p>
-                <Button variant="outline" className="mt-4 rounded-full" onClick={() => window.location.reload()}>تحديث الصفحة</Button>
-              </div>
             ) : products && products.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
                 {products.map((product: any) => (
                   <ProductCard 
                     key={product.id} 
@@ -200,16 +202,16 @@ export default function Home() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-24 bg-white rounded-[3rem] border-2 border-dashed border-primary/20">
-                <div className="bg-primary/5 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Package className="h-10 w-10 text-primary/40" />
+              <div className="text-center py-24 bg-white rounded-[4rem] border-2 border-dashed border-primary/20">
+                <div className="bg-primary/5 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-8">
+                  <Package className="h-12 w-12 text-primary/40" />
                 </div>
-                <p className="text-muted-foreground text-lg mb-6">
-                  {isAdmin ? "لا توجد منتجات حالياً. أضف منتجات من لوحة التحكم." : "لا توجد منتجات حالياً. يرجى العودة لاحقاً."}
+                <p className="text-muted-foreground text-xl mb-8">
+                  {isAdmin ? "المخزون فارغ حالياً. ابدأ بإضافة المنتجات." : "لا توجد منتجات حالياً. يرجى العودة لاحقاً."}
                 </p>
                 {isAdmin && (
                   <Link href="/admin">
-                     <Button className="rounded-full px-8 h-12 text-lg font-bold">إضافة منتج جديد</Button>
+                     <Button className="rounded-full px-12 h-14 text-xl font-bold shadow-lg">أضف أول منتج</Button>
                   </Link>
                 )}
               </div>
