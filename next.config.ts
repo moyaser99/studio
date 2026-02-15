@@ -55,6 +55,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'www.ubuy.com.jo',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 };

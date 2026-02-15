@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -23,6 +24,25 @@ export default function ProductPage() {
   }, [db, id]);
 
   const { data: product, loading } = useDoc(productRef);
+
+  const isImageOptimizable = (url: string) => {
+    if (!url) return false;
+    const supportedHosts = [
+      'images.unsplash.com',
+      'picsum.photos',
+      'firebasestorage.googleapis.com',
+      'gen-lang-client-0789065518.firebasestorage.app',
+      'placehold.co',
+      'lh3.googleusercontent.com',
+      'www.ubuy.com.jo'
+    ];
+    try {
+      const hostname = new URL(url).hostname;
+      return supportedHosts.includes(hostname);
+    } catch {
+      return false;
+    }
+  };
 
   if (loading) {
     return (
@@ -54,6 +74,7 @@ export default function ProductPage() {
   }
 
   const isValidUrl = product.imageUrl && (product.imageUrl.startsWith('http://') || product.imageUrl.startsWith('https://'));
+  const optimized = isImageOptimizable(product.imageUrl);
   const displayImage = isValidUrl ? product.imageUrl : 'https://picsum.photos/seed/placeholder/800/800';
 
   const message = `مرحباً YourGroceriesUSA، أود طلب منتج: ${product.name}`;
@@ -65,13 +86,24 @@ export default function ProductPage() {
       <main className="flex-1 container mx-auto px-4 py-12 md:px-6">
         <div className="grid gap-12 lg:grid-cols-2 items-start">
           <div className="relative aspect-square overflow-hidden rounded-3xl bg-muted shadow-sm ring-1 ring-muted">
-            <Image
-              src={displayImage}
-              alt={product.name}
-              fill
-              className="object-cover"
-              data-ai-hint="product detail image"
-            />
+            {optimized ? (
+              <Image
+                src={displayImage}
+                alt={product.name}
+                fill
+                className="object-cover"
+                data-ai-hint="product detail image"
+              />
+            ) : (
+              <img
+                src={displayImage}
+                alt={product.name}
+                className="absolute inset-0 h-full w-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/placeholder/800/800';
+                }}
+              />
+            )}
           </div>
           <div className="flex flex-col space-y-8 text-right">
             <div className="space-y-4">

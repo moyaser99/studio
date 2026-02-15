@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -53,12 +54,10 @@ export default function AdminPage() {
     description: '',
   });
 
-  // Strict Dual-Factor Admin Redirect
   useEffect(() => {
     if (!authLoading) {
       const isAdmin = user && (user.email === ADMIN_EMAIL || user.phoneNumber === ADMIN_PHONE);
       if (!isAdmin) {
-        // Use replace to prevent the restricted page from staying in history
         router.replace('/');
       }
     }
@@ -70,6 +69,25 @@ export default function AdminPage() {
   }, [db]);
 
   const { data: products, loading: productsLoading } = useCollection(productsQuery);
+
+  const isImageOptimizable = (url: string) => {
+    if (!url) return false;
+    const supportedHosts = [
+      'images.unsplash.com',
+      'picsum.photos',
+      'firebasestorage.googleapis.com',
+      'gen-lang-client-0789065518.firebasestorage.app',
+      'placehold.co',
+      'lh3.googleusercontent.com',
+      'www.ubuy.com.jo'
+    ];
+    try {
+      const hostname = new URL(url).hostname;
+      return supportedHosts.includes(hostname);
+    } catch {
+      return false;
+    }
+  };
 
   const handleAddProduct = (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,7 +177,6 @@ export default function AdminPage() {
     );
   }
 
-  // Final safety check to ensure non-admins see nothing while the redirect happens
   const isAdmin = user && (user.email === ADMIN_EMAIL || user.phoneNumber === ADMIN_PHONE);
   if (!isAdmin) return null;
 
@@ -311,36 +328,50 @@ export default function AdminPage() {
                         </TableCell>
                       </TableRow>
                     ) : products && products.length > 0 ? (
-                      products.map((p: any) => (
-                        <TableRow key={p.id}>
-                          <TableCell className="text-right font-medium">
-                            <div className="flex items-center gap-3">
-                              <div className="relative h-12 w-12 rounded-xl overflow-hidden border shadow-sm">
-                                <Image 
-                                  src={p.imageUrl?.startsWith('http') ? p.imageUrl : 'https://picsum.photos/seed/placeholder/100/100'} 
-                                  alt={p.name} 
-                                  fill 
-                                  className="object-cover" 
-                                  unoptimized 
-                                />
+                      products.map((p: any) => {
+                        const optimized = isImageOptimizable(p.imageUrl);
+                        return (
+                          <TableRow key={p.id}>
+                            <TableCell className="text-right font-medium">
+                              <div className="flex items-center gap-3">
+                                <div className="relative h-12 w-12 rounded-xl overflow-hidden border shadow-sm">
+                                  {optimized ? (
+                                    <Image 
+                                      src={p.imageUrl?.startsWith('http') ? p.imageUrl : 'https://picsum.photos/seed/placeholder/100/100'} 
+                                      alt={p.name} 
+                                      fill 
+                                      className="object-cover" 
+                                      unoptimized 
+                                    />
+                                  ) : (
+                                    <img 
+                                      src={p.imageUrl?.startsWith('http') ? p.imageUrl : 'https://picsum.photos/seed/placeholder/100/100'} 
+                                      alt={p.name} 
+                                      className="absolute inset-0 h-full w-full object-cover" 
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/placeholder/100/100';
+                                      }}
+                                    />
+                                  )}
+                                </div>
+                                <span className="font-bold">{p.name}</span>
                               </div>
-                              <span className="font-bold">{p.name}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right text-muted-foreground">{p.categoryName}</TableCell>
-                          <TableCell className="text-right font-bold text-primary">${p.price?.toFixed(2)}</TableCell>
-                          <TableCell className="text-right">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => setDeleteId(p.id)}
-                              className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full"
-                            >
-                              <Trash2 className="h-4 w-4 ml-1" /> حذف
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                            </TableCell>
+                            <TableCell className="text-right text-muted-foreground">{p.categoryName}</TableCell>
+                            <TableCell className="text-right font-bold text-primary">${p.price?.toFixed(2)}</TableCell>
+                            <TableCell className="text-right">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => setDeleteId(p.id)}
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full"
+                              >
+                                <Trash2 className="h-4 w-4 ml-1" /> حذف
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
                     ) : (
                       <TableRow>
                         <TableCell colSpan={4} className="h-32 text-center text-muted-foreground italic">

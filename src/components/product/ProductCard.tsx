@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -16,20 +17,52 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  // Enhanced check for supported Image hostnames or fallbacks
+  const isImageOptimizable = (url: string) => {
+    if (!url) return false;
+    const supportedHosts = [
+      'images.unsplash.com',
+      'picsum.photos',
+      'firebasestorage.googleapis.com',
+      'gen-lang-client-0789065518.firebasestorage.app',
+      'placehold.co',
+      'lh3.googleusercontent.com',
+      'www.ubuy.com.jo'
+    ];
+    try {
+      const hostname = new URL(url).hostname;
+      return supportedHosts.includes(hostname);
+    } catch {
+      return false;
+    }
+  };
+
   const isValidUrl = product.image && (product.image.startsWith('http://') || product.image.startsWith('https://'));
+  const useOptimized = isValidUrl && isImageOptimizable(product.image);
   const displayImage = isValidUrl ? product.image : 'https://picsum.photos/seed/placeholder/600/600';
 
   return (
     <Link href={`/product/${product.id}`}>
       <Card className="group overflow-hidden transition-all hover:shadow-lg border-none bg-secondary/10 rounded-3xl h-full">
         <div className="relative aspect-square overflow-hidden">
-          <Image
-            src={displayImage}
-            alt={product.name}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-            data-ai-hint="product photo"
-          />
+          {useOptimized ? (
+            <Image
+              src={displayImage}
+              alt={product.name}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              data-ai-hint="product photo"
+            />
+          ) : (
+            <img
+              src={displayImage}
+              alt={product.name}
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/error/600/600';
+              }}
+            />
+          )}
           <Badge className="absolute right-2 top-2 bg-primary/90 rounded-full px-3">
             {product.categoryName}
           </Badge>
