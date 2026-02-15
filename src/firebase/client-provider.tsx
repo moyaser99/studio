@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo } from 'react';
@@ -10,10 +9,6 @@ export const FirebaseClientProvider: React.FC<{ children: React.ReactNode }> = (
   const instances = useMemo(() => {
     return initializeFirebase();
   }, []);
-
-  if (!instances.app || !instances.firestore || !instances.auth) {
-    return null;
-  }
 
   return (
     <FirebaseProvider

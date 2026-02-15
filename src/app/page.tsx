@@ -1,6 +1,6 @@
-
 'use client';
 
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/layout/Header';
@@ -60,6 +60,11 @@ function CategoryImage({ category }: { category: Category }) {
 export default function Home() {
   const db = useFirestore();
   const { user, loading: authLoading } = useUser();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   // Strict Dual-Factor Admin Logic (Email AND Phone)
   const isAdmin = !authLoading && !!user && 
@@ -80,6 +85,21 @@ export default function Home() {
   const { data: products, loading: productsLoading } = useCollection(productsQuery);
 
   const heroImage = heroDoc?.imageUrl;
+
+  // Prevent hydration mismatch by only rendering browser-specific logic after mount
+  if (!mounted) {
+    return (
+      <div className="flex min-h-screen flex-col" dir="rtl">
+        <Header />
+        <main className="flex-1">
+          <div className="w-full h-[500px] md:h-[750px] bg-[#F8E8E8] flex items-center justify-center">
+             <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col" dir="rtl">
@@ -114,7 +134,7 @@ export default function Home() {
                     تسوق الآن
                   </Button>
                 </Link>
-                {!authLoading && isAdmin && (
+                {isAdmin && (
                   <Link href="/admin">
                     <Button variant="outline" size="lg" className="border-primary/50 bg-white/40 backdrop-blur-md text-primary hover:bg-primary/10 px-12 h-16 rounded-full font-bold text-lg shadow-xl">
                       لوحة التحكم
@@ -191,7 +211,7 @@ export default function Home() {
                 <p className="text-muted-foreground text-lg mb-6">
                   {isAdmin ? "لا توجد منتجات حالياً. أضف منتجات من لوحة التحكم." : "لا توجد منتجات حالياً. يرجى العودة لاحقاً."}
                 </p>
-                {!authLoading && isAdmin && (
+                {isAdmin && (
                   <Link href="/admin">
                      <Button className="rounded-full px-8 h-12 text-lg font-bold">إضافة منتج جديد</Button>
                   </Link>

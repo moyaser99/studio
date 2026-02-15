@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore } from 'firebase/firestore';
 import { Auth } from 'firebase/auth';
@@ -25,14 +25,16 @@ export const useFirestore = () => useFirebase().firestore;
 export const useAuth = () => useFirebase().auth;
 
 export const FirebaseProvider: React.FC<{
-  app: FirebaseApp;
-  firestore: Firestore;
-  auth: Auth;
+  app: FirebaseApp | null;
+  firestore: Firestore | null;
+  auth: Auth | null;
   children: React.ReactNode;
 }> = ({ app, firestore, auth, children }) => {
   const { toast } = useToast();
 
   useEffect(() => {
+    if (!app) return;
+    
     const handleError = (error: any) => {
       toast({
         variant: "destructive",
@@ -45,7 +47,7 @@ export const FirebaseProvider: React.FC<{
     return () => {
       errorEmitter.off('permission-error', handleError);
     };
-  }, [toast]);
+  }, [app, toast]);
 
   return (
     <FirebaseContext.Provider value={{ app, firestore, auth }}>
