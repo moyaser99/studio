@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -73,7 +74,7 @@ export default function Home() {
   const isAdmin = !authLoading && !!user && 
     (user.email === ADMIN_EMAIL && user.phoneNumber === ADMIN_PHONE);
 
-  // Dynamic Hero Section Fetch
+  // Dynamic Hero Section Fetch - Waits for auth state to be stable
   const heroRef = useMemoFirebase(() => {
     if (!db || authLoading) return null;
     return doc(db, 'siteSettings', 'heroSection');

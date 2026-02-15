@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Product": {
@@ -97,19 +98,19 @@
   "firestore": {
     "/products/{productId}": {
       "schema": "Product",
-      "description": "Collection of products in the store - Public Read, Admin Write"
+      "description": "Collection of products in the store - Public Read (Anyone can see products), Admin Write (Only mohammad.dd.my@gmail.com can edit)"
     },
     "/users/{userId}": {
       "schema": "UserProfile",
-      "description": "Customer profiles and delivery information"
+      "description": "Customer profiles and delivery information - Owner Read/Write"
     },
     "/hero_images/{heroId}": {
       "schema": "HeroImage",
-      "description": "Banners for the main landing page"
+      "description": "Banners for the main landing page - Public Read"
     },
     "/siteSettings/heroSection": {
       "schema": "HeroImage",
-      "description": "Global hero section configuration"
+      "description": "Global hero section configuration - Public Read, Admin Write"
     }
   }
 }
