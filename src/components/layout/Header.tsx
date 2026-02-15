@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingBag, Search, User, Menu, Settings } from 'lucide-react';
+import { ShoppingBag, Search, User, Menu, Settings, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CATEGORIES } from '@/lib/data';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
