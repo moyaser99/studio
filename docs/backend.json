@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "Product": {
@@ -98,7 +97,7 @@
   "firestore": {
     "/products/{productId}": {
       "schema": "Product",
-      "description": "Collection of products in the store"
+      "description": "Collection of products in the store - Public Read, Admin Write"
     },
     "/users/{userId}": {
       "schema": "UserProfile",

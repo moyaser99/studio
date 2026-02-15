@@ -18,18 +18,21 @@ const ADMIN_PHONE = '+962780334074';
 
 /**
  * CategoryImage component fetches the latest product image for a specific category.
+ * Updated to wait for auth state to avoid premature permission errors.
  */
 function CategoryImage({ category }: { category: Category }) {
   const db = useFirestore();
+  const { loading: authLoading } = useUser();
+  
   const categoryProductQuery = useMemoFirebase(() => {
-    if (!db) return null;
+    if (!db || authLoading) return null;
     return query(
       collection(db, 'products'),
       where('category', '==', category.slug),
       orderBy('createdAt', 'desc'),
       limit(1)
     );
-  }, [db, category.slug]);
+  }, [db, category.slug, authLoading]);
 
   const { data: products, loading } = useCollection(categoryProductQuery);
 
@@ -70,7 +73,7 @@ export default function Home() {
   const isAdmin = !authLoading && !!user && 
     (user.email === ADMIN_EMAIL && user.phoneNumber === ADMIN_PHONE);
 
-  // Dynamic Hero Section Fetch - Wait for auth to settle to avoid permission errors if rules are strict
+  // Dynamic Hero Section Fetch
   const heroRef = useMemoFirebase(() => {
     if (!db || authLoading) return null;
     return doc(db, 'siteSettings', 'heroSection');
@@ -78,16 +81,15 @@ export default function Home() {
   
   const { data: heroDoc, loading: heroLoading } = useDoc(heroRef);
 
-  // Latest Products
+  // Latest Products - Now waits for authLoading to prevent permission flutters
   const productsQuery = useMemoFirebase(() => {
-    if (!db) return null;
+    if (!db || authLoading) return null;
     return query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(8));
-  }, [db]);
+  }, [db, authLoading]);
   const { data: products, loading: productsLoading } = useCollection(productsQuery);
 
   const heroImage = heroDoc?.imageUrl;
 
-  // Prevent hydration mismatch
   if (!mounted) {
     return (
       <div className="flex min-h-screen flex-col" dir="rtl">
@@ -115,7 +117,6 @@ export default function Home() {
             backgroundPosition: 'center',
           }}
         >
-          {/* Elegant White/Pink Gradient Overlay for Text Readability */}
           <div className="absolute inset-0 bg-gradient-to-l from-white/95 via-white/70 to-transparent md:from-white/90 md:via-white/50" />
           
           <div className="container relative mx-auto px-4 md:px-6 z-10">
@@ -146,7 +147,7 @@ export default function Home() {
             </div>
           </div>
           
-          {heroLoading && (
+          {(heroLoading || authLoading) && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/20 backdrop-blur-sm">
               <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
             </div>
