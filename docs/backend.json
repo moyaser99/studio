@@ -69,6 +69,23 @@
           "format": "date-time"
         }
       }
+    },
+    "HeroImage": {
+      "title": "Hero Image",
+      "description": "Promotional banners for the hero section",
+      "type": "object",
+      "properties": {
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of the hero image"
+        },
+        "title": {
+          "type": "string"
+        },
+        "active": {
+          "type": "boolean"
+        }
+      }
     }
   },
   "auth": {
@@ -86,6 +103,10 @@
     "/users/{userId}": {
       "schema": "UserProfile",
       "description": "Customer profiles and delivery information"
+    },
+    "/hero_images/{heroId}": {
+      "schema": "HeroImage",
+      "description": "Banners for the main landing page"
     }
   }
 }
