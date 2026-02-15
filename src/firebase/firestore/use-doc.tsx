@@ -32,6 +32,7 @@ export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
           path: docRef.path,
           operation: 'get',
         });
+        
         errorEmitter.emit('permission-error', permissionError);
         setError(permissionError);
         setLoading(false);

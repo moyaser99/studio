@@ -6,6 +6,7 @@ import { Firestore } from 'firebase/firestore';
 import { Auth } from 'firebase/auth';
 import { errorEmitter } from './error-emitter';
 import { useToast } from '@/hooks/use-toast';
+import { FirestorePermissionError } from './errors';
 
 interface FirebaseContextType {
   app: FirebaseApp | null;
@@ -36,10 +37,17 @@ export const FirebaseProvider: React.FC<{
     if (!app) return;
     
     const handleError = (error: any) => {
+      // Detailed logging for debugging
+      if (error instanceof FirestorePermissionError) {
+        console.error(`[Firestore Permission Denied] Path: ${error.context.path}, Operation: ${error.context.operation}`);
+      } else {
+        console.error("[Firebase Error]", error);
+      }
+
       toast({
         variant: "destructive",
         title: "خطأ في قاعدة البيانات",
-        description: "لا تملك الصلاحية للقيام بهذا الإجراء.",
+        description: "لا تملك الصلاحية للقيام بهذا الإجراء أو جاري التحقق من الهوية.",
       });
     };
 

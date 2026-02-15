@@ -70,11 +70,12 @@ export default function Home() {
   const isAdmin = !authLoading && !!user && 
     (user.email === ADMIN_EMAIL && user.phoneNumber === ADMIN_PHONE);
 
-  // Dynamic Hero Section Fetch from siteSettings/heroSection
+  // Dynamic Hero Section Fetch - Wait for auth to settle to avoid permission errors if rules are strict
   const heroRef = useMemoFirebase(() => {
-    if (!db) return null;
+    if (!db || authLoading) return null;
     return doc(db, 'siteSettings', 'heroSection');
-  }, [db]);
+  }, [db, authLoading]);
+  
   const { data: heroDoc, loading: heroLoading } = useDoc(heroRef);
 
   // Latest Products
@@ -86,7 +87,7 @@ export default function Home() {
 
   const heroImage = heroDoc?.imageUrl;
 
-  // Prevent hydration mismatch by only rendering browser-specific logic after mount
+  // Prevent hydration mismatch
   if (!mounted) {
     return (
       <div className="flex min-h-screen flex-col" dir="rtl">
@@ -145,7 +146,6 @@ export default function Home() {
             </div>
           </div>
           
-          {/* Subtle loading indicator if hero is still fetching */}
           {heroLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/20 backdrop-blur-sm">
               <Loader2 className="h-10 w-10 animate-spin text-primary/40" />

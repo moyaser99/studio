@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -54,9 +53,10 @@ export default function AdminPage() {
     description: '',
   });
 
+  // Strict Dual-Factor Admin Verification
   useEffect(() => {
     if (!authLoading) {
-      const isAdmin = user && (user.email === ADMIN_EMAIL || user.phoneNumber === ADMIN_PHONE);
+      const isAdmin = user && (user.email === ADMIN_EMAIL && user.phoneNumber === ADMIN_PHONE);
       if (!isAdmin) {
         router.replace('/');
       }
@@ -64,9 +64,9 @@ export default function AdminPage() {
   }, [user, authLoading, router]);
 
   const productsQuery = useMemoFirebase(() => {
-    if (!db) return null;
+    if (!db || authLoading) return null; // Wait for auth
     return query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(50));
-  }, [db]);
+  }, [db, authLoading]);
 
   const { data: products, loading: productsLoading } = useCollection(productsQuery);
 
@@ -177,7 +177,7 @@ export default function AdminPage() {
     );
   }
 
-  const isAdmin = user && (user.email === ADMIN_EMAIL || user.phoneNumber === ADMIN_PHONE);
+  const isAdmin = user && (user.email === ADMIN_EMAIL && user.phoneNumber === ADMIN_PHONE);
   if (!isAdmin) return null;
 
   return (
