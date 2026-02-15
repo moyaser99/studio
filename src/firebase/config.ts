@@ -18,7 +18,7 @@ let firestore: Firestore | undefined;
 let auth: Auth | undefined;
 
 export function getFirebaseApp() {
-  if (typeof window === 'undefined') return null as any;
+  if (typeof window === 'undefined') return null;
   if (!app) {
     app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   }
@@ -26,9 +26,9 @@ export function getFirebaseApp() {
 }
 
 export function getFirestoreInstance() {
-  if (typeof window === 'undefined') return null as any;
+  if (typeof window === 'undefined') return null;
   const currentApp = getFirebaseApp();
-  if (!currentApp) return null as any;
+  if (!currentApp) return null;
   if (!firestore) {
     firestore = getFirestore(currentApp);
   }
@@ -36,9 +36,9 @@ export function getFirestoreInstance() {
 }
 
 export function getAuthInstance() {
-  if (typeof window === 'undefined') return null as any;
+  if (typeof window === 'undefined') return null;
   const currentApp = getFirebaseApp();
-  if (!currentApp) return null as any;
+  if (!currentApp) return null;
   if (!auth) {
     auth = getAuth(currentApp);
   }

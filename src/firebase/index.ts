@@ -1,8 +1,12 @@
+
 'use client';
 
 import { getFirebaseApp, getFirestoreInstance, getAuthInstance } from './config';
 
 export function initializeFirebase() {
+  if (typeof window === 'undefined') {
+    return { app: null, firestore: null, auth: null };
+  }
   const app = getFirebaseApp();
   const firestore = getFirestoreInstance();
   const auth = getAuthInstance();
