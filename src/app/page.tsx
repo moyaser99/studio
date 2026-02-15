@@ -85,54 +85,52 @@ export default function Home() {
     <div className="flex min-h-screen flex-col" dir="rtl">
       <Header />
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative w-full py-12 md:py-24 lg:py-32 bg-gradient-to-b from-secondary/20 to-background overflow-hidden">
-          <div className="container mx-auto px-4 md:px-6">
-            <div className="grid gap-12 lg:grid-cols-2 items-center">
-              <div className="flex flex-col justify-center space-y-6 text-right">
-                <div className="space-y-4">
-                  <h1 className="text-4xl font-bold tracking-tight sm:text-6xl text-foreground font-headline leading-tight">
-                    ارتقِ بأساسياتك اليومية <br/><span className="text-primary">بلمسة من الفخامة</span>
-                  </h1>
-                  <p className="max-w-[600px] text-muted-foreground md:text-xl leading-relaxed">
-                    اكتشف مجموعة مختارة من المكياج الفاخر والعناية بالبشرة وإكسسوارات نمط الحياة. الجودة تلتقي بالأناقة في YourGroceriesUSA.
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-4">
-                  <Link href="/category/makeup">
-                    <Button size="lg" className="bg-primary hover:bg-primary/90 text-white px-10 rounded-full text-lg font-bold shadow-lg transition-transform hover:scale-105">
-                      تسوق الآن
+        {/* Luxury Hero Banner Section */}
+        <section 
+          className="relative w-full min-h-[500px] md:min-h-[750px] flex items-center bg-[#F8E8E8] transition-all duration-700"
+          style={{
+            backgroundImage: heroImage ? `url(${heroImage})` : 'none',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          {/* Elegant White/Pink Gradient Overlay for Text Readability */}
+          <div className="absolute inset-0 bg-gradient-to-l from-white/95 via-white/70 to-transparent md:from-white/90 md:via-white/50" />
+          
+          <div className="container relative mx-auto px-4 md:px-6 z-10">
+            <div className="max-w-[750px] space-y-8 text-right pr-2 md:pr-10">
+              <div className="space-y-6">
+                <h1 className="text-4xl font-bold tracking-tight sm:text-6xl lg:text-7xl text-foreground font-headline leading-[1.1] animate-in fade-in slide-in-from-right-10 duration-1000">
+                  ارتقِ بأساسياتك اليومية <br/>
+                  <span className="text-primary drop-shadow-sm">بلمسة من الفخامة</span>
+                </h1>
+                <p className="max-w-[550px] text-muted-foreground text-lg md:text-2xl leading-relaxed font-medium animate-in fade-in slide-in-from-right-10 duration-1000 delay-200">
+                  اكتشف مجموعة مختارة من المكياج الفاخر والعناية بالبشرة وإكسسوارات نمط الحياة. الجودة تلتقي بالأناقة في YourGroceriesUSA.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-5 animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-300">
+                <Link href="/category/makeup">
+                  <Button size="lg" className="bg-primary hover:bg-primary/90 text-white px-12 h-16 rounded-full text-xl font-bold shadow-2xl transition-all hover:scale-105 active:scale-95">
+                    تسوق الآن
+                  </Button>
+                </Link>
+                {!authLoading && isAdmin && (
+                  <Link href="/admin">
+                    <Button variant="outline" size="lg" className="border-primary/50 bg-white/40 backdrop-blur-md text-primary hover:bg-primary/10 px-12 h-16 rounded-full font-bold text-lg shadow-xl">
+                      لوحة التحكم
                     </Button>
                   </Link>
-                  {!authLoading && isAdmin && (
-                    <Link href="/admin">
-                      <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary/10 px-10 rounded-full font-bold">
-                        لوحة التحكم
-                      </Button>
-                    </Link>
-                  )}
-                </div>
-              </div>
-              <div className="relative aspect-square lg:aspect-[4/3] rounded-[2.5rem] overflow-hidden shadow-2xl ring-8 ring-white/50 bg-[#F8E8E8]">
-                {heroLoading ? (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary/30" />
-                  </div>
-                ) : heroImage ? (
-                  <img
-                    src={heroImage}
-                    alt="Premium Collection"
-                    className="absolute inset-0 h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-primary/20 font-black text-2xl tracking-tighter">
-                    YourGroceriesUSA
-                  </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
               </div>
             </div>
           </div>
+          
+          {/* Subtle loading indicator if hero is still fetching */}
+          {heroLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/20 backdrop-blur-sm">
+              <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
+            </div>
+          )}
         </section>
 
         {/* Dynamic Categories Grid */}
