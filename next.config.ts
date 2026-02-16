@@ -15,8 +15,8 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '2mb',
     },
   },
-  // Increase timeout for server actions (especially AI generation)
-  serverActionTimeout: 120,
+  // Increase timeout for server actions to prevent runtime timeouts during AI generation
+  serverActionTimeout: 180,
   images: {
     remotePatterns: [
       {

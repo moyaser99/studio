@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -81,6 +82,7 @@ export default function Home() {
 
   const heroImage = heroDoc?.imageUrl;
 
+  // Prevent hydration/timeout issues by ensuring component is fully mounted
   if (!mounted) {
     return (
       <div className="flex min-h-screen flex-col" dir="rtl">
