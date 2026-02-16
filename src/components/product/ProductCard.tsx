@@ -27,7 +27,9 @@ export default function ProductCard({ product }: ProductCardProps) {
       'gen-lang-client-0789065518.firebasestorage.app',
       'placehold.co',
       'lh3.googleusercontent.com',
-      'www.ubuy.com.jo'
+      'www.ubuy.com.jo',
+      'i5.walmartimages.com',
+      'm.media-amazon.com'
     ];
     try {
       const hostname = new URL(url).hostname;

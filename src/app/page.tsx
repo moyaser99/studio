@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -29,7 +30,6 @@ const CATEGORY_STYLES: Record<string, string> = {
 function CategoryImage({ category, fallbackStyle }: { category: Category, fallbackStyle?: string }) {
   const db = useFirestore();
   
-  // Simplified query without orderBy to ensure results are fetched even without complex indexes
   const categoryProductQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(
@@ -42,22 +42,31 @@ function CategoryImage({ category, fallbackStyle }: { category: Category, fallba
   const { data: products, loading } = useCollection(categoryProductQuery);
 
   const product = products && products.length > 0 ? products[0] : null;
-  
-  // Robust field check for image path across different potential names
   const productImage = product?.imageUrl || product?.image || (product as any)?.src || null;
   
-  // Console Debugging logic
-  useEffect(() => {
-    if (!loading && typeof window !== 'undefined') {
-      if (product) {
-        console.log(`[Category Image Debug] Searching for category: ${category.slug}, result found ID: ${product.id}, image path: ${productImage}`);
-      } else {
-        console.log(`[Category Image Debug] Searching for category: ${category.slug}, no results found (Collection empty or no matches).`);
-      }
+  const isImageOptimizable = (url: string) => {
+    if (!url) return false;
+    const supportedHosts = [
+      'images.unsplash.com',
+      'picsum.photos',
+      'firebasestorage.googleapis.com',
+      'gen-lang-client-0789065518.firebasestorage.app',
+      'placehold.co',
+      'lh3.googleusercontent.com',
+      'www.ubuy.com.jo',
+      'i5.walmartimages.com',
+      'm.media-amazon.com'
+    ];
+    try {
+      const hostname = new URL(url).hostname;
+      return supportedHosts.includes(hostname);
+    } catch {
+      return false;
     }
-  }, [loading, product, category.slug, productImage]);
+  };
 
-  // Check if product is "New" (added in last 48 hours)
+  const useOptimized = isImageOptimizable(productImage);
+
   const isNew = product?.createdAt?.toDate 
     ? (new Date().getTime() - product.createdAt.toDate().getTime()) < (48 * 60 * 60 * 1000)
     : false;
@@ -70,12 +79,23 @@ function CategoryImage({ category, fallbackStyle }: { category: Category, fallba
         </div>
       ) : productImage ? (
         <div className="relative h-full w-full overflow-hidden rounded-full">
-          <Image
-            src={productImage}
-            alt={category.name}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-110"
-          />
+          {useOptimized ? (
+            <Image
+              src={productImage}
+              alt={category.name}
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-110"
+            />
+          ) : (
+            <img
+              src={productImage}
+              alt={category.name}
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          )}
           {isNew && (
             <div className="absolute inset-0 bg-black/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
               <span className="bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-2xl backdrop-blur-sm">جديد</span>
