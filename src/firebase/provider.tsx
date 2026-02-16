@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useMemo } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore } from 'firebase/firestore';
 import { Auth } from 'firebase/auth';
@@ -33,32 +34,32 @@ export const FirebaseProvider: React.FC<{
 }> = ({ app, firestore, auth, children }) => {
   const { toast } = useToast();
 
+  const contextValue = useMemo(() => ({
+    app,
+    firestore,
+    auth
+  }), [app, firestore, auth]);
+
   useEffect(() => {
     if (!app) return;
     
     const handleError = (error: any) => {
-      // Detailed logging for debugging
       if (error instanceof FirestorePermissionError) {
         const { path, operation } = error.context;
-        console.warn(`[Firestore Context] Path: ${path}, Operation: ${operation}`);
-
-        // Silent Transition: Suppress UI for public paths during auth state changes
+        
+        // Suppress logs for public paths to keep console clean
         const isPublicPath = path.includes('products') || path.includes('siteSettings');
-        const isReadOperation = operation === 'list' || operation === 'get';
+        if (isPublicPath) return;
 
-        if (isPublicPath && isReadOperation) {
-          console.info('Initial public fetch suppressed during auth transition to ensure smooth UX.');
-          return; // Exit without showing the error UI
-        }
+        console.error(`[Firestore Permission Denied] Path: ${path}, Operation: ${operation}`);
       } else {
         console.error("[Firebase Error]", error);
       }
 
-      // Show destructive toast for actual unauthorized mutations or non-public errors
       toast({
         variant: "destructive",
         title: "خطأ في الصلاحيات",
-        description: "لا تملك الصلاحية للقيام بهذا الإجراء. يرجى التأكد من حسابك.",
+        description: "لا تملك الصلاحية للقيام بهذا الإجراء.",
       });
     };
 
@@ -69,7 +70,7 @@ export const FirebaseProvider: React.FC<{
   }, [app, toast]);
 
   return (
-    <FirebaseContext.Provider value={{ app, firestore, auth }}>
+    <FirebaseContext.Provider value={contextValue}>
       {children}
     </FirebaseContext.Provider>
   );
