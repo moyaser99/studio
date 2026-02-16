@@ -98,15 +98,15 @@
   "firestore": {
     "/products/{productId}": {
       "schema": "Product",
-      "description": "PUBLIC_READ: Allow any user (even unauthenticated) to read products. ADMIN_WRITE: Only allow mohammad.dd.my@gmail.com to create, update, or delete products."
+      "description": "PUBLIC_READ: Allow any user to read products. ADMIN_WRITE: Restricted to mohammad.dd.my@gmail.com."
     },
     "/users/{userId}": {
       "schema": "UserProfile",
-      "description": "OWNER_ONLY: Users can only read and write their own profile data."
+      "description": "OWNER_ONLY: Users can read/write their own data. UNIQUE_PHONE_CHECK: Allow collection-level query on phoneNumber field for validation purposes."
     },
     "/siteSettings/heroSection": {
       "schema": "HeroImage",
-      "description": "PUBLIC_READ: Allow any user to see the hero section. ADMIN_WRITE: Only allow mohammad.dd.my@gmail.com to modify site settings."
+      "description": "PUBLIC_READ: Visible to all. ADMIN_WRITE: Restricted to mohammad.dd.my@gmail.com."
     }
   }
 }

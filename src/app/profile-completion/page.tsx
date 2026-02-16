@@ -13,13 +13,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, MapPin, Phone, User as UserIcon, Edit3, AlertCircle } from 'lucide-react';
+import { Loader2, MapPin, Phone, User as UserIcon, Edit3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
-/**
- * Profile Management Page
- * Enforces using Firebase UID as Document ID and Unique Phone Number Rule.
- */
 export default function ProfileCompletionPage() {
   const db = useFirestore();
   const { user, loading: authLoading } = useUser();
@@ -33,7 +31,6 @@ export default function ProfileCompletionPage() {
     fullName: '',
   });
 
-  // Fetch existing profile data using the UID as the unique key
   const userRef = useMemoFirebase(() => {
     if (!db || !user) return null;
     return doc(db, 'users', user.uid);
@@ -41,27 +38,15 @@ export default function ProfileCompletionPage() {
 
   const { data: profile, loading: profileLoading } = useDoc(userRef);
 
-  // Pre-fill Logic: Firestore Data -> Auth Data Fallback
   useEffect(() => {
     if (!authLoading && user) {
-      const existingName = profile?.fullName || user.displayName || '';
-      const existingPhone = profile?.phoneNumber || user.phoneNumber || '';
-      const existingAddress = profile?.address || '';
-
       setFormData({
-        fullName: existingName,
-        phoneNumber: existingPhone,
-        address: existingAddress,
+        fullName: profile?.fullName || user.displayName || '',
+        phoneNumber: profile?.phoneNumber || user.phoneNumber || '',
+        address: profile?.address || '',
       });
     }
   }, [profile, user, authLoading]);
-
-  // Handle unauthorized access
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, authLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,15 +55,21 @@ export default function ProfileCompletionPage() {
     setSaving(true);
 
     try {
-      // 1. UNIQUE PHONE CHECK: Ensure phone is not linked to another UID
       if (formData.phoneNumber) {
         const phoneQuery = query(
           collection(db, 'users'),
           where('phoneNumber', '==', formData.phoneNumber)
         );
-        const querySnapshot = await getDocs(phoneQuery);
         
-        // Check if any document exists with this phone that is NOT the current user
+        const querySnapshot = await getDocs(phoneQuery).catch(async (err) => {
+          const pErr = new FirestorePermissionError({
+            path: 'users',
+            operation: 'list',
+          });
+          errorEmitter.emit('permission-error', pErr);
+          throw err;
+        });
+        
         const duplicate = querySnapshot.docs.find(doc => doc.id !== user.uid);
         
         if (duplicate) {
@@ -92,7 +83,6 @@ export default function ProfileCompletionPage() {
         }
       }
       
-      // 2. CONSTRUCT PAYLOAD
       const profileData = {
         fullName: formData.fullName,
         phoneNumber: formData.phoneNumber,
@@ -102,24 +92,25 @@ export default function ProfileCompletionPage() {
         updatedAt: serverTimestamp(),
       };
 
-      // 3. PERSIST: Always use user.uid as the document ID to prevent duplicates
-      // Use setDoc with merge: true to avoid the 'Insufficient Permissions' error 
-      // when overwriting parts of an existing document.
       const targetDocRef = doc(db, 'users', user.uid);
-      await setDoc(targetDocRef, profileData, { merge: true });
       
-      toast({ title: "تم التحديث", description: "تم حفظ بياناتك بنجاح." });
-      
-      // Redirect after successful save
-      router.push('/');
+      // Use setDoc with merge: true and handle permissions contextually
+      setDoc(targetDocRef, profileData, { merge: true })
+        .then(() => {
+          toast({ title: "تم التحديث", description: "تم حفظ بياناتك بنجاح." });
+          router.push('/');
+        })
+        .catch(async (serverError) => {
+          const pErr = new FirestorePermissionError({
+            path: targetDocRef.path,
+            operation: 'write',
+            requestResourceData: profileData,
+          });
+          errorEmitter.emit('permission-error', pErr);
+          setSaving(false);
+        });
+
     } catch (error: any) {
-      console.error("[Firebase Profile Update Error]:", error);
-      toast({ 
-        variant: 'destructive', 
-        title: 'فشل في حفظ البيانات', 
-        description: 'حدث خطأ أثناء معالجة طلبك.' 
-      });
-    } finally {
       setSaving(false);
     }
   };
@@ -141,23 +132,17 @@ export default function ProfileCompletionPage() {
         <Card className="w-full max-w-lg border-none shadow-2xl rounded-[32px] overflow-hidden bg-white">
           <CardHeader className="bg-primary/5 py-10 text-center border-b border-primary/10">
             <div className="flex justify-center mb-4">
-               {hasExistingData ? (
-                 <div className="bg-primary/10 text-primary p-4 rounded-full">
-                    <Edit3 className="h-8 w-8" />
-                 </div>
-               ) : (
-                 <div className="bg-primary/10 text-primary p-4 rounded-full animate-pulse">
-                    <UserIcon className="h-8 w-8" />
-                 </div>
-               )}
+               <div className="bg-primary/10 text-primary p-4 rounded-full">
+                  {hasExistingData ? <Edit3 className="h-8 w-8" /> : <UserIcon className="h-8 w-8" />}
+               </div>
             </div>
             <CardTitle className="text-3xl font-bold font-headline text-primary">
               {hasExistingData ? 'تعديل الملف الشخصي' : 'بيانات التوصيل'}
             </CardTitle>
-            <p className="text-muted-foreground mt-2 px-6 text-lg">
+            <p className="text-muted-foreground mt-2 px-6 text-lg text-right">
               {hasExistingData 
-                ? 'يمكنك تحديث معلوماتك وعنوان التوصيل في أي وقت.' 
-                : 'أهلاً بك! نحتاج هذه البيانات لتسهيل عملية التوصيل لك.'}
+                ? 'تأكد من أن عنوان التوصيل ورقم الهاتف صحيحين دائماً.' 
+                : 'نحتاج هذه البيانات لتسهيل عملية وصول مشترياتك لباب منزلك.'}
             </p>
           </CardHeader>
           <CardContent className="p-10">
@@ -170,7 +155,7 @@ export default function ProfileCompletionPage() {
                   id="fullName" 
                   placeholder="أدخل اسمك بالكامل" 
                   required
-                  className="rounded-2xl h-14 text-right bg-muted/30 border-none focus:ring-2 focus:ring-primary/20 transition-all" 
+                  className="rounded-2xl h-14 text-right bg-muted/30 border-none" 
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                 />
@@ -184,7 +169,7 @@ export default function ProfileCompletionPage() {
                   id="phone" 
                   placeholder="05XXXXXXXX" 
                   required
-                  className="rounded-2xl h-14 text-right bg-muted/30 border-none focus:ring-2 focus:ring-primary/20 transition-all" 
+                  className="rounded-2xl h-14 text-right bg-muted/30 border-none" 
                   value={formData.phoneNumber}
                   onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                 />
@@ -198,16 +183,16 @@ export default function ProfileCompletionPage() {
                   id="address" 
                   placeholder="المدينة، الحي، اسم الشارع، رقم المبنى..." 
                   required
-                  className="rounded-3xl min-h-[140px] text-right bg-muted/30 border-none p-4 focus:ring-2 focus:ring-primary/20 transition-all" 
+                  className="rounded-3xl min-h-[140px] text-right bg-muted/30 border-none p-4" 
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 />
               </div>
 
-              <Button disabled={saving} type="submit" className="w-full h-16 rounded-full text-xl font-bold shadow-xl mt-6 hover:scale-[1.02] transition-transform">
+              <Button disabled={saving} type="submit" className="w-full h-16 rounded-full text-xl font-bold shadow-xl mt-6">
                 {saving ? (
                   <div className="flex items-center gap-2">
-                    <Loader2 className="h-6 w-6 animate-spin" /> جاري التحقق والحفظ...
+                    <Loader2 className="h-6 w-6 animate-spin" /> جاري الحفظ...
                   </div>
                 ) : (
                   hasExistingData ? "حفظ التغييرات" : "حفظ والمتابعة"

@@ -15,6 +15,8 @@ import { Label } from '@/components/ui/label';
 import { UserPlus, Loader2, Phone, Mail, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function RegisterPage() {
   const auth = useAuth();
@@ -31,7 +33,6 @@ export default function RegisterPage() {
     phoneNumber: '',
   });
 
-  // Redirect if already logged in
   useEffect(() => {
     if (!authLoading && user) {
       router.replace('/');
@@ -56,19 +57,23 @@ export default function RegisterPage() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      toast({ variant: 'destructive', title: 'خطأ', description: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل.' });
-      return;
-    }
-
     setLoading(true);
+
     try {
-      // 1. UNIQUE PHONE CHECK: Ensure phone is not linked to any existing user
+      // 1. UNIQUE PHONE CHECK
       const phoneQuery = query(
         collection(db, 'users'),
         where('phoneNumber', '==', formData.phoneNumber)
       );
-      const querySnapshot = await getDocs(phoneQuery);
+      
+      const querySnapshot = await getDocs(phoneQuery).catch(async (err) => {
+        const pErr = new FirestorePermissionError({
+          path: 'users',
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', pErr);
+        throw err;
+      });
       
       if (!querySnapshot.empty) {
         toast({ 
@@ -80,14 +85,13 @@ export default function RegisterPage() {
         return;
       }
 
-      // 2. CREATE USER IN AUTH
+      // 2. CREATE USER
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const newUser = userCredential.user;
 
-      // 3. UPDATE AUTH PROFILE
       await updateProfile(newUser, { displayName: formData.fullName });
 
-      // 4. SAVE TO FIRESTORE: Always use user.uid as ID to prevent duplicates
+      // 3. SAVE TO FIRESTORE (Non-blocking with proper error handling)
       const userProfile = {
         fullName: formData.fullName,
         email: formData.email,
@@ -96,19 +100,28 @@ export default function RegisterPage() {
         updatedAt: serverTimestamp(),
       };
 
-      // Use setDoc with merge: true to protect admin status or metadata
-      await setDoc(doc(db, 'users', newUser.uid), userProfile, { merge: true });
+      const userDocRef = doc(db, 'users', newUser.uid);
+      setDoc(userDocRef, userProfile, { merge: true })
+        .then(() => {
+          toast({ title: 'تم التسجيل بنجاح', description: 'أهلاً بك في YourGroceriesUSA.' });
+          router.replace('/');
+        })
+        .catch(async (serverError) => {
+          const pErr = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'write',
+            requestResourceData: userProfile,
+          });
+          errorEmitter.emit('permission-error', pErr);
+          setLoading(false);
+        });
 
-      toast({ title: 'تم التسجيل بنجاح', description: 'أهلاً بك في YourGroceriesUSA.' });
-      router.replace('/');
     } catch (error: any) {
-      console.error("[Registration Error]:", error);
       let errorMessage = 'فشل إنشاء الحساب. يرجى المحاولة لاحقاً.';
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = 'هذا البريد الإلكتروني مسجل مسبقاً، يرجى تسجيل الدخول.';
       }
       toast({ variant: 'destructive', title: 'خطأ في التسجيل', description: errorMessage });
-    } finally {
       setLoading(false);
     }
   };
