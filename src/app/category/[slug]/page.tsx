@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import * as React from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ProductCard from '@/components/product/ProductCard';
@@ -12,29 +12,60 @@ import { Loader2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
-export default function CategoryPage() {
-  const { slug } = useParams();
-  const db = useFirestore();
+export default function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
+  // Next.js 15: Handling params as a Promise
+  const resolvedParams = React.use(params);
+  const rawSlug = resolvedParams.slug;
   
+  // Decoding and normalization
+  const slug = React.useMemo(() => {
+    try {
+      return decodeURIComponent(rawSlug).toLowerCase();
+    } catch (e) {
+      return rawSlug.toLowerCase();
+    }
+  }, [rawSlug]);
+
+  const db = useFirestore();
   const category = CATEGORIES.find(c => c.slug === slug);
 
+  // Stability Audit: Targeted Query with Logging
   const productsQuery = useMemoFirebase(() => {
     if (!db || !slug) return null;
-    return query(
-      collection(db, 'products'),
-      where('category', '==', slug),
-      orderBy('createdAt', 'desc')
-    );
+    
+    console.log(`[Audit] Fetching products for category slug: "${slug}"`);
+    
+    try {
+      return query(
+        collection(db, 'products'),
+        where('category', '==', slug),
+        orderBy('createdAt', 'desc')
+      );
+    } catch (e) {
+      console.error("[Audit] Query construction failed:", e);
+      return null;
+    }
   }, [db, slug]);
 
-  const { data: products, loading } = useCollection(productsQuery);
+  const { data: products, loading, error } = useCollection(productsQuery);
+
+  // Debugging & Verification
+  React.useEffect(() => {
+    if (products) {
+      console.log(`[Audit] Success: Returned ${products.length} items for "${slug}".`);
+    }
+    if (error) {
+      console.error(`[Audit] Firestore error for "${slug}":`, error);
+    }
+  }, [products, error, slug]);
 
   if (!category) {
     return (
       <div className="min-h-screen flex flex-col" dir="rtl">
         <Header />
         <main className="flex-1 flex flex-col items-center justify-center p-6 space-y-4">
-          <h1 className="text-2xl font-bold">القسم غير موجود</h1>
+          <h1 className="text-2xl font-bold font-headline">القسم غير موجود</h1>
+          <p className="text-muted-foreground">عذراً، لم نتمكن من العثور على القسم المطلوب: {slug}</p>
           <Link href="/">
             <Button variant="outline" className="rounded-full gap-2">
               <ArrowRight className="h-4 w-4" /> العودة للرئيسية
@@ -54,7 +85,7 @@ export default function CategoryPage() {
           <div className="container mx-auto px-4 text-right">
             <h1 className="text-4xl md:text-5xl font-bold font-headline mb-4">{category.name}</h1>
             <p className="text-muted-foreground text-lg max-w-2xl">
-              تصفح مجموعتنا المختارة من أفضل منتجات {category.name} في YourGroceriesUSA.
+              تصفح مجموعتنا المختارة من أفضل منتجات {category.name} المستوردة حصرياً.
             </p>
           </div>
         </section>
@@ -64,6 +95,11 @@ export default function CategoryPage() {
             {loading ? (
               <div className="flex justify-center items-center py-20">
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
+              </div>
+            ) : error ? (
+              <div className="text-center py-20 bg-destructive/5 rounded-3xl border border-destructive/20 max-w-lg mx-auto">
+                <h3 className="text-xl font-bold text-destructive mb-2">فشل جلب المنتجات</h3>
+                <p className="text-muted-foreground text-sm">يرجى التحقق من اتصال الإنترنت أو التأكد من وجود الفهارس المطلوبة في Firestore.</p>
               </div>
             ) : products && products.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -81,10 +117,10 @@ export default function CategoryPage() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-20 bg-muted/20 rounded-3xl border-2 border-dashed">
-                <p className="text-muted-foreground">لا توجد منتجات حالياً في هذا القسم.</p>
-                <Link href="/">
-                   <Button className="mt-4 rounded-full">استكشاف الأقسام الأخرى</Button>
+              <div className="text-center py-20 bg-muted/20 rounded-[3rem] border-2 border-dashed border-primary/20 max-w-2xl mx-auto px-6">
+                <p className="text-muted-foreground text-xl mb-6">لا توجد منتجات حالياً في قسم {category.name}.</p>
+                <Link href="/products">
+                   <Button className="rounded-full px-8 h-12 font-bold shadow-md">استكشاف كافة الأقسام</Button>
                 </Link>
               </div>
             )}
