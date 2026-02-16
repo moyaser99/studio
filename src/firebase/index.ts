@@ -3,9 +3,8 @@
 import { getFirebaseInstances } from './config';
 
 /**
- * Initializes and returns the Firebase instances.
- * This is a safe getter that ensures singleton pattern across the app.
- * Memoized at the provider level to prevent assertion errors during HMR.
+ * تهيئة وإرجاع نسخ Firebase.
+ * تضمن هذه الوظيفة استخدام Singleton عبر التطبيق بأكمله.
  */
 export function initializeFirebase() {
   const instances = getFirebaseInstances();

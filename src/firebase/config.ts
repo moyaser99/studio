@@ -1,6 +1,6 @@
 'use client';
 
-import { initializeApp, getApps, FirebaseApp } from "firebase/app";
+import { initializeApp, getApps, FirebaseApp, getApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getAuth, Auth } from "firebase/auth";
 
@@ -20,36 +20,41 @@ interface FirebaseInstances {
   auth: Auth;
 }
 
-// Global cache to prevent re-initialization during HMR in Next.js development
+// استخدام كائن عالمي لضمان عدم تكرار التهيئة أثناء الـ HMR في Next.js
 const globalForFirebase = globalThis as unknown as {
-  instances: FirebaseInstances | undefined;
+  __firebase_instances: FirebaseInstances | undefined;
 };
 
 /**
- * Robust singleton getter for all Firebase instances.
- * Ensures consistent state across the entire application lifecycle.
+ * وظيفة موحدة للحصول على كافة نسخ Firebase
+ * تضمن استخدام نمط الـ Singleton بشكل صارم
  */
 export function getFirebaseInstances(): FirebaseInstances | null {
   if (typeof window === 'undefined') return null;
 
-  if (!globalForFirebase.instances) {
-    const existingApp = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
-    const firestore = getFirestore(existingApp);
-    const auth = getAuth(existingApp);
+  if (!globalForFirebase.__firebase_instances) {
+    try {
+      // محاولة الحصول على التطبيق الموجود أو تهيئة واحد جديد
+      const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+      const firestore = getFirestore(app);
+      const auth = getAuth(app);
 
-    globalForFirebase.instances = {
-      app: existingApp,
-      firestore,
-      auth
-    };
+      globalForFirebase.__firebase_instances = {
+        app,
+        firestore,
+        auth
+      };
+    } catch (error) {
+      console.error("Firebase initialization failed:", error);
+      return null;
+    }
   }
 
-  return globalForFirebase.instances;
+  return globalForFirebase.__firebase_instances;
 }
 
 /**
- * Individual getters for compatibility with existing code.
- * These now rely on the same unified singleton.
+ * دوال الحصول على النسخ الفردية متوافقة مع الكود الحالي
  */
 export const getFirebaseApp = () => getFirebaseInstances()?.app || null;
 export const getFirestoreInstance = () => getFirebaseInstances()?.firestore || null;
