@@ -6,16 +6,18 @@ import { getFirebaseApp, getFirestoreInstance, getAuthInstance } from './config'
 /**
  * Initializes and returns the Firebase instances.
  * This is a safe getter that ensures singleton pattern.
+ * Memoized at the provider level to prevent assertion errors.
  */
 export function initializeFirebase() {
   if (typeof window === 'undefined') {
     return { app: null, firestore: null, auth: null };
   }
-  return { 
-    app: getFirebaseApp(), 
-    firestore: getFirestoreInstance(), 
-    auth: getAuthInstance() 
-  };
+  
+  const app = getFirebaseApp();
+  const firestore = getFirestoreInstance();
+  const auth = getAuthInstance();
+
+  return { app, firestore, auth };
 }
 
 export * from './provider';

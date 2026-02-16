@@ -20,17 +20,21 @@ const globalForFirebase = globalThis as unknown as {
   auth: Auth | undefined;
 };
 
-export function getFirebaseApp() {
+export function getFirebaseApp(): FirebaseApp | null {
   if (typeof window === 'undefined') return null;
   
   if (!globalForFirebase.app) {
     const apps = getApps();
-    globalForFirebase.app = apps.length > 0 ? apps[0] : initializeApp(firebaseConfig);
+    if (apps.length > 0) {
+      globalForFirebase.app = apps[0];
+    } else {
+      globalForFirebase.app = initializeApp(firebaseConfig);
+    }
   }
   return globalForFirebase.app;
 }
 
-export function getFirestoreInstance() {
+export function getFirestoreInstance(): Firestore | null {
   if (typeof window === 'undefined') return null;
   
   const currentApp = getFirebaseApp();
@@ -42,7 +46,7 @@ export function getFirestoreInstance() {
   return globalForFirebase.firestore;
 }
 
-export function getAuthInstance() {
+export function getAuthInstance(): Auth | null {
   if (typeof window === 'undefined') return null;
   
   const currentApp = getFirebaseApp();
