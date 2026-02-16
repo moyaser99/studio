@@ -42,7 +42,14 @@ function CategoryImage({ category, fallbackStyle }: { category: Category, fallba
 
   const { data: products, loading } = useCollection(categoryProductQuery);
 
-  const productImage = products && products.length > 0 && products[0].imageUrl ? products[0].imageUrl : null;
+  const product = products && products.length > 0 ? products[0] : null;
+  const productImage = product?.imageUrl || null;
+  
+  // Check if product is "New" (added in last 48 hours)
+  // Firestore timestamps need to be converted to JS Date
+  const isNew = product?.createdAt?.toDate 
+    ? (new Date().getTime() - product.createdAt.toDate().getTime()) < (48 * 60 * 60 * 1000)
+    : false;
 
   return (
     <div className="relative aspect-square rounded-full overflow-hidden border-2 border-transparent group-hover:border-primary transition-all p-1 bg-white shadow-sm">
@@ -58,12 +65,19 @@ function CategoryImage({ category, fallbackStyle }: { category: Category, fallba
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-110"
           />
+          {isNew && (
+            <div className="absolute inset-0 bg-black/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-2xl backdrop-blur-sm">جديد</span>
+            </div>
+          )}
         </div>
       ) : (
         <div
-          className="absolute inset-0 h-full w-full rounded-full transition-all duration-500 group-hover:opacity-90 group-hover:scale-105"
+          className="absolute inset-0 h-full w-full rounded-full transition-all duration-500 group-hover:opacity-90 group-hover:scale-105 flex items-center justify-center"
           style={{ background: fallbackStyle || '#F8C8DC' }}
-        />
+        >
+          <Sparkles className="h-8 w-8 text-white/50 animate-pulse" />
+        </div>
       )}
     </div>
   );
