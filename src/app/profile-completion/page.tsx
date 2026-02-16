@@ -12,12 +12,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, MapPin, Phone, CheckCircle, User as UserIcon, Lock } from 'lucide-react';
+import { Loader2, MapPin, Phone, CheckCircle, User as UserIcon, Lock, Edit3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 /**
- * Profile Completion & Management Page
- * Handles fetching existing user data, locking completed fields, and auto-skipping.
+ * Profile Management Page
+ * Handles fetching existing user data, pre-filling from Auth, and syncing to Firestore.
  */
 export default function ProfileCompletionPage() {
   const db = useFirestore();
@@ -40,26 +40,20 @@ export default function ProfileCompletionPage() {
 
   const { data: profile, loading: profileLoading } = useDoc(userRef);
 
-  // Auto-fill and Auto-skip Logic
+  // Pre-fill Logic: Firestore Data -> Auth Data Fallback
   useEffect(() => {
-    if (profile) {
-      const existingName = profile.fullName || profile.displayName || user?.displayName || '';
-      const existingPhone = profile.phoneNumber || '';
-      const existingAddress = profile.address || '';
+    if (!authLoading && user) {
+      const existingName = profile?.fullName || user.displayName || '';
+      const existingPhone = profile?.phoneNumber || user.phoneNumber || '';
+      const existingAddress = profile?.address || '';
 
       setFormData({
         fullName: existingName,
         phoneNumber: existingPhone,
         address: existingAddress,
       });
-
-      // AUTO-SKIP: If all critical fields are present, go to home
-      if (existingName && existingPhone && existingAddress) {
-        console.log('Profile complete, skipping completion page...');
-        router.replace('/');
-      }
     }
-  }, [profile, user, router]);
+  }, [profile, user, authLoading]);
 
   // Handle unauthorized access
   useEffect(() => {
@@ -74,7 +68,7 @@ export default function ProfileCompletionPage() {
 
     setSaving(true);
     
-    // Construct payload with only necessary changes
+    // Construct payload with merge strategy
     const profileData = {
       fullName: formData.fullName,
       phoneNumber: formData.phoneNumber,
@@ -85,18 +79,19 @@ export default function ProfileCompletionPage() {
     };
 
     try {
-      // Use setDoc with merge: true to avoid creating duplicates and handle missing docs
+      // Use setDoc with merge: true to protect metadata like Admin Status
       await setDoc(doc(db, 'users', user.uid), profileData, { merge: true });
       
       toast({ title: "تم التحديث", description: "تم حفظ بياناتك بنجاح." });
+      
+      // Redirect ONLY after successful manual save
       router.push('/');
     } catch (error: any) {
-      // Detailed error logging as requested
-      console.error("[Firebase Update Error]:", error);
+      console.error("[Firebase Profile Update Error]:", error);
       toast({ 
         variant: 'destructive', 
         title: 'فشل في حفظ البيانات', 
-        description: 'يرجى التحقق من صلاحيات الأمان أو الاتصال بالدعم.' 
+        description: 'يرجى التحقق من الاتصال أو المحاولة لاحقاً.' 
       });
     } finally {
       setSaving(false);
@@ -111,8 +106,7 @@ export default function ProfileCompletionPage() {
     );
   }
 
-  const isNameLocked = !!profile?.fullName;
-  const isPhoneLocked = !!profile?.phoneNumber;
+  const hasExistingData = !!profile?.address;
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/20" dir="rtl">
@@ -121,9 +115,9 @@ export default function ProfileCompletionPage() {
         <Card className="w-full max-w-lg border-none shadow-2xl rounded-[32px] overflow-hidden bg-white">
           <CardHeader className="bg-primary/5 py-10 text-center border-b border-primary/10">
             <div className="flex justify-center mb-4">
-               {profile?.address ? (
-                 <div className="bg-green-100 text-green-600 p-4 rounded-full shadow-inner">
-                    <CheckCircle className="h-8 w-8" />
+               {hasExistingData ? (
+                 <div className="bg-primary/10 text-primary p-4 rounded-full">
+                    <Edit3 className="h-8 w-8" />
                  </div>
                ) : (
                  <div className="bg-primary/10 text-primary p-4 rounded-full animate-pulse">
@@ -132,11 +126,11 @@ export default function ProfileCompletionPage() {
                )}
             </div>
             <CardTitle className="text-3xl font-bold font-headline text-primary">
-              بيانات التوصيل
+              {hasExistingData ? 'تعديل الملف الشخصي' : 'بيانات التوصيل'}
             </CardTitle>
             <p className="text-muted-foreground mt-2 px-6 text-lg">
-              {profile?.address 
-                ? 'مرحباً بك مجدداً. يمكنك تحديث عنوانك هنا.' 
+              {hasExistingData 
+                ? 'يمكنك تحديث معلوماتك وعنوان التوصيل في أي وقت.' 
                 : 'أهلاً بك! نحتاج هذه البيانات لتسهيل عملية التوصيل لك.'}
             </p>
           </CardHeader>
@@ -144,14 +138,13 @@ export default function ProfileCompletionPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2 text-right">
                 <Label htmlFor="fullName" className="font-bold flex items-center gap-2 justify-end text-lg">
-                  {isNameLocked && <Lock className="h-3 w-3 text-muted-foreground" />} الاسم الكامل
+                  الاسم الكامل <UserIcon className="h-4 w-4 text-primary" />
                 </Label>
                 <Input 
                   id="fullName" 
                   placeholder="أدخل اسمك بالكامل" 
                   required
-                  readOnly={isNameLocked}
-                  className={`rounded-2xl h-14 text-right border-none focus:ring-2 focus:ring-primary/20 transition-all ${isNameLocked ? 'bg-muted/50 text-muted-foreground' : 'bg-muted/30'}`} 
+                  className="rounded-2xl h-14 text-right bg-muted/30 border-none focus:ring-2 focus:ring-primary/20 transition-all" 
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                 />
@@ -159,14 +152,13 @@ export default function ProfileCompletionPage() {
 
               <div className="space-y-2 text-right">
                 <Label htmlFor="phone" className="font-bold flex items-center gap-2 justify-end text-lg">
-                   {isPhoneLocked && <Lock className="h-3 w-3 text-muted-foreground" />} رقم الهاتف <Phone className="h-4 w-4 text-primary" />
+                   رقم الهاتف <Phone className="h-4 w-4 text-primary" />
                 </Label>
                 <Input 
                   id="phone" 
                   placeholder="05XXXXXXXX" 
                   required
-                  readOnly={isPhoneLocked}
-                  className={`rounded-2xl h-14 text-right border-none focus:ring-2 focus:ring-primary/20 transition-all ${isPhoneLocked ? 'bg-muted/50 text-muted-foreground' : 'bg-muted/30'}`} 
+                  className="rounded-2xl h-14 text-right bg-muted/30 border-none focus:ring-2 focus:ring-primary/20 transition-all" 
                   value={formData.phoneNumber}
                   onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                 />
@@ -192,7 +184,7 @@ export default function ProfileCompletionPage() {
                     <Loader2 className="h-6 w-6 animate-spin" /> جاري الحفظ...
                   </div>
                 ) : (
-                  "حفظ والمتابعة"
+                  hasExistingData ? "حفظ التغييرات" : "حفظ والمتابعة"
                 )}
               </Button>
             </form>
