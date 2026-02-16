@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,7 +10,7 @@ import { CATEGORIES, Category } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2, Package, Sparkles } from 'lucide-react';
 import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
-import { collection, query, orderBy, limit, where, doc } from 'firebase/firestore';
+import { collection, query, limit, where, doc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
@@ -30,12 +29,12 @@ const CATEGORY_STYLES: Record<string, string> = {
 function CategoryImage({ category, fallbackStyle }: { category: Category, fallbackStyle?: string }) {
   const db = useFirestore();
   
+  // Simplified query without orderBy to ensure results are fetched even without complex indexes
   const categoryProductQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(
       collection(db, 'products'),
       where('category', '==', category.slug),
-      orderBy('createdAt', 'desc'),
       limit(1)
     );
   }, [db, category.slug]);
@@ -43,10 +42,22 @@ function CategoryImage({ category, fallbackStyle }: { category: Category, fallba
   const { data: products, loading } = useCollection(categoryProductQuery);
 
   const product = products && products.length > 0 ? products[0] : null;
-  const productImage = product?.imageUrl || null;
   
+  // Robust field check for image path across different potential names
+  const productImage = product?.imageUrl || product?.image || (product as any)?.src || null;
+  
+  // Console Debugging logic
+  useEffect(() => {
+    if (!loading && typeof window !== 'undefined') {
+      if (product) {
+        console.log(`[Category Image Debug] Searching for category: ${category.slug}, result found ID: ${product.id}, image path: ${productImage}`);
+      } else {
+        console.log(`[Category Image Debug] Searching for category: ${category.slug}, no results found (Collection empty or no matches).`);
+      }
+    }
+  }, [loading, product, category.slug, productImage]);
+
   // Check if product is "New" (added in last 48 hours)
-  // Firestore timestamps need to be converted to JS Date
   const isNew = product?.createdAt?.toDate 
     ? (new Date().getTime() - product.createdAt.toDate().getTime()) < (48 * 60 * 60 * 1000)
     : false;
@@ -103,7 +114,7 @@ export default function Home() {
 
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
-    return query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(8));
+    return query(collection(db, 'products'), limit(8));
   }, [db]);
   
   const { data: products, loading: productsLoading } = useCollection(productsQuery);

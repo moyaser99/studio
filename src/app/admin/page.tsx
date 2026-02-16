@@ -134,17 +134,20 @@ export default function AdminPage() {
   const saveProduct = () => {
     if (!db) return;
     const categoryName = CATEGORIES.find(c => c.slug === formData.category)?.name || '';
-    const payload = {
+    
+    // Ensure metadata includes timestamps for future sorting
+    const payload: any = {
       ...formData,
       price: parseFloat(formData.price),
       categoryName,
-      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     };
 
     if (isEditing) {
       updateDoc(doc(db, 'products', isEditing), payload);
       toast({ title: 'تم التحديث', description: 'تم تحديث المنتج بنجاح.' });
     } else {
+      payload.createdAt = serverTimestamp();
       addDoc(collection(db, 'products'), payload);
       toast({ title: 'تمت الإضافة', description: 'تمت إضافة المنتج الجديد بنجاح.' });
     }
