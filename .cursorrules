@@ -1,0 +1,21 @@
+# Project Rules - YourGroceriesUSA
+
+## 1. Identity & Admin Credentials
+- **Project Owner:** Mohammad Jebrel (Software Engineering student at HTU).
+- **CRITICAL:** Always preserve the Admin access logic. Never modify or delete the following credentials:
+  `const isAdmin = user?.email === 'mohammad.dd.my@gmail.com' || user?.phoneNumber === '+962780334074';`
+- **Supervisor:** Madonna Samawi.
+
+## 2. Technical Stack & Architecture
+- **Framework:** Next.js 15 (App Router).
+- **Database/Auth:** Firebase (Firestore & Auth).
+- **Configuration:** Never modify `src/firebase/config.ts`, `.env`, or the project's core provider files without explicit permission.
+
+## 3. UI/UX & Design Language
+- **Theme:** 'YourGroceriesUSA' luxury theme (Clean whites, pink/gold accents, and high-quality Arabic typography).
+- **Components:** The Sidebar is integrated into `Header.tsx` via a `Sheet` component. Do not create redundant sidebar files.
+
+## 4. Safe Development Protocol
+- **Rule of Non-Interference:** Do not modify existing logic in files unrelated to the current task.
+- **Consultation:** If a change might affect global navigation or authentication, you MUST propose a plan and wait for Mohammad's approval before editing.
+- **Persistence:** Read this file before every task to ensure compliance with the project's standards.
