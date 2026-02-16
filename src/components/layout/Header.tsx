@@ -36,6 +36,9 @@ export default function Header() {
   };
 
   const navigateTo = (path: string) => {
+    if (path === '/admin') {
+      console.log('Navigating to Admin...');
+    }
     setOpen(false);
     router.push(path);
   };
@@ -75,7 +78,10 @@ export default function Header() {
                     <div className="mt-8 pt-8 border-t">
                       <p className="text-xs font-bold text-primary mb-4 uppercase tracking-widest">الإدارة</p>
                       <button 
-                        onClick={() => navigateTo('/admin')}
+                        onClick={() => {
+                          console.log('Navigating to Admin from Sidebar...');
+                          navigateTo('/admin');
+                        }}
                         className="w-full text-lg font-black text-primary py-3 px-4 rounded-2xl bg-primary/5 flex items-center gap-2 justify-end hover:bg-primary/10 transition-colors"
                       >
                         لوحة التحكم <Settings className="h-5 w-5" />
@@ -123,7 +129,10 @@ export default function Header() {
                 variant="ghost" 
                 size="icon" 
                 className="hidden sm:flex rounded-full text-primary hover:bg-primary/10"
-                onClick={() => navigateTo('/admin')}
+                onClick={() => {
+                  console.log('Navigating to Admin from Header Icon...');
+                  navigateTo('/admin');
+                }}
               >
                 <Settings className="h-5 w-5" />
               </Button>
