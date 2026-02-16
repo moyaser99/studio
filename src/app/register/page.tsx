@@ -60,7 +60,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // 1. UNIQUE PHONE CHECK
+      // 1. UNIQUE PHONE CHECK (Targeted Query)
       const phoneQuery = query(
         collection(db, 'users'),
         where('phoneNumber', '==', formData.phoneNumber)
@@ -79,7 +79,7 @@ export default function RegisterPage() {
         toast({ 
           variant: 'destructive', 
           title: 'رقم الهاتف مستخدم', 
-          description: 'رقم الهاتف هذا مستخدم في حساب آخر.' 
+          description: 'رقم الهاتف هذا مسجل مسبقاً.' 
         });
         setLoading(false);
         return;
@@ -91,7 +91,7 @@ export default function RegisterPage() {
 
       await updateProfile(newUser, { displayName: formData.fullName });
 
-      // 3. SAVE TO FIRESTORE (Non-blocking with proper error handling)
+      // 3. SAVE TO FIRESTORE (Atomic UID usage)
       const userProfile = {
         fullName: formData.fullName,
         email: formData.email,

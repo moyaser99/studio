@@ -56,6 +56,7 @@ export default function ProfileCompletionPage() {
 
     try {
       if (formData.phoneNumber) {
+        // Targeted Query for Phone Uniqueness
         const phoneQuery = query(
           collection(db, 'users'),
           where('phoneNumber', '==', formData.phoneNumber)
@@ -76,7 +77,7 @@ export default function ProfileCompletionPage() {
           toast({ 
             variant: 'destructive', 
             title: 'رقم الهاتف مستخدم', 
-            description: 'رقم الهاتف هذا مستخدم في حساب آخر.' 
+            description: 'رقم الهاتف هذا مسجل مسبقاً.' 
           });
           setSaving(false);
           return;
@@ -94,7 +95,6 @@ export default function ProfileCompletionPage() {
 
       const targetDocRef = doc(db, 'users', user.uid);
       
-      // Use setDoc with merge: true and handle permissions contextually
       setDoc(targetDocRef, profileData, { merge: true })
         .then(() => {
           toast({ title: "تم التحديث", description: "تم حفظ بياناتك بنجاح." });

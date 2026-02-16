@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useEffect, useMemo } from 'react';
@@ -40,14 +41,11 @@ export const FirebaseProvider: React.FC<{
   }), [app, firestore, auth]);
 
   useEffect(() => {
-    // نظام "كتم" أخطاء الـ HMR المزعجة لمنع توقف التطوير بصرياً
     const onWindowError = (event: ErrorEvent) => {
       const errorMsg = event.error?.message || event.message || "";
       if (errorMsg.includes('INTERNAL ASSERTION FAILED') || errorMsg.includes('ca9')) {
-        // منع ظهور الشاشة الحمراء لـ Next.js
         event.preventDefault();
         event.stopPropagation();
-        console.warn("[Firebase HMR] Suppressed internal assertion error during development.");
       }
     };
 
@@ -56,28 +54,31 @@ export const FirebaseProvider: React.FC<{
       if (errorMsg.includes('INTERNAL ASSERTION FAILED') || errorMsg.includes('ca9')) {
         event.preventDefault();
         event.stopPropagation();
-        console.warn("[Firebase HMR] Suppressed unhandled rejection (assertion) during development.");
       }
     };
 
     window.addEventListener('error', onWindowError, true);
     window.addEventListener('unhandledrejection', onUnhandledRejection, true);
 
-    // مستمع الأخطاء العالمي للتعامل مع أخطاء الصلاحيات الحقيقية
     const handleError = (error: any) => {
       const errorMsg = error?.message || String(error);
 
       if (error instanceof FirestorePermissionError) {
         const { path, operation } = error.context;
-        // تجاهل أخطاء الصلاحيات للمسارات العامة (للمستخدمين غير المسجلين)
         const isPublicPath = path.includes('products') || path.includes('siteSettings');
         if (isPublicPath) return;
 
-        console.error(`[Firestore Permission Denied] Path: ${path}, Operation: ${operation}`);
+        // Optimized specific error handling for user verification
+        if (path === 'users' && operation === 'list') {
+          toast({
+            variant: "destructive",
+            title: "خطأ في التحقق",
+            description: "عذراً، لا يمكن التحقق من البيانات حالياً، يرجى المحاولة لاحقاً.",
+          });
+          return;
+        }
       } else {
-        // تجاهل أخطاء الـ Assertion في سجلات الـ UI أيضاً
         if (errorMsg.includes('INTERNAL ASSERTION FAILED') || errorMsg.includes('ca9')) return;
-        console.error("[Firebase Error]", error);
       }
 
       toast({
