@@ -40,22 +40,18 @@ export const FirebaseProvider: React.FC<{
   }), [app, firestore, auth]);
 
   useEffect(() => {
-    if (!app) return;
-    
+    // مستمع الأخطاء العالمي - يتعامل بصمت مع مسارات "المنتجات" العامة لتجنب إزعاج المطور
     const handleError = (error: any) => {
       if (error instanceof FirestorePermissionError) {
         const { path, operation } = error.context;
-        
-        // Suppress logs for known public paths to keep console clean during development
         const isPublicPath = path.includes('products') || path.includes('siteSettings');
         if (isPublicPath) return;
 
         console.error(`[Firestore Permission Denied] Path: ${path}, Operation: ${operation}`);
       } else {
-        // Only log major unexpected errors, ignore standard SDK assertion failures during HMR
-        if (!error.message?.includes('INTERNAL ASSERTION FAILED')) {
-          console.error("[Firebase Error]", error);
-        }
+        // تجاهل أخطاء الـ Assertion الداخلية الناتجة عن الـ HMR في سجلات الـ UI
+        if (error.message?.includes('INTERNAL ASSERTION FAILED')) return;
+        console.error("[Firebase Error]", error);
       }
 
       toast({
@@ -69,7 +65,7 @@ export const FirebaseProvider: React.FC<{
     return () => {
       errorEmitter.off('permission-error', handleError);
     };
-  }, [app, toast]);
+  }, [toast]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>

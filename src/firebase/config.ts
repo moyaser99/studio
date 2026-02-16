@@ -20,22 +20,23 @@ interface FirebaseInstances {
   auth: Auth;
 }
 
-// استخدام كائن عالمي لضمان عدم تكرار التهيئة أثناء الـ HMR في Next.js
+/**
+ * استخدام كائن عالمي لضمان بقاء النسخ ثابتة حتى مع إعادة تحميل الكود (HMR).
+ * هذا يمنع خطأ "Unexpected state (ID: ca9)" الناتج عن تكرار التهيئة.
+ */
 const globalForFirebase = globalThis as unknown as {
   __firebase_instances: FirebaseInstances | undefined;
 };
 
-/**
- * وظيفة موحدة للحصول على كافة نسخ Firebase
- * تضمن استخدام نمط الـ Singleton بشكل صارم
- */
 export function getFirebaseInstances(): FirebaseInstances | null {
   if (typeof window === 'undefined') return null;
 
   if (!globalForFirebase.__firebase_instances) {
     try {
-      // محاولة الحصول على التطبيق الموجود أو تهيئة واحد جديد
+      // الحصول على التطبيق الحالي أو إنشاء واحد جديد
       const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+      
+      // تهيئة الخدمات مرة واحدة فقط وتخزينها
       const firestore = getFirestore(app);
       const auth = getAuth(app);
 
@@ -44,8 +45,10 @@ export function getFirebaseInstances(): FirebaseInstances | null {
         firestore,
         auth
       };
+      
+      console.log("[Firebase] Singleton initialized successfully.");
     } catch (error) {
-      console.error("Firebase initialization failed:", error);
+      console.error("[Firebase] Initialization failed:", error);
       return null;
     }
   }
@@ -54,7 +57,7 @@ export function getFirebaseInstances(): FirebaseInstances | null {
 }
 
 /**
- * دوال الحصول على النسخ الفردية متوافقة مع الكود الحالي
+ * دوال وصول سريعة ومتوافقة مع كامل أجزاء التطبيق
  */
 export const getFirebaseApp = () => getFirebaseInstances()?.app || null;
 export const getFirestoreInstance = () => getFirebaseInstances()?.firestore || null;

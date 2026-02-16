@@ -3,8 +3,8 @@
 import { getFirebaseInstances } from './config';
 
 /**
- * تهيئة وإرجاع نسخ Firebase.
- * تضمن هذه الوظيفة استخدام Singleton عبر التطبيق بأكمله.
+ * وظيفة موحدة لإرجاع نسخ Firebase بشكل Singleton.
+ * تضمن هذه الوظيفة عدم حدوث تعارض في الحالة الداخلية لـ Firestore.
  */
 export function initializeFirebase() {
   const instances = getFirebaseInstances();
