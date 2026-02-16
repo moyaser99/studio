@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useUser, useFirestore } from '@/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -62,14 +62,31 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      // 1. Create User in Auth
+      // 1. UNIQUE PHONE CHECK: Ensure phone is not linked to any existing user
+      const phoneQuery = query(
+        collection(db, 'users'),
+        where('phoneNumber', '==', formData.phoneNumber)
+      );
+      const querySnapshot = await getDocs(phoneQuery);
+      
+      if (!querySnapshot.empty) {
+        toast({ 
+          variant: 'destructive', 
+          title: 'رقم الهاتف مستخدم', 
+          description: 'هذا الرقم مرتبط بحساب آخر بالفعل.' 
+        });
+        setLoading(false);
+        return;
+      }
+
+      // 2. CREATE USER IN AUTH
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const newUser = userCredential.user;
 
-      // 2. Update Auth Profile
+      // 3. UPDATE AUTH PROFILE
       await updateProfile(newUser, { displayName: formData.fullName });
 
-      // 3. Save to Firestore using UID as ID to prevent duplicates
+      // 4. SAVE TO FIRESTORE: Always use user.uid as ID to prevent duplicates
       const userProfile = {
         fullName: formData.fullName,
         email: formData.email,
@@ -78,7 +95,7 @@ export default function RegisterPage() {
         updatedAt: serverTimestamp(),
       };
 
-      // Use setDoc with merge: true to avoid overwriting metadata or creating duplicates
+      // Use setDoc with merge: true to protect admin status or metadata
       await setDoc(doc(db, 'users', newUser.uid), userProfile, { merge: true });
 
       toast({ title: 'تم التسجيل بنجاح', description: 'أهلاً بك في YourGroceriesUSA.' });

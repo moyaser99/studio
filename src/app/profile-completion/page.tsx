@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useUser, useDoc } from '@/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -12,12 +12,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, MapPin, Phone, User as UserIcon, Edit3 } from 'lucide-react';
+import { Loader2, MapPin, Phone, User as UserIcon, Edit3, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 /**
  * Profile Management Page
- * Enforces using Firebase UID as Document ID to prevent duplicates.
+ * Enforces using Firebase UID as Document ID and Unique Phone Number Rule.
  */
 export default function ProfileCompletionPage() {
   const db = useFirestore();
@@ -67,21 +67,42 @@ export default function ProfileCompletionPage() {
     if (!db || !user) return;
 
     setSaving(true);
-    
-    // Construct payload with merge strategy to protect metadata like Admin Status
-    const profileData = {
-      fullName: formData.fullName,
-      phoneNumber: formData.phoneNumber,
-      address: formData.address,
-      email: user.email,
-      uid: user.uid, // Explicitly keep the UID field
-      updatedAt: serverTimestamp(),
-    };
 
     try {
-      // CRITICAL: Always use user.uid as the document ID to prevent duplicates
-      const targetDocRef = doc(db, 'users', user.uid);
+      // 1. UNIQUE PHONE CHECK: Ensure phone is not linked to another UID
+      if (formData.phoneNumber) {
+        const phoneQuery = query(
+          collection(db, 'users'),
+          where('phoneNumber', '==', formData.phoneNumber)
+        );
+        const querySnapshot = await getDocs(phoneQuery);
+        
+        // Check if any document exists with this phone that is NOT the current user
+        const duplicate = querySnapshot.docs.find(doc => doc.id !== user.uid);
+        
+        if (duplicate) {
+          toast({ 
+            variant: 'destructive', 
+            title: 'رقم الهاتف مستخدم', 
+            description: 'هذا الرقم مرتبط بحساب آخر بالفعل.' 
+          });
+          setSaving(false);
+          return;
+        }
+      }
       
+      // 2. CONSTRUCT PAYLOAD
+      const profileData = {
+        fullName: formData.fullName,
+        phoneNumber: formData.phoneNumber,
+        address: formData.address,
+        email: user.email,
+        uid: user.uid,
+        updatedAt: serverTimestamp(),
+      };
+
+      // 3. PERSIST: Always use user.uid as the document ID to prevent duplicates
+      const targetDocRef = doc(db, 'users', user.uid);
       await setDoc(targetDocRef, profileData, { merge: true });
       
       toast({ title: "تم التحديث", description: "تم حفظ بياناتك بنجاح." });
@@ -93,7 +114,7 @@ export default function ProfileCompletionPage() {
       toast({ 
         variant: 'destructive', 
         title: 'فشل في حفظ البيانات', 
-        description: 'يرجى التحقق من الصلاحيات أو المحاولة لاحقاً.' 
+        description: 'حدث خطأ أثناء معالجة طلبك.' 
       });
     } finally {
       setSaving(false);
@@ -183,7 +204,7 @@ export default function ProfileCompletionPage() {
               <Button disabled={saving} type="submit" className="w-full h-16 rounded-full text-xl font-bold shadow-xl mt-6 hover:scale-[1.02] transition-transform">
                 {saving ? (
                   <div className="flex items-center gap-2">
-                    <Loader2 className="h-6 w-6 animate-spin" /> جاري الحفظ...
+                    <Loader2 className="h-6 w-6 animate-spin" /> جاري التحقق والحفظ...
                   </div>
                 ) : (
                   hasExistingData ? "حفظ التغييرات" : "حفظ والمتابعة"
