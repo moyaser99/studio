@@ -82,7 +82,6 @@ export default function Home() {
 
   const heroImage = heroDoc?.imageUrl;
 
-  // Prevent hydration/timeout issues by ensuring component is fully mounted
   if (!mounted) {
     return (
       <div className="flex min-h-screen flex-col" dir="rtl">
@@ -128,7 +127,7 @@ export default function Home() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-5 animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-300">
-                <Link href="/category/makeup">
+                <Link href="/products">
                   <Button size="lg" className="bg-primary hover:bg-primary/90 text-white px-12 h-16 rounded-full text-xl font-bold shadow-2xl transition-all hover:scale-105">
                     تسوق المجموعة
                   </Button>
@@ -159,7 +158,7 @@ export default function Home() {
                 <h2 className="text-4xl font-bold tracking-tight font-headline mb-4">تسوق حسب القسم</h2>
                 <p className="text-muted-foreground text-lg">مجموعاتنا المختارة بعناية لتناسب ذوقك الرفيع</p>
               </div>
-              <Link href="/category/makeup">
+              <Link href="/products">
                 <Button variant="ghost" className="text-primary gap-2 hover:bg-primary/5 rounded-full text-lg">
                   استكشف الكل <ArrowLeft className="h-5 w-5" />
                 </Button>
