@@ -12,12 +12,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, MapPin, Phone, CheckCircle, User as UserIcon, Lock, Edit3 } from 'lucide-react';
+import { Loader2, MapPin, Phone, User as UserIcon, Edit3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 /**
  * Profile Management Page
- * Handles fetching existing user data, pre-filling from Auth, and syncing to Firestore.
+ * Enforces using Firebase UID as Document ID to prevent duplicates.
  */
 export default function ProfileCompletionPage() {
   const db = useFirestore();
@@ -32,7 +32,7 @@ export default function ProfileCompletionPage() {
     fullName: '',
   });
 
-  // Fetch existing profile data from Firestore
+  // Fetch existing profile data using the UID as the unique key
   const userRef = useMemoFirebase(() => {
     if (!db || !user) return null;
     return doc(db, 'users', user.uid);
@@ -68,30 +68,32 @@ export default function ProfileCompletionPage() {
 
     setSaving(true);
     
-    // Construct payload with merge strategy
+    // Construct payload with merge strategy to protect metadata like Admin Status
     const profileData = {
       fullName: formData.fullName,
       phoneNumber: formData.phoneNumber,
       address: formData.address,
       email: user.email,
-      uid: user.uid,
+      uid: user.uid, // Explicitly keep the UID field
       updatedAt: serverTimestamp(),
     };
 
     try {
-      // Use setDoc with merge: true to protect metadata like Admin Status
-      await setDoc(doc(db, 'users', user.uid), profileData, { merge: true });
+      // CRITICAL: Always use user.uid as the document ID to prevent duplicates
+      const targetDocRef = doc(db, 'users', user.uid);
+      
+      await setDoc(targetDocRef, profileData, { merge: true });
       
       toast({ title: "تم التحديث", description: "تم حفظ بياناتك بنجاح." });
       
-      // Redirect ONLY after successful manual save
+      // Redirect after successful save
       router.push('/');
     } catch (error: any) {
       console.error("[Firebase Profile Update Error]:", error);
       toast({ 
         variant: 'destructive', 
         title: 'فشل في حفظ البيانات', 
-        description: 'يرجى التحقق من الاتصال أو المحاولة لاحقاً.' 
+        description: 'يرجى التحقق من الصلاحيات أو المحاولة لاحقاً.' 
       });
     } finally {
       setSaving(false);

@@ -30,7 +30,7 @@ export default function RegisterPage() {
     phoneNumber: '',
   });
 
-  // Redirect if already logged in and has profile
+  // Redirect if already logged in
   useEffect(() => {
     if (!authLoading && user) {
       router.replace('/');
@@ -62,14 +62,14 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      // 1. Create User
+      // 1. Create User in Auth
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const newUser = userCredential.user;
 
       // 2. Update Auth Profile
       await updateProfile(newUser, { displayName: formData.fullName });
 
-      // 3. Save to Firestore
+      // 3. Save to Firestore using UID as ID to prevent duplicates
       const userProfile = {
         fullName: formData.fullName,
         email: formData.email,
@@ -78,11 +78,13 @@ export default function RegisterPage() {
         updatedAt: serverTimestamp(),
       };
 
-      await setDoc(doc(db, 'users', newUser.uid), userProfile);
+      // Use setDoc with merge: true to avoid overwriting metadata or creating duplicates
+      await setDoc(doc(db, 'users', newUser.uid), userProfile, { merge: true });
 
       toast({ title: 'تم التسجيل بنجاح', description: 'أهلاً بك في YourGroceriesUSA.' });
       router.replace('/');
     } catch (error: any) {
+      console.error("[Registration Error]:", error);
       let errorMessage = 'فشل إنشاء الحساب. يرجى المحاولة لاحقاً.';
       if (error.code === 'auth/email-already-in-use') errorMessage = 'هذا البريد الإلكتروني مسجل مسبقاً.';
       toast({ variant: 'destructive', title: 'خطأ', description: errorMessage });
