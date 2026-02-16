@@ -1,5 +1,6 @@
+'use client';
 
-import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getAuth, Auth } from "firebase/auth";
 
@@ -13,47 +14,43 @@ export const firebaseConfig = {
   measurementId: "G-NEBTS4V7CT"
 };
 
-// Global cache to prevent re-initialization during HMR
+interface FirebaseInstances {
+  app: FirebaseApp;
+  firestore: Firestore;
+  auth: Auth;
+}
+
+// Global cache to prevent re-initialization during HMR in Next.js development
 const globalForFirebase = globalThis as unknown as {
-  app: FirebaseApp | undefined;
-  firestore: Firestore | undefined;
-  auth: Auth | undefined;
+  instances: FirebaseInstances | undefined;
 };
 
-export function getFirebaseApp(): FirebaseApp | null {
+/**
+ * Robust singleton getter for all Firebase instances.
+ * Ensures consistent state across the entire application lifecycle.
+ */
+export function getFirebaseInstances(): FirebaseInstances | null {
   if (typeof window === 'undefined') return null;
-  
-  if (!globalForFirebase.app) {
-    const apps = getApps();
-    if (apps.length > 0) {
-      globalForFirebase.app = apps[0];
-    } else {
-      globalForFirebase.app = initializeApp(firebaseConfig);
-    }
+
+  if (!globalForFirebase.instances) {
+    const existingApp = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
+    const firestore = getFirestore(existingApp);
+    const auth = getAuth(existingApp);
+
+    globalForFirebase.instances = {
+      app: existingApp,
+      firestore,
+      auth
+    };
   }
-  return globalForFirebase.app;
+
+  return globalForFirebase.instances;
 }
 
-export function getFirestoreInstance(): Firestore | null {
-  if (typeof window === 'undefined') return null;
-  
-  const currentApp = getFirebaseApp();
-  if (!currentApp) return null;
-
-  if (!globalForFirebase.firestore) {
-    globalForFirebase.firestore = getFirestore(currentApp);
-  }
-  return globalForFirebase.firestore;
-}
-
-export function getAuthInstance(): Auth | null {
-  if (typeof window === 'undefined') return null;
-  
-  const currentApp = getFirebaseApp();
-  if (!currentApp) return null;
-
-  if (!globalForFirebase.auth) {
-    globalForFirebase.auth = getAuth(currentApp);
-  }
-  return globalForFirebase.auth;
-}
+/**
+ * Individual getters for compatibility with existing code.
+ * These now rely on the same unified singleton.
+ */
+export const getFirebaseApp = () => getFirebaseInstances()?.app || null;
+export const getFirestoreInstance = () => getFirebaseInstances()?.firestore || null;
+export const getAuthInstance = () => getFirebaseInstances()?.auth || null;

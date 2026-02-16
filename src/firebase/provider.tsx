@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useEffect, useMemo } from 'react';
@@ -47,19 +46,22 @@ export const FirebaseProvider: React.FC<{
       if (error instanceof FirestorePermissionError) {
         const { path, operation } = error.context;
         
-        // Suppress logs for public paths to keep console clean
+        // Suppress logs for known public paths to keep console clean during development
         const isPublicPath = path.includes('products') || path.includes('siteSettings');
         if (isPublicPath) return;
 
         console.error(`[Firestore Permission Denied] Path: ${path}, Operation: ${operation}`);
       } else {
-        console.error("[Firebase Error]", error);
+        // Only log major unexpected errors, ignore standard SDK assertion failures during HMR
+        if (!error.message?.includes('INTERNAL ASSERTION FAILED')) {
+          console.error("[Firebase Error]", error);
+        }
       }
 
       toast({
         variant: "destructive",
         title: "خطأ في الصلاحيات",
-        description: "لا تملك الصلاحية للقيام بهذا الإجراء.",
+        description: "لا تملك الصلاحية للقيام بهذا الإجراء أو انتهت صلاحية الجلسة.",
       });
     };
 
