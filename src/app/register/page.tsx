@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -73,7 +74,7 @@ export default function RegisterPage() {
         toast({ 
           variant: 'destructive', 
           title: 'رقم الهاتف مستخدم', 
-          description: 'هذا الرقم مرتبط بحساب آخر بالفعل.' 
+          description: 'رقم الهاتف هذا مستخدم في حساب آخر.' 
         });
         setLoading(false);
         return;
@@ -103,8 +104,10 @@ export default function RegisterPage() {
     } catch (error: any) {
       console.error("[Registration Error]:", error);
       let errorMessage = 'فشل إنشاء الحساب. يرجى المحاولة لاحقاً.';
-      if (error.code === 'auth/email-already-in-use') errorMessage = 'هذا البريد الإلكتروني مسجل مسبقاً.';
-      toast({ variant: 'destructive', title: 'خطأ', description: errorMessage });
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'هذا البريد الإلكتروني مسجل مسبقاً، يرجى تسجيل الدخول.';
+      }
+      toast({ variant: 'destructive', title: 'خطأ في التسجيل', description: errorMessage });
     } finally {
       setLoading(false);
     }

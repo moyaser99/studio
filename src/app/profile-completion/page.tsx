@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -84,7 +85,7 @@ export default function ProfileCompletionPage() {
           toast({ 
             variant: 'destructive', 
             title: 'رقم الهاتف مستخدم', 
-            description: 'هذا الرقم مرتبط بحساب آخر بالفعل.' 
+            description: 'رقم الهاتف هذا مستخدم في حساب آخر.' 
           });
           setSaving(false);
           return;
@@ -102,6 +103,8 @@ export default function ProfileCompletionPage() {
       };
 
       // 3. PERSIST: Always use user.uid as the document ID to prevent duplicates
+      // Use setDoc with merge: true to avoid the 'Insufficient Permissions' error 
+      // when overwriting parts of an existing document.
       const targetDocRef = doc(db, 'users', user.uid);
       await setDoc(targetDocRef, profileData, { merge: true });
       
