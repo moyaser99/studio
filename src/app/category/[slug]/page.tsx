@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -6,18 +7,16 @@ import Footer from '@/components/layout/Footer';
 import ProductCard from '@/components/product/ProductCard';
 import { CATEGORIES } from '@/lib/data';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import { Loader2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
 export default function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
-  // Next.js 15: Handling params as a Promise
   const resolvedParams = React.use(params);
   const rawSlug = resolvedParams.slug;
   
-  // Decoding and normalization
   const slug = React.useMemo(() => {
     try {
       return decodeURIComponent(rawSlug).toLowerCase();
@@ -29,35 +28,21 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   const db = useFirestore();
   const category = CATEGORIES.find(c => c.slug === slug);
 
-  // Stability Audit: Targeted Query with Logging
+  // تبسيط الاستعلام بإزالة orderBy لتجنب الحاجة لفهارس مركبة (Composite Indexes) قد تسبب أخطاء صلاحيات
   const productsQuery = useMemoFirebase(() => {
     if (!db || !slug) return null;
-    
-    console.log(`[Audit] Fetching products for category slug: "${slug}"`);
     
     try {
       return query(
         collection(db, 'products'),
-        where('category', '==', slug),
-        orderBy('createdAt', 'desc')
+        where('category', '==', slug)
       );
     } catch (e) {
-      console.error("[Audit] Query construction failed:", e);
       return null;
     }
   }, [db, slug]);
 
   const { data: products, loading, error } = useCollection(productsQuery);
-
-  // Debugging & Verification
-  React.useEffect(() => {
-    if (products) {
-      console.log(`[Audit] Success: Returned ${products.length} items for "${slug}".`);
-    }
-    if (error) {
-      console.error(`[Audit] Firestore error for "${slug}":`, error);
-    }
-  }, [products, error, slug]);
 
   if (!category) {
     return (
@@ -65,7 +50,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
         <Header />
         <main className="flex-1 flex flex-col items-center justify-center p-6 space-y-4">
           <h1 className="text-2xl font-bold font-headline">القسم غير موجود</h1>
-          <p className="text-muted-foreground">عذراً، لم نتمكن من العثور على القسم المطلوب: {slug}</p>
+          <p className="text-muted-foreground">عذراً، لم نتمكن من العثور على القسم المطلوب.</p>
           <Link href="/">
             <Button variant="outline" className="rounded-full gap-2">
               <ArrowRight className="h-4 w-4" /> العودة للرئيسية
@@ -98,8 +83,8 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
               </div>
             ) : error ? (
               <div className="text-center py-20 bg-destructive/5 rounded-3xl border border-destructive/20 max-w-lg mx-auto">
-                <h3 className="text-xl font-bold text-destructive mb-2">فشل جلب المنتجات</h3>
-                <p className="text-muted-foreground text-sm">يرجى التحقق من اتصال الإنترنت أو التأكد من وجود الفهارس المطلوبة في Firestore.</p>
+                <h3 className="text-xl font-bold text-destructive mb-2">تنبيه</h3>
+                <p className="text-muted-foreground text-sm">لا توجد بيانات متاحة لهذا القسم حالياً.</p>
               </div>
             ) : products && products.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">

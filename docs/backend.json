@@ -98,7 +98,7 @@
   "firestore": {
     "/products/{productId}": {
       "schema": "Product",
-      "description": "PUBLIC_READ: Allow any user to read products. ADMIN_WRITE: Restricted to mohammad.dd.my@gmail.com."
+      "description": "PUBLIC_READ: Allow any user to read products. ADMIN_WRITE: Restricted to mohammad.dd.my@gmail.com. (Rules Refreshed)"
     },
     "/users/{userId}": {
       "schema": "UserProfile",

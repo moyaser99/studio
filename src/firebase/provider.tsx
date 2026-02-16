@@ -41,6 +41,7 @@ export const FirebaseProvider: React.FC<{
   }), [app, firestore, auth]);
 
   useEffect(() => {
+    // كتم أخطاء الـ HMR المزعجة في بيئة التطوير
     const onWindowError = (event: ErrorEvent) => {
       const errorMsg = event.error?.message || event.message || "";
       if (errorMsg.includes('INTERNAL ASSERTION FAILED') || errorMsg.includes('ca9')) {
@@ -61,31 +62,29 @@ export const FirebaseProvider: React.FC<{
     window.addEventListener('unhandledrejection', onUnhandledRejection, true);
 
     const handleError = (error: any) => {
-      const errorMsg = error?.message || String(error);
-
       if (error instanceof FirestorePermissionError) {
         const { path, operation } = error.context;
         const isPublicPath = path.includes('products') || path.includes('siteSettings');
+        
+        // لا تظهر أي رسائل خطأ للمسارات العامة، ولا تسجلها في الكونسول لتجنب شاشة Next.js الحمراء
         if (isPublicPath) return;
 
-        // Optimized specific error handling for user verification
+        // معالجة مخصصة للتحقق من بيانات المستخدمين
         if (path === 'users' && operation === 'list') {
           toast({
             variant: "destructive",
-            title: "خطأ في التحقق",
+            title: "تنبيه",
             description: "عذراً، لا يمكن التحقق من البيانات حالياً، يرجى المحاولة لاحقاً.",
           });
           return;
         }
-      } else {
-        if (errorMsg.includes('INTERNAL ASSERTION FAILED') || errorMsg.includes('ca9')) return;
-      }
 
-      toast({
-        variant: "destructive",
-        title: "خطأ في الصلاحيات",
-        description: "لا تملك الصلاحية للقيام بهذا الإجراء أو انتهت صلاحية الجلسة.",
-      });
+        toast({
+          variant: "destructive",
+          title: "خطأ في الصلاحيات",
+          description: "لا تملك الصلاحية للقيام بهذا الإجراء.",
+        });
+      }
     };
 
     errorEmitter.on('permission-error', handleError);
