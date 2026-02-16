@@ -21,8 +21,8 @@ interface FirebaseInstances {
 }
 
 /**
- * استخدام كائن عالمي لضمان بقاء النسخ ثابتة حتى مع إعادة تحميل الكود (HMR).
- * هذا يمنع خطأ "Unexpected state (ID: ca9)" الناتج عن تكرار التهيئة.
+ * استخدام كائن عالمي ثابت تماماً لضمان عدم تكرار التهيئة تحت أي ظرف.
+ * هذا هو الحل الجذري لخطأ "INTERNAL ASSERTION FAILED (ID: ca9)".
  */
 const globalForFirebase = globalThis as unknown as {
   __firebase_instances: FirebaseInstances | undefined;
@@ -31,15 +31,16 @@ const globalForFirebase = globalThis as unknown as {
 export function getFirebaseInstances(): FirebaseInstances | null {
   if (typeof window === 'undefined') return null;
 
-  // إذا كانت النسخ موجودة مسبقاً، نرجعها فوراً دون أي استدعاءات إضافية
+  // إذا كانت النسخ موجودة مسبقاً، نرجعها فوراً دون أي استدعاءات إضافية للمكتبة
   if (globalForFirebase.__firebase_instances) {
     return globalForFirebase.__firebase_instances;
   }
 
   try {
+    // التأكد من عدم وجود تطبيق مهيأ مسبقاً في نظام Firebase نفسه
     const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
     
-    // تهيئة الخدمات مرة واحدة فقط
+    // تهيئة الخدمات مرة واحدة فقط وتخزينها عالمياً
     const firestore = getFirestore(app);
     const auth = getAuth(app);
 
