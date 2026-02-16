@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ProductCard from '@/components/product/ProductCard';
@@ -16,7 +17,17 @@ import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
 
-function CategoryImage({ category }: { category: Category }) {
+// Luxury Gradient Map based on Pink & Gold theme
+const CATEGORY_STYLES: Record<string, string> = {
+  makeup: 'linear-gradient(135deg, #F8C8DC 0%, #D4AF37 100%)',
+  watches: 'radial-gradient(circle at center, #F8C8DC 40%, #D4AF37 100%)',
+  bags: 'repeating-linear-gradient(45deg, #F8C8DC, #F8C8DC 10px, #D4AF37 10px, #D4AF37 20px)',
+  skincare: 'linear-gradient(to bottom, #F8C8DC, white)',
+  vitamins: 'conic-gradient(from 90deg at 50% 50%, #F8C8DC, #D4AF37, #F8C8DC)',
+  haircare: 'linear-gradient(to top, #F8C8DC, #D4AF37)',
+};
+
+function CategoryImage({ category, fallbackStyle }: { category: Category, fallbackStyle?: string }) {
   const db = useFirestore();
   
   const categoryProductQuery = useMemoFirebase(() => {
@@ -31,9 +42,7 @@ function CategoryImage({ category }: { category: Category }) {
 
   const { data: products, loading } = useCollection(categoryProductQuery);
 
-  const displayImage = products && products.length > 0 && products[0].imageUrl 
-    ? products[0].imageUrl 
-    : `https://picsum.photos/seed/${category.slug}/400/400`;
+  const productImage = products && products.length > 0 && products[0].imageUrl ? products[0].imageUrl : null;
 
   return (
     <div className="relative aspect-square rounded-full overflow-hidden border-2 border-transparent group-hover:border-primary transition-all p-1 bg-white shadow-sm">
@@ -41,14 +50,19 @@ function CategoryImage({ category }: { category: Category }) {
         <div className="absolute inset-0 flex items-center justify-center bg-muted/20">
           <Loader2 className="h-4 w-4 animate-spin text-primary" />
         </div>
+      ) : productImage ? (
+        <div className="relative h-full w-full overflow-hidden rounded-full">
+          <Image
+            src={productImage}
+            alt={category.name}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-110"
+          />
+        </div>
       ) : (
-        <img
-          src={displayImage}
-          alt={category.name}
-          className="absolute inset-0 h-full w-full object-cover rounded-full"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${category.slug}-err/400/400`;
-          }}
+        <div
+          className="absolute inset-0 h-full w-full rounded-full transition-all duration-500 group-hover:opacity-90 group-hover:scale-105"
+          style={{ background: fallbackStyle || '#F8C8DC' }}
         />
       )}
     </div>
@@ -167,7 +181,10 @@ export default function Home() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-10">
               {CATEGORIES.map((category) => (
                 <Link key={category.id} href={`/category/${category.slug}`} className="group space-y-6 text-center">
-                  <CategoryImage category={category} />
+                  <CategoryImage 
+                    category={category} 
+                    fallbackStyle={CATEGORY_STYLES[category.slug]} 
+                  />
                   <span className="block font-bold text-xl group-hover:text-primary transition-colors">{category.name}</span>
                 </Link>
               ))}
