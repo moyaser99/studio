@@ -31,34 +31,29 @@ const globalForFirebase = globalThis as unknown as {
 export function getFirebaseInstances(): FirebaseInstances | null {
   if (typeof window === 'undefined') return null;
 
-  if (!globalForFirebase.__firebase_instances) {
-    try {
-      // الحصول على التطبيق الحالي أو إنشاء واحد جديد
-      const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-      
-      // تهيئة الخدمات مرة واحدة فقط وتخزينها
-      const firestore = getFirestore(app);
-      const auth = getAuth(app);
-
-      globalForFirebase.__firebase_instances = {
-        app,
-        firestore,
-        auth
-      };
-      
-      console.log("[Firebase] Singleton initialized successfully.");
-    } catch (error) {
-      console.error("[Firebase] Initialization failed:", error);
-      return null;
-    }
+  // إذا كانت النسخ موجودة مسبقاً، نرجعها فوراً دون أي استدعاءات إضافية
+  if (globalForFirebase.__firebase_instances) {
+    return globalForFirebase.__firebase_instances;
   }
 
-  return globalForFirebase.__firebase_instances;
+  try {
+    const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+    
+    // تهيئة الخدمات مرة واحدة فقط
+    const firestore = getFirestore(app);
+    const auth = getAuth(app);
+
+    const instances = { app, firestore, auth };
+    globalForFirebase.__firebase_instances = instances;
+    
+    console.log("[Firebase] Singleton initialized successfully.");
+    return instances;
+  } catch (error) {
+    console.error("[Firebase] Initialization failed:", error);
+    return null;
+  }
 }
 
-/**
- * دوال وصول سريعة ومتوافقة مع كامل أجزاء التطبيق
- */
 export const getFirebaseApp = () => getFirebaseInstances()?.app || null;
 export const getFirestoreInstance = () => getFirebaseInstances()?.firestore || null;
 export const getAuthInstance = () => getFirebaseInstances()?.auth || null;

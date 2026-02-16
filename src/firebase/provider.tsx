@@ -40,8 +40,28 @@ export const FirebaseProvider: React.FC<{
   }), [app, firestore, auth]);
 
   useEffect(() => {
+    // معالج لمنع ظهور شاشة الخطأ الحمراء لـ Next.js في حال حدوث خطأ Assertion من مكتبة Firebase (خاص بالـ HMR)
+    const onWindowError = (event: ErrorEvent) => {
+      if (event.error?.message?.includes('INTERNAL ASSERTION FAILED')) {
+        event.preventDefault();
+        console.warn("[Firebase HMR] Suppressed internal assertion error:", event.error.message);
+      }
+    };
+
+    const onUnhandledRejection = (event: PromiseRejectionEvent) => {
+      if (event.reason?.message?.includes('INTERNAL ASSERTION FAILED')) {
+        event.preventDefault();
+        console.warn("[Firebase HMR] Suppressed unhandled rejection (assertion):", event.reason.message);
+      }
+    };
+
+    window.addEventListener('error', onWindowError);
+    window.addEventListener('unhandledrejection', onUnhandledRejection);
+
     // مستمع الأخطاء العالمي - يتعامل بصمت مع مسارات "المنتجات" العامة لتجنب إزعاج المطور
     const handleError = (error: any) => {
+      const errorMsg = error?.message || String(error);
+
       if (error instanceof FirestorePermissionError) {
         const { path, operation } = error.context;
         const isPublicPath = path.includes('products') || path.includes('siteSettings');
@@ -50,7 +70,7 @@ export const FirebaseProvider: React.FC<{
         console.error(`[Firestore Permission Denied] Path: ${path}, Operation: ${operation}`);
       } else {
         // تجاهل أخطاء الـ Assertion الداخلية الناتجة عن الـ HMR في سجلات الـ UI
-        if (error.message?.includes('INTERNAL ASSERTION FAILED')) return;
+        if (errorMsg.includes('INTERNAL ASSERTION FAILED')) return;
         console.error("[Firebase Error]", error);
       }
 
@@ -62,7 +82,10 @@ export const FirebaseProvider: React.FC<{
     };
 
     errorEmitter.on('permission-error', handleError);
+    
     return () => {
+      window.removeEventListener('error', onWindowError);
+      window.removeEventListener('unhandledrejection', onUnhandledRejection);
       errorEmitter.off('permission-error', handleError);
     };
   }, [toast]);
