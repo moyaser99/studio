@@ -5,13 +5,10 @@ import Link from 'next/link';
 import { ShoppingBag, Search, User, Menu, Settings, Loader2, LogOut, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CATEGORIES } from '@/lib/data';
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-
-const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
-const ADMIN_PHONE = '+962780334074';
 
 export default function Header() {
   const { user, loading } = useUser();
@@ -19,15 +16,17 @@ export default function Header() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   
-  const isAdmin = user?.email === ADMIN_EMAIL || user?.phoneNumber === ADMIN_PHONE;
+  // Admin logic as per .cursorrules
+  const isAdmin = user?.email === 'mohammad.dd.my@gmail.com' || user?.phoneNumber === '+962780334074';
   
-  // Log for verification as requested
+  // Log for verification as per .cursorrules
   console.log('Admin Detection Status:', isAdmin);
 
   const handleLogout = async () => {
     if (!auth) return;
     try {
       await signOut(auth);
+      console.log('User signed out successfully');
       setOpen(false);
       router.push('/');
     } catch (error) {
@@ -61,7 +60,7 @@ export default function Header() {
                   </SheetTitle>
                 </SheetHeader>
                 
-                <nav className="flex flex-col gap-2 mt-8 text-right flex-1">
+                <nav className="flex flex-col gap-2 mt-8 text-right flex-1 overflow-y-auto">
                   <p className="text-xs font-bold text-muted-foreground mb-4 uppercase tracking-widest">تسوق حسب القسم</p>
                   {CATEGORIES.map((cat) => (
                     <button
@@ -90,22 +89,22 @@ export default function Header() {
                   )}
                 </nav>
 
-                <div className="mt-auto pt-6 border-t space-y-3">
+                <div className="mt-auto pt-6 border-t space-y-3 pb-6">
                   {user ? (
                     <Button 
-                      variant="outline" 
+                      variant="ghost" 
                       onClick={handleLogout} 
-                      className="w-full rounded-full border-primary text-primary hover:bg-primary hover:text-white h-12 font-bold gap-2"
+                      className="w-full rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/5 h-12 font-bold gap-2 justify-center"
                     >
-                      <LogOut className="h-4 w-4" /> تسجيل الخروج
+                      <LogOut className="h-5 w-5" /> تسجيل الخروج
                     </Button>
                   ) : (
                     <Button 
                       variant="default" 
                       onClick={() => navigateTo('/login')} 
-                      className="w-full rounded-full h-12 font-bold gap-2"
+                      className="w-full rounded-full h-12 font-bold gap-2 shadow-lg"
                     >
-                      <LogIn className="h-4 w-4" /> تسجيل الدخول
+                      <LogIn className="h-5 w-5" /> تسجيل الدخول
                     </Button>
                   )}
                 </div>
