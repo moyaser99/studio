@@ -43,6 +43,33 @@
         "imageUrl"
       ]
     },
+    "Category": {
+      "title": "Category",
+      "description": "Product categories managed by admin",
+      "type": "object",
+      "properties": {
+        "nameAr": {
+          "type": "string",
+          "description": "Arabic name of the category"
+        },
+        "slug": {
+          "type": "string",
+          "description": "URL friendly identifier"
+        },
+        "displayOrder": {
+          "type": "number",
+          "description": "Sort order for display"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "nameAr",
+        "slug"
+      ]
+    },
     "UserProfile": {
       "title": "User Profile",
       "description": "Additional information for customers",
@@ -98,7 +125,11 @@
   "firestore": {
     "/products/{productId}": {
       "schema": "Product",
-      "description": "PUBLIC_READ: Allow any user to read products. ADMIN_WRITE: Restricted to mohammad.dd.my@gmail.com. (Rules Refreshed)"
+      "description": "PUBLIC_READ: Allow any user to read products. ADMIN_WRITE: Restricted to mohammad.dd.my@gmail.com."
+    },
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "PUBLIC_READ: All can view categories. ADMIN_WRITE: Only admin can manage categories."
     },
     "/users/{userId}": {
       "schema": "UserProfile",

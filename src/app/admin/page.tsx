@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -44,14 +45,16 @@ import {
   Loader2, 
   Sparkles,
   Image as ImageIcon,
-  Save
+  Save,
+  Tags,
+  ChevronRight
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { CATEGORIES } from '@/lib/data';
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
+import Link from 'next/link';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
@@ -68,7 +71,7 @@ export default function AdminPage() {
   const [formData, setFormData] = useState({
     name: '',
     price: '',
-    category: 'makeup',
+    category: '',
     imageUrl: '',
     description: '',
   });
@@ -83,6 +86,13 @@ export default function AdminPage() {
 
   const { data: products, loading: productsLoading } = useCollection(productsQuery);
   
+  const categoriesQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'categories'), orderBy('displayOrder', 'asc'));
+  }, [db]);
+
+  const { data: categories } = useCollection(categoriesQuery);
+
   const heroRef = useMemoFirebase(() => {
     if (!db) return null;
     return doc(db, 'siteSettings', 'heroSection');
@@ -116,7 +126,7 @@ export default function AdminPage() {
     }
     setAiLoading(true);
     try {
-      const categoryName = CATEGORIES.find(c => c.slug === formData.category)?.name || formData.category;
+      const categoryName = categories?.find((c: any) => c.slug === formData.category)?.nameAr || formData.category;
       const res = await generateProductDescription({
         productName: formData.name,
         category: categoryName,
@@ -133,9 +143,8 @@ export default function AdminPage() {
 
   const saveProduct = () => {
     if (!db) return;
-    const categoryName = CATEGORIES.find(c => c.slug === formData.category)?.name || '';
+    const categoryName = categories?.find((c: any) => c.slug === formData.category)?.nameAr || '';
     
-    // Ensure metadata includes timestamps for future sorting
     const payload: any = {
       ...formData,
       price: parseFloat(formData.price),
@@ -161,7 +170,7 @@ export default function AdminPage() {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', price: '', category: 'makeup', imageUrl: '', description: '' });
+    setFormData({ name: '', price: '', category: categories?.[0]?.slug || '', imageUrl: '', description: '' });
     setIsAdding(false);
     setIsEditing(null);
   };
@@ -187,91 +196,99 @@ export default function AdminPage() {
             <p className="text-muted-foreground mt-2 text-lg">إدارة منتجات YourGroceriesUSA وإعدادات الموقع</p>
           </div>
           
-          <Dialog open={isAdding || !!isEditing} onOpenChange={(val) => !val && resetForm()}>
-            <DialogTrigger asChild>
-              <Button onClick={() => setIsAdding(true)} className="rounded-full h-14 px-8 text-lg font-bold shadow-lg gap-2">
-                <Plus className="h-6 w-6" /> إضافة منتج جديد
+          <div className="flex gap-4">
+            <Link href="/admin/categories">
+              <Button variant="outline" className="rounded-full h-14 px-8 text-lg font-bold border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/10 gap-2">
+                <Tags className="h-6 w-6" /> إدارة الأقسام
               </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl rounded-3xl overflow-y-auto max-h-[90vh]">
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-bold font-headline">
-                  {isEditing ? 'تعديل منتج' : 'إضافة منتج جديد'}
-                </DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-6 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2 text-right">
-                    <Label>اسم المنتج</Label>
-                    <Input 
-                      value={formData.name} 
-                      onChange={e => setFormData({...formData, name: e.target.value})}
-                      placeholder="مثال: كريم أساس فاخر" 
-                      className="rounded-xl"
-                    />
-                  </div>
-                  <div className="space-y-2 text-right">
-                    <Label>السعر ($)</Label>
-                    <Input 
-                      type="number"
-                      value={formData.price} 
-                      onChange={e => setFormData({...formData, price: e.target.value})}
-                      placeholder="0.00" 
-                      className="rounded-xl"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2 text-right">
-                    <Label>القسم</Label>
-                    <select 
-                      className="w-full h-10 rounded-xl border border-input bg-background px-3"
-                      value={formData.category}
-                      onChange={e => setFormData({...formData, category: e.target.value})}
-                    >
-                      {CATEGORIES.map(c => <option key={c.id} value={c.slug}>{c.name}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-2 text-right">
-                    <Label>رابط الصورة</Label>
-                    <Input 
-                      value={formData.imageUrl} 
-                      onChange={e => setFormData({...formData, imageUrl: e.target.value})}
-                      placeholder="https://..." 
-                      className="rounded-xl"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2 text-right">
-                  <div className="flex items-center justify-between">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={handleAiDescription}
-                      disabled={aiLoading}
-                      className="rounded-full gap-2 border-primary/30 text-primary hover:bg-primary/5"
-                    >
-                      {aiLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                      توليد الوصف بالذكاء الاصطناعي
-                    </Button>
-                    <Label>الوصف</Label>
-                  </div>
-                  <Textarea 
-                    value={formData.description} 
-                    onChange={e => setFormData({...formData, description: e.target.value})}
-                    placeholder="اكتب وصفاً جذاباً للمنتج..." 
-                    className="rounded-xl min-h-[120px]"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button onClick={saveProduct} className="w-full rounded-full h-12 text-lg font-bold">
-                  {isEditing ? 'حفظ التعديلات' : 'إضافة المنتج للمخزون'}
+            </Link>
+            <Dialog open={isAdding || !!isEditing} onOpenChange={(val) => !val && resetForm()}>
+              <DialogTrigger asChild>
+                <Button onClick={() => setIsAdding(true)} className="rounded-full h-14 px-8 text-lg font-bold shadow-lg gap-2 bg-[#D4AF37] hover:bg-[#B8962D]">
+                  <Plus className="h-6 w-6" /> إضافة منتج جديد
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl rounded-3xl overflow-y-auto max-h-[90vh]">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-bold font-headline">
+                    {isEditing ? 'تعديل منتج' : 'إضافة منتج جديد'}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-6 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2 text-right">
+                      <Label>اسم المنتج</Label>
+                      <Input 
+                        value={formData.name} 
+                        onChange={e => setFormData({...formData, name: e.target.value})}
+                        placeholder="مثال: كريم أساس فاخر" 
+                        className="rounded-xl"
+                      />
+                    </div>
+                    <div className="space-y-2 text-right">
+                      <Label>السعر ($)</Label>
+                      <Input 
+                        type="number"
+                        value={formData.price} 
+                        onChange={e => setFormData({...formData, price: e.target.value})}
+                        placeholder="0.00" 
+                        className="rounded-xl"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2 text-right">
+                      <Label>القسم</Label>
+                      <select 
+                        className="w-full h-10 rounded-xl border border-input bg-background px-3"
+                        value={formData.category}
+                        onChange={e => setFormData({...formData, category: e.target.value})}
+                      >
+                        <option value="" disabled>اختر القسم...</option>
+                        {categories?.map((c: any) => <option key={c.id} value={c.slug}>{c.nameAr}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-2 text-right">
+                      <Label>رابط الصورة</Label>
+                      <Input 
+                        value={formData.imageUrl} 
+                        onChange={e => setFormData({...formData, imageUrl: e.target.value})}
+                        placeholder="https://..." 
+                        className="rounded-xl"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2 text-right">
+                    <div className="flex items-center justify-between">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleAiDescription}
+                        disabled={aiLoading}
+                        className="rounded-full gap-2 border-primary/30 text-primary hover:bg-primary/5"
+                      >
+                        {aiLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                        توليد الوصف بالذكاء الاصطناعي
+                      </Button>
+                      <Label>الوصف</Label>
+                    </div>
+                    <Textarea 
+                      value={formData.description} 
+                      onChange={e => setFormData({...formData, description: e.target.value})}
+                      placeholder="اكتب وصفاً جذاباً للمنتج..." 
+                      className="rounded-xl min-h-[120px]"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={saveProduct} className="w-full rounded-full h-12 text-lg font-bold bg-[#D4AF37] hover:bg-[#B8962D]">
+                    {isEditing ? 'حفظ التعديلات' : 'إضافة المنتج للمخزون'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         <Tabs defaultValue="products" className="space-y-8">
@@ -320,7 +337,7 @@ export default function AdminPage() {
                               <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="rounded-full text-blue-600 hover:bg-blue-50"
+                                className="rounded-full text-[#D4AF37] hover:bg-yellow-50"
                                 onClick={() => {
                                   setIsEditing(product.id);
                                   setFormData({
@@ -376,7 +393,7 @@ export default function AdminPage() {
                         className="rounded-2xl h-12"
                       />
                     </div>
-                    <Button onClick={updateHero} className="rounded-full h-12 gap-2 font-bold shadow-md">
+                    <Button onClick={updateHero} className="rounded-full h-12 gap-2 font-bold shadow-md bg-[#D4AF37] hover:bg-[#B8962D]">
                       <Save className="h-5 w-5" /> حفظ الصورة الجديدة
                     </Button>
                   </div>

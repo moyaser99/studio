@@ -1,32 +1,38 @@
+
 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
 import { ShoppingBag, Search, User, Menu, Settings, Loader2, LogOut, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CATEGORIES } from '@/lib/data';
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
-import { useUser, useAuth } from '@/firebase';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { useUser, useAuth, useFirestore, useCollection } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { query, collection, orderBy } from 'firebase/firestore';
+import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 
 export default function Header() {
   const { user, loading } = useUser();
   const auth = useAuth();
+  const db = useFirestore();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   
-  // Admin logic as per .cursorrules
+  // Dynamic categories for sidebar
+  const categoriesQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'categories'), orderBy('displayOrder', 'asc'));
+  }, [db]);
+  const { data: categories } = useCollection(categoriesQuery);
+
+  // Admin logic
   const isAdmin = user?.email === 'mohammad.dd.my@gmail.com' || user?.phoneNumber === '+962780334074';
-  
-  // Log for verification as per .cursorrules
-  console.log('Admin Detection Status:', isAdmin);
 
   const handleLogout = async () => {
     if (!auth) return;
     try {
       await signOut(auth);
-      console.log('User signed out successfully');
       setOpen(false);
       router.push('/');
     } catch (error) {
@@ -35,9 +41,6 @@ export default function Header() {
   };
 
   const navigateTo = (path: string) => {
-    if (path === '/admin') {
-      console.log('Navigating to Admin...');
-    }
     setOpen(false);
     router.push(path);
   };
@@ -62,13 +65,13 @@ export default function Header() {
                 
                 <nav className="flex flex-col gap-2 mt-8 text-right flex-1 overflow-y-auto">
                   <p className="text-xs font-bold text-muted-foreground mb-4 uppercase tracking-widest">تسوق حسب القسم</p>
-                  {CATEGORIES.map((cat) => (
+                  {categories?.map((cat: any) => (
                     <button
                       key={cat.id}
                       onClick={() => navigateTo(`/category/${cat.slug}`)}
                       className="text-lg font-bold hover:text-primary py-3 px-4 rounded-2xl hover:bg-primary/5 transition-all flex items-center justify-between group text-right"
                     >
-                      <span>{cat.name}</span>
+                      <span>{cat.nameAr}</span>
                       <span className="opacity-0 group-hover:opacity-100 transition-opacity">←</span>
                     </button>
                   ))}
@@ -77,10 +80,7 @@ export default function Header() {
                     <div className="mt-8 pt-8 border-t">
                       <p className="text-xs font-bold text-primary mb-4 uppercase tracking-widest">الإدارة</p>
                       <button 
-                        onClick={() => {
-                          console.log('Navigating to Admin from Sidebar...');
-                          navigateTo('/admin');
-                        }}
+                        onClick={() => navigateTo('/admin')}
                         className="w-full text-lg font-black text-primary py-3 px-4 rounded-2xl bg-primary/5 flex items-center gap-2 justify-end hover:bg-primary/10 transition-colors"
                       >
                         لوحة التحكم <Settings className="h-5 w-5" />
@@ -128,10 +128,7 @@ export default function Header() {
                 variant="ghost" 
                 size="icon" 
                 className="hidden sm:flex rounded-full text-primary hover:bg-primary/10"
-                onClick={() => {
-                  console.log('Navigating to Admin from Header Icon...');
-                  navigateTo('/admin');
-                }}
+                onClick={() => navigateTo('/admin')}
               >
                 <Settings className="h-5 w-5" />
               </Button>

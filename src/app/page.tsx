@@ -7,27 +7,26 @@ import Image from 'next/image';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ProductCard from '@/components/product/ProductCard';
-import { CATEGORIES, Category } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2, Package, Sparkles } from 'lucide-react';
 import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
-import { collection, query, limit, where, doc } from 'firebase/firestore';
+import { collection, query, limit, where, doc, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
 
-// Luxury Gradient Map based on Pink & Gold theme
-const CATEGORY_STYLES: Record<string, string> = {
-  makeup: 'linear-gradient(135deg, #F8C8DC 0%, #D4AF37 100%)',
-  watches: 'radial-gradient(circle at center, #F8C8DC 40%, #D4AF37 100%)',
-  bags: 'repeating-linear-gradient(45deg, #F8C8DC, #F8C8DC 10px, #D4AF37 10px, #D4AF37 20px)',
-  skincare: 'linear-gradient(to bottom, #F8C8DC, white)',
-  vitamins: 'conic-gradient(from 90deg at 50% 50%, #F8C8DC, #D4AF37, #F8C8DC)',
-  haircare: 'linear-gradient(to top, #F8C8DC, #D4AF37)',
-};
+// Luxury Fallback styles for different categories
+const FALLBACK_STYLES = [
+  'linear-gradient(135deg, #F8C8DC 0%, #D4AF37 100%)',
+  'radial-gradient(circle at center, #F8C8DC 40%, #D4AF37 100%)',
+  'repeating-linear-gradient(45deg, #F8C8DC, #F8C8DC 10px, #D4AF37 10px, #D4AF37 20px)',
+  'linear-gradient(to bottom, #F8C8DC, white)',
+  'conic-gradient(from 90deg at 50% 50%, #F8C8DC, #D4AF37, #F8C8DC)',
+  'linear-gradient(to top, #F8C8DC, #D4AF37)',
+];
 
-function CategoryImage({ category, fallbackStyle }: { category: Category, fallbackStyle?: string }) {
+function CategoryImage({ category, index }: { category: any, index: number }) {
   const db = useFirestore();
   
   const categoryProductQuery = useMemoFirebase(() => {
@@ -66,10 +65,7 @@ function CategoryImage({ category, fallbackStyle }: { category: Category, fallba
   };
 
   const useOptimized = isImageOptimizable(productImage);
-
-  const isNew = product?.createdAt?.toDate 
-    ? (new Date().getTime() - product.createdAt.toDate().getTime()) < (48 * 60 * 60 * 1000)
-    : false;
+  const fallbackStyle = FALLBACK_STYLES[index % FALLBACK_STYLES.length];
 
   return (
     <div className="relative aspect-square rounded-full overflow-hidden border-2 border-transparent group-hover:border-primary transition-all p-1 bg-white shadow-sm">
@@ -82,30 +78,25 @@ function CategoryImage({ category, fallbackStyle }: { category: Category, fallba
           {useOptimized ? (
             <Image
               src={productImage}
-              alt={category.name}
+              alt={category.nameAr}
               fill
               className="object-cover transition-transform duration-500 group-hover:scale-110"
             />
           ) : (
             <img
               src={productImage}
-              alt={category.name}
+              alt={category.nameAr}
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
               }}
             />
           )}
-          {isNew && (
-            <div className="absolute inset-0 bg-black/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <span className="bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-2xl backdrop-blur-sm">جديد</span>
-            </div>
-          )}
         </div>
       ) : (
         <div
           className="absolute inset-0 h-full w-full rounded-full transition-all duration-500 group-hover:opacity-90 group-hover:scale-105 flex items-center justify-center"
-          style={{ background: fallbackStyle || '#F8C8DC' }}
+          style={{ background: fallbackStyle }}
         >
           <Sparkles className="h-8 w-8 text-white/50 animate-pulse" />
         </div>
@@ -134,10 +125,17 @@ export default function Home() {
 
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
-    return query(collection(db, 'products'), limit(8));
+    return query(collection(db, 'products'), limit(8), orderBy('createdAt', 'desc'));
   }, [db]);
   
   const { data: products, loading: productsLoading } = useCollection(productsQuery);
+
+  const categoriesQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'categories'), orderBy('displayOrder', 'asc'));
+  }, [db]);
+
+  const { data: categories, loading: categoriesLoading } = useCollection(categoriesQuery);
 
   const heroImage = heroDoc?.imageUrl;
 
@@ -223,17 +221,24 @@ export default function Home() {
                 </Button>
               </Link>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-10">
-              {CATEGORIES.map((category) => (
-                <Link key={category.id} href={`/category/${category.slug}`} className="group space-y-6 text-center">
-                  <CategoryImage 
-                    category={category} 
-                    fallbackStyle={CATEGORY_STYLES[category.slug]} 
-                  />
-                  <span className="block font-bold text-xl group-hover:text-primary transition-colors">{category.name}</span>
-                </Link>
-              ))}
-            </div>
+            
+            {categoriesLoading ? (
+              <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary/30" /></div>
+            ) : categories && categories.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-10">
+                {categories.map((category: any, idx: number) => (
+                  <Link key={category.id} href={`/category/${category.slug}`} className="group space-y-6 text-center">
+                    <CategoryImage 
+                      category={category} 
+                      index={idx}
+                    />
+                    <span className="block font-bold text-xl group-hover:text-primary transition-colors">{category.nameAr}</span>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">لا توجد أقسام حالياً.</div>
+            )}
           </div>
         </section>
 
@@ -274,7 +279,7 @@ export default function Home() {
                 </p>
                 {isAdmin && (
                   <Link href="/admin">
-                     <Button className="rounded-full px-12 h-14 text-xl font-bold shadow-lg">أضف أول منتج</Button>
+                     <Button className="rounded-full px-12 h-14 text-xl font-bold shadow-lg bg-[#D4AF37] hover:bg-[#B8962D]">أضف أول منتج</Button>
                   </Link>
                 )}
               </div>

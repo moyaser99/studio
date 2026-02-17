@@ -5,9 +5,8 @@ import * as React from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ProductCard from '@/components/product/ProductCard';
-import { CATEGORIES } from '@/lib/data';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import { Loader2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
@@ -26,25 +25,38 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   }, [rawSlug]);
 
   const db = useFirestore();
-  const category = CATEGORIES.find(c => c.slug === slug);
 
-  // تبسيط الاستعلام بإزالة orderBy لتجنب الحاجة لفهارس مركبة (Composite Indexes) قد تسبب أخطاء صلاحيات
+  // Fetch category data to get nameAr
+  const categoryQuery = useMemoFirebase(() => {
+    if (!db || !slug) return null;
+    return query(collection(db, 'categories'), where('slug', '==', slug), limit(1));
+  }, [db, slug]);
+  const { data: categoryData, loading: catLoading } = useCollection(categoryQuery);
+  const category = categoryData && categoryData.length > 0 ? categoryData[0] : null;
+
   const productsQuery = useMemoFirebase(() => {
     if (!db || !slug) return null;
-    
-    try {
-      return query(
-        collection(db, 'products'),
-        where('category', '==', slug)
-      );
-    } catch (e) {
-      return null;
-    }
+    return query(
+      collection(db, 'products'),
+      where('category', '==', slug)
+    );
   }, [db, slug]);
 
   const { data: products, loading, error } = useCollection(productsQuery);
 
-  if (!category) {
+  if (catLoading) {
+    return (
+      <div className="min-h-screen flex flex-col" dir="rtl">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!category && !loading) {
     return (
       <div className="min-h-screen flex flex-col" dir="rtl">
         <Header />
@@ -68,9 +80,9 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
       <main className="flex-1">
         <section className="bg-primary/5 py-12 md:py-20 border-b">
           <div className="container mx-auto px-4 text-right">
-            <h1 className="text-4xl md:text-5xl font-bold font-headline mb-4">{category.name}</h1>
+            <h1 className="text-4xl md:text-5xl font-bold font-headline mb-4">{(category as any)?.nameAr}</h1>
             <p className="text-muted-foreground text-lg max-w-2xl">
-              تصفح مجموعتنا المختارة من أفضل منتجات {category.name} المستوردة حصرياً.
+              تصفح مجموعتنا المختارة من أفضل منتجات {(category as any)?.nameAr} المستوردة حصرياً.
             </p>
           </div>
         </section>
@@ -103,9 +115,9 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
               </div>
             ) : (
               <div className="text-center py-20 bg-muted/20 rounded-[3rem] border-2 border-dashed border-primary/20 max-w-2xl mx-auto px-6">
-                <p className="text-muted-foreground text-xl mb-6">لا توجد منتجات حالياً في قسم {category.name}.</p>
+                <p className="text-muted-foreground text-xl mb-6">لا توجد منتجات حالياً في قسم {(category as any)?.nameAr}.</p>
                 <Link href="/products">
-                   <Button className="rounded-full px-8 h-12 font-bold shadow-md">استكشاف كافة الأقسام</Button>
+                   <Button className="rounded-full px-8 h-12 font-bold shadow-md bg-[#D4AF37] hover:bg-[#B8962D]">استكشاف كافة الأقسام</Button>
                 </Link>
               </div>
             )}
