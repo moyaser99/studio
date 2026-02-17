@@ -15,9 +15,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { 
   Table, 
   TableBody, 
@@ -45,8 +43,7 @@ import {
   Image as ImageIcon,
   Save,
   Tags,
-  AlertTriangle,
-  AlertCircle
+  AlertTriangle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow';
@@ -127,17 +124,10 @@ export default function AdminPage() {
             <div className="bg-destructive/10 text-destructive p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="h-8 w-8" />
             </div>
-            <CardTitle className="text-2xl text-destructive mb-4">{lang === 'ar' ? 'وصول مرفوض أو جلسة مفقودة' : 'Access Denied or Session Lost'}</CardTitle>
-            <p className="text-muted-foreground mb-6">
-              {lang === 'ar' 
-                ? 'ليس لديك الصلاحيات الكافية، أو أن المتصفح فقد بيانات تسجيل الدخول بسبب قيود الأمان.' 
-                : 'You do not have enough permissions, or the browser has lost the login data due to security restrictions.'}
-              <br/><br/>
-              <b>{lang === 'ar' ? 'حل مقترح:' : 'Suggested Fix:'}</b> {lang === 'ar' ? 'يرجى فتح الموقع في نافذة مستقلة بدلاً من الإطار الحالي.' : 'Please open the site in a standalone window instead of the current frame.'}
-            </p>
+            <CardTitle className="text-2xl text-destructive mb-4">{t.sessionWarning}</CardTitle>
             <div className="flex flex-col gap-3">
-              <Button onClick={() => window.open(window.location.href, '_blank')} className="rounded-full h-12">{lang === 'ar' ? 'فتح في نافذة جديدة' : 'Open in New Window'}</Button>
-              <Button onClick={() => window.location.href = '/login'} variant="outline" className="rounded-full h-12">{lang === 'ar' ? 'الذهاب لصفحة الدخول' : 'Go to Login Page'}</Button>
+              <Button onClick={() => window.open(window.location.href, '_blank')} className="rounded-full h-12">Open in New Window</Button>
+              <Button onClick={() => window.location.href = '/login'} variant="outline" className="rounded-full h-12">{t.loginTitle}</Button>
             </div>
           </Card>
         </main>
@@ -148,7 +138,7 @@ export default function AdminPage() {
 
   const handleAiDescription = async () => {
     if (!formData.name) {
-      toast({ variant: 'destructive', title: 'خطأ', description: 'يرجى إدخال اسم المنتج أولاً.' });
+      toast({ variant: 'destructive', title: t.errorOccurred, description: 'Please enter product name first.' });
       return;
     }
     setAiLoading(true);
@@ -157,12 +147,12 @@ export default function AdminPage() {
       const res = await generateProductDescription({
         productName: formData.name,
         category: categoryName,
-        keyFeatures: ['منتج حصري', 'جودة عالية', 'مستورد من أمريكا']
+        keyFeatures: ['Exclusive product', 'High quality', 'Imported from USA']
       });
       setFormData(prev => ({ ...prev, description: res.description }));
-      toast({ title: 'تم التوليد', description: 'تم إنشاء الوصف بواسطة الذكاء الاصطناعي.' });
+      toast({ title: 'Generated', description: t.aiDescriptionSuccess });
     } catch (error) {
-      toast({ variant: 'destructive', title: 'خطأ', description: 'فشل في توليد الوصف.' });
+      toast({ variant: 'destructive', title: t.errorOccurred, description: t.aiDescriptionError });
     } finally {
       setAiLoading(false);
     }
@@ -184,7 +174,7 @@ export default function AdminPage() {
       const docRef = doc(db, 'products', isEditing);
       updateDoc(docRef, payload)
         .then(() => {
-          toast({ title: 'تم التحديث', description: 'تم تحديث المنتج بنجاح.' });
+          toast({ title: 'Updated', description: t.productUpdated });
           resetForm();
         })
         .catch(async () => {
@@ -195,7 +185,7 @@ export default function AdminPage() {
       payload.createdAt = serverTimestamp();
       addDoc(collection(db, 'products'), payload)
         .then(() => {
-          toast({ title: 'تمت الإضافة', description: 'تمت إضافة المنتج الجديد بنجاح.' });
+          toast({ title: 'Added', description: t.productAdded });
           resetForm();
         })
         .catch(async () => {
@@ -207,14 +197,14 @@ export default function AdminPage() {
 
   const deleteProduct = (id: string) => {
     if (!isAdmin || !db) return;
-    if (!window.confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
+    if (!window.confirm(t.confirmDeleteProduct)) return;
     
     setDeletingId(id);
     const docRef = doc(db, 'products', id);
     
     deleteDoc(docRef)
       .then(() => {
-        toast({ title: 'تم الحذف', description: 'تم إزالة المنتج بنجاح.' });
+        toast({ title: 'Deleted', description: t.productDeleted });
       })
       .catch((err) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' }));
@@ -237,7 +227,7 @@ export default function AdminPage() {
       updatedAt: serverTimestamp()
     })
       .then(() => {
-        toast({ title: 'تم التحديث', description: 'تم تغيير صورة الـ Hero Banner بنجاح.' });
+        toast({ title: 'Updated', description: t.heroUpdated });
       })
       .catch(async () => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update' }));
@@ -251,41 +241,41 @@ export default function AdminPage() {
         <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6">
           <div className="text-start">
             <h1 className="text-4xl font-black font-headline text-primary flex items-center gap-3">
-              <LayoutDashboard className="h-10 w-10" /> لوحة التحكم
+              <LayoutDashboard className="h-10 w-10" /> {t.adminDashboard}
             </h1>
           </div>
           
           <div className="flex gap-4">
             <Link href="/admin/categories">
               <Button variant="outline" className="rounded-full h-14 px-8 text-lg font-bold border-[#D4AF37] text-[#D4AF37] gap-2">
-                <Tags className="h-6 w-6" /> إدارة الأقسام
+                <Tags className="h-6 w-6" /> {t.manageCategories}
               </Button>
             </Link>
             <Dialog open={isAdding || !!isEditing} onOpenChange={(val) => !val && resetForm()}>
               <DialogTrigger asChild>
                 <Button onClick={() => setIsAdding(true)} className="rounded-full h-14 px-8 text-lg font-bold shadow-lg gap-2 bg-[#D4AF37] hover:bg-[#B8962D]">
-                  <Plus className="h-6 w-6" /> إضافة منتج جديد
+                  <Plus className="h-6 w-6" /> {t.addNewProduct}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl rounded-3xl overflow-y-auto max-h-[90vh]">
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-bold font-headline text-start">
-                    {isEditing ? 'تعديل منتج' : 'إضافة منتج جديد'}
+                    {isEditing ? t.editProduct : t.addNewProduct}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-6 py-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2 text-start">
-                      <Label>اسم المنتج</Label>
+                      <Label>{t.productNameLabel}</Label>
                       <input 
                         value={formData.name} 
                         onChange={e => setFormData({...formData, name: e.target.value})}
-                        placeholder="مثال: كريم أساس فاخر" 
+                        placeholder="Ex: Luxury Cream" 
                         className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
                     </div>
                     <div className="space-y-2 text-start">
-                      <Label>السعر ($)</Label>
+                      <Label>{t.productPrice}</Label>
                       <input 
                         type="number"
                         value={formData.price} 
@@ -297,18 +287,18 @@ export default function AdminPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2 text-start">
-                      <Label>القسم</Label>
+                      <Label>{t.categoryLabel}</Label>
                       <select 
                         className="w-full h-12 rounded-xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         value={formData.category}
                         onChange={e => setFormData({...formData, category: e.target.value})}
                       >
-                        <option value="" disabled>اختر القسم...</option>
-                        {categories?.map((c: any) => <option key={c.id} value={c.slug}>{c.nameAr}</option>)}
+                        <option value="" disabled>{t.chooseCategory}</option>
+                        {categories?.map((c: any) => <option key={c.id} value={c.slug}>{lang === 'ar' ? c.nameAr : (c.nameEn || c.slug)}</option>)}
                       </select>
                     </div>
                     <div className="space-y-2 text-start">
-                      <Label>رابط الصورة</Label>
+                      <Label>{t.imageLabel}</Label>
                       <input 
                         value={formData.imageUrl} 
                         onChange={e => setFormData({...formData, imageUrl: e.target.value})}
@@ -318,8 +308,8 @@ export default function AdminPage() {
                     </div>
                   </div>
                   <div className="space-y-2 text-start">
-                    <div className="flex items-center justify-between flex-row-reverse">
-                      <Label>الوصف</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>{t.descriptionLabel}</Label>
                       <Button 
                         type="button" 
                         variant="outline" 
@@ -328,20 +318,20 @@ export default function AdminPage() {
                         disabled={aiLoading}
                         className="rounded-full gap-2 h-10 px-4"
                       >
-                        {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "توليد الوصف بالذكاء الاصطناعي"}
+                        {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : t.generateAiDescription}
                       </Button>
                     </div>
                     <textarea 
                       value={formData.description} 
                       onChange={e => setFormData({...formData, description: e.target.value})}
-                      placeholder="اكتب وصفاً جذاباً..." 
+                      placeholder="Write a compelling description..." 
                       className="flex min-h-[140px] w-full rounded-2xl border border-input bg-background px-4 py-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     />
                   </div>
                 </div>
                 <DialogFooter>
                   <Button onClick={saveProduct} disabled={saving} className="w-full rounded-full h-14 text-lg font-bold bg-[#D4AF37] hover:bg-[#B8962D] shadow-lg">
-                    {saving ? <Loader2 className="h-6 w-6 animate-spin" /> : (isEditing ? 'حفظ التعديلات' : 'إضافة المنتج')}
+                    {saving ? <Loader2 className="h-6 w-6 animate-spin" /> : (isEditing ? t.save : t.save)}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -352,17 +342,17 @@ export default function AdminPage() {
         <Tabs defaultValue="products" className="space-y-8">
           <TabsList className="bg-white p-1 rounded-full shadow-sm border h-16 w-full max-w-md mx-auto grid grid-cols-2">
             <TabsTrigger value="products" className="rounded-full gap-2 font-bold text-lg h-14 data-[state=active]:bg-primary data-[state=active]:text-white">
-              <Package className="h-5 w-5" /> المنتجات
+              <Package className="h-5 w-5" /> {t.products}
             </TabsTrigger>
             <TabsTrigger value="settings" className="rounded-full gap-2 font-bold text-lg h-14 data-[state=active]:bg-primary data-[state=active]:text-white">
-              <Settings className="h-5 w-5" /> الإعدادات
+              <Settings className="h-5 w-5" /> {t.settings}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="products">
             <Card className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white">
               <CardHeader className="bg-primary/5 p-8 border-b">
-                <CardTitle className="text-2xl font-bold font-headline text-start">قائمة المنتجات</CardTitle>
+                <CardTitle className="text-2xl font-bold font-headline text-start">{t.productList}</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 {productsLoading ? (
@@ -371,10 +361,10 @@ export default function AdminPage() {
                   <Table>
                     <TableHeader className="bg-muted/30">
                       <TableRow>
-                        <TableHead className="text-start py-6">الصورة</TableHead>
-                        <TableHead className="text-start">الاسم</TableHead>
-                        <TableHead className="text-start">السعر</TableHead>
-                        <TableHead className="text-center">الإجراءات</TableHead>
+                        <TableHead className="text-start py-6">{t.imageLabel}</TableHead>
+                        <TableHead className="text-start">{t.productName}</TableHead>
+                        <TableHead className="text-start">{t.priceLabel}</TableHead>
+                        <TableHead className="text-center">{t.actions}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -429,7 +419,7 @@ export default function AdminPage() {
                     </TableBody>
                   </Table>
                 ) : (
-                  <div className="py-20 text-center text-muted-foreground">لا توجد منتجات حالياً.</div>
+                  <div className="py-20 text-center text-muted-foreground">{t.noProductsFound}</div>
                 )}
               </CardContent>
             </Card>
@@ -438,16 +428,16 @@ export default function AdminPage() {
           <TabsContent value="settings">
             <Card className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white">
               <CardHeader className="bg-primary/5 p-8 border-b">
-                <CardTitle className="text-2xl font-bold font-headline text-start">إعدادات الموقع</CardTitle>
+                <CardTitle className="text-2xl font-bold font-headline text-start">{t.siteSettings}</CardTitle>
               </CardHeader>
               <CardContent className="p-8 space-y-8">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3 text-xl font-bold justify-start">
-                    <ImageIcon className="h-6 w-6 text-primary" /> صورة الـ Hero Banner
+                    <ImageIcon className="h-6 w-6 text-primary" /> {t.heroBannerImage}
                   </div>
                   <div className="grid gap-6 md:grid-cols-2 items-end">
                     <div className="space-y-2 text-start">
-                      <Label>رابط الصورة</Label>
+                      <Label>{t.productImage}</Label>
                       <input 
                         placeholder="https://..." 
                         value={heroUrl}
@@ -456,7 +446,7 @@ export default function AdminPage() {
                       />
                     </div>
                     <Button onClick={updateHero} className="rounded-full h-12 gap-2 font-bold shadow-md bg-[#D4AF37] hover:bg-[#B8962D]">
-                      <Save className="h-5 w-5" /> حفظ التغييرات
+                      <Save className="h-5 w-5" /> {t.saveChanges}
                     </Button>
                   </div>
                 </div>

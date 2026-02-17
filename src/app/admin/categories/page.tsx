@@ -98,12 +98,9 @@ export default function AdminCategoriesPage() {
               <AlertTriangle className="h-8 w-8" />
             </div>
             <CardTitle className="text-2xl text-destructive mb-4">{t.sessionWarning}</CardTitle>
-            <p className="text-muted-foreground mb-6">
-              You do not have enough permissions or the session is lost.
-            </p>
             <div className="flex flex-col gap-3">
               <Button onClick={() => window.open(window.location.href, '_blank')} className="rounded-full h-12">Open in New Tab</Button>
-              <Button onClick={() => window.location.href = '/login'} variant="outline" className="rounded-full h-12">Login Page</Button>
+              <Button onClick={() => window.location.href = '/login'} variant="outline" className="rounded-full h-12">{t.loginTitle}</Button>
             </div>
           </Card>
         </main>
@@ -114,7 +111,7 @@ export default function AdminCategoriesPage() {
 
   const saveCategory = () => {
     if (!db || !formData.nameAr || !formData.slug) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Please complete all fields.' });
+      toast({ variant: 'destructive', title: t.errorOccurred, description: 'Please complete all fields.' });
       return;
     }
     
@@ -176,7 +173,7 @@ export default function AdminCategoriesPage() {
         
         deleteDoc(docRef)
           .then(() => {
-            toast({ title: 'Deleted', description: 'Category removed.' });
+            toast({ title: 'Deleted', description: t.categoryDeleted });
           })
           .catch((err) => {
             errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' }));
@@ -185,7 +182,7 @@ export default function AdminCategoriesPage() {
       })
       .catch(() => {
         deleteDoc(docRef)
-          .then(() => toast({ title: 'Deleted', description: 'Category removed.' }))
+          .then(() => toast({ title: 'Deleted', description: t.categoryDeleted }))
           .finally(() => setDeletingId(null));
       });
   };
@@ -220,21 +217,21 @@ export default function AdminCategoriesPage() {
             <DialogContent className="max-w-md rounded-3xl">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold font-headline text-start">
-                  {isEditing ? 'تعديل القسم' : 'إضافة قسم جديد'}
+                  {isEditing ? t.editCategory : t.addNewCategory}
                 </DialogTitle>
               </DialogHeader>
               <div className="grid gap-6 py-4">
                 <div className="space-y-2 text-start">
-                  <Label>اسم القسم (بالعربية)</Label>
+                  <Label>{t.categoryNameAr}</Label>
                   <input 
                     value={formData.nameAr} 
                     onChange={e => setFormData({...formData, nameAr: e.target.value})}
-                    placeholder="مثال: المكياج" 
+                    placeholder="Ex: Makeup" 
                     className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
                 </div>
                 <div className="space-y-2 text-start">
-                  <Label>المعرف (Slug)</Label>
+                  <Label>{t.categorySlug}</Label>
                   <input 
                     value={formData.slug} 
                     onChange={e => setFormData({...formData, slug: e.target.value})}
@@ -243,7 +240,7 @@ export default function AdminCategoriesPage() {
                   />
                 </div>
                 <div className="space-y-2 text-start">
-                  <Label>ترتيب العرض</Label>
+                  <Label>{t.displayOrder}</Label>
                   <input 
                     type="number"
                     value={formData.displayOrder} 
@@ -277,8 +274,8 @@ export default function AdminCategoriesPage() {
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow>
-                    <TableHead className="text-start">الاسم (AR)</TableHead>
-                    <TableHead className="text-start">Slug</TableHead>
+                    <TableHead className="text-start">{lang === 'ar' ? 'الاسم (AR)' : 'Name (AR)'}</TableHead>
+                    <TableHead className="text-start">{t.categorySlug}</TableHead>
                     <TableHead className="text-center">{t.actions}</TableHead>
                   </TableRow>
                 </TableHeader>
