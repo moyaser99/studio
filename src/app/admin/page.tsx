@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFirestore, useCollection, useUser, useDoc, useAuth } from '@/firebase';
 import { 
   collection, 
@@ -56,6 +56,7 @@ import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import Link from 'next/link';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { useTranslation } from '@/hooks/use-translation';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
@@ -66,6 +67,7 @@ export default function AdminPage() {
   const auth = useAuth();
   const { user, loading: authLoading } = useUser();
   const { toast } = useToast();
+  const { lang, t } = useTranslation();
   const [isAdding, setIsAdding] = useState(false);
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
@@ -102,6 +104,12 @@ export default function AdminPage() {
   }, [db]);
   const { data: heroData } = useDoc(heroRef);
 
+  useEffect(() => {
+    if (heroData?.imageUrl) {
+      setHeroUrl(heroData.imageUrl);
+    }
+  }, [heroData]);
+
   const isAdmin = user?.email === ADMIN_EMAIL || user?.phoneNumber === ADMIN_PHONE;
 
   if (authLoading) return (
@@ -112,22 +120,24 @@ export default function AdminPage() {
 
   if (!isAdmin && !authLoading) {
     return (
-      <div className="min-h-screen flex flex-col" dir="rtl">
+      <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 flex items-center justify-center bg-muted/20">
           <Card className="max-w-md text-center p-8 rounded-3xl shadow-xl">
             <div className="bg-destructive/10 text-destructive p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="h-8 w-8" />
             </div>
-            <CardTitle className="text-2xl text-destructive mb-4">وصول مرفوض أو جلسة مفقودة</CardTitle>
+            <CardTitle className="text-2xl text-destructive mb-4">{lang === 'ar' ? 'وصول مرفوض أو جلسة مفقودة' : 'Access Denied or Session Lost'}</CardTitle>
             <p className="text-muted-foreground mb-6">
-              ليس لديك الصلاحيات الكافية، أو أن المتصفح فقد بيانات تسجيل الدخول بسبب قيود الأمان.
+              {lang === 'ar' 
+                ? 'ليس لديك الصلاحيات الكافية، أو أن المتصفح فقد بيانات تسجيل الدخول بسبب قيود الأمان.' 
+                : 'You do not have enough permissions, or the browser has lost the login data due to security restrictions.'}
               <br/><br/>
-              <b>حل مقترح:</b> يرجى فتح الموقع في نافذة مستقلة (New Tab) بدلاً من الإطار الحالي.
+              <b>{lang === 'ar' ? 'حل مقترح:' : 'Suggested Fix:'}</b> {lang === 'ar' ? 'يرجى فتح الموقع في نافذة مستقلة بدلاً من الإطار الحالي.' : 'Please open the site in a standalone window instead of the current frame.'}
             </p>
             <div className="flex flex-col gap-3">
-              <Button onClick={() => window.open(window.location.href, '_blank')} className="rounded-full h-12">فتح في نافذة جديدة</Button>
-              <Button onClick={() => window.location.href = '/login'} variant="outline" className="rounded-full h-12">الذهاب لصفحة الدخول</Button>
+              <Button onClick={() => window.open(window.location.href, '_blank')} className="rounded-full h-12">{lang === 'ar' ? 'فتح في نافذة جديدة' : 'Open in New Window'}</Button>
+              <Button onClick={() => window.location.href = '/login'} variant="outline" className="rounded-full h-12">{lang === 'ar' ? 'الذهاب لصفحة الدخول' : 'Go to Login Page'}</Button>
             </div>
           </Card>
         </main>
@@ -178,9 +188,6 @@ export default function AdminPage() {
           resetForm();
         })
         .catch(async () => {
-          if (!auth?.currentUser) {
-            toast({ variant: 'destructive', title: 'جلسة مفقودة', description: 'يرجى فتح الموقع في نافذة جديدة.' });
-          }
           errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: payload }));
         })
         .finally(() => setSaving(false));
@@ -192,9 +199,6 @@ export default function AdminPage() {
           resetForm();
         })
         .catch(async () => {
-          if (!auth?.currentUser) {
-            toast({ variant: 'destructive', title: 'جلسة مفقودة', description: 'يرجى فتح الموقع في نافذة جديدة.' });
-          }
           errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'products', operation: 'create', requestResourceData: payload }));
         })
         .finally(() => setSaving(false));
@@ -202,12 +206,7 @@ export default function AdminPage() {
   };
 
   const deleteProduct = (id: string) => {
-    if (!isAdmin || !db) {
-      if (!user) {
-         alert('عذراً، الجلسة منتهية أو مفقودة. يرجى فتح الموقع في نافذة جديدة أو إعادة تسجيل الدخول.');
-      }
-      return;
-    }
+    if (!isAdmin || !db) return;
     if (!window.confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
     
     setDeletingId(id);
@@ -218,11 +217,6 @@ export default function AdminPage() {
         toast({ title: 'تم الحذف', description: 'تم إزالة المنتج بنجاح.' });
       })
       .catch((err) => {
-        if (!auth?.currentUser) {
-           toast({ variant: 'destructive', title: 'جلسة مفقودة', description: 'يرجى فتح الموقع في نافذة جديدة لإتمام العملية.' });
-        } else {
-           toast({ variant: 'destructive', title: 'خطأ في الصلاحيات', description: 'عذراً، لا تملك صلاحية الحذف من قاعدة البيانات.' });
-        }
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' }));
       })
       .finally(() => setDeletingId(null));
@@ -251,11 +245,11 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted/10" dir="rtl">
+    <div className="min-h-screen flex flex-col bg-muted/10">
       <Header />
       <main className="flex-1 container mx-auto px-4 py-12">
         <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6">
-          <div className="text-right">
+          <div className="text-start">
             <h1 className="text-4xl font-black font-headline text-primary flex items-center gap-3">
               <LayoutDashboard className="h-10 w-10" /> لوحة التحكم
             </h1>
@@ -275,37 +269,37 @@ export default function AdminPage() {
               </DialogTrigger>
               <DialogContent className="max-w-2xl rounded-3xl overflow-y-auto max-h-[90vh]">
                 <DialogHeader>
-                  <DialogTitle className="text-2xl font-bold font-headline">
+                  <DialogTitle className="text-2xl font-bold font-headline text-start">
                     {isEditing ? 'تعديل منتج' : 'إضافة منتج جديد'}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-6 py-4">
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2 text-right">
+                    <div className="space-y-2 text-start">
                       <Label>اسم المنتج</Label>
                       <input 
                         value={formData.name} 
                         onChange={e => setFormData({...formData, name: e.target.value})}
                         placeholder="مثال: كريم أساس فاخر" 
-                        className="flex h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
                     </div>
-                    <div className="space-y-2 text-right">
+                    <div className="space-y-2 text-start">
                       <Label>السعر ($)</Label>
                       <input 
                         type="number"
                         value={formData.price} 
                         onChange={e => setFormData({...formData, price: e.target.value})}
                         placeholder="0.00" 
-                        className="flex h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2 text-right">
+                    <div className="space-y-2 text-start">
                       <Label>القسم</Label>
                       <select 
-                        className="w-full h-12 rounded-xl border border-input bg-background px-3 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="w-full h-12 rounded-xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         value={formData.category}
                         onChange={e => setFormData({...formData, category: e.target.value})}
                       >
@@ -313,18 +307,19 @@ export default function AdminPage() {
                         {categories?.map((c: any) => <option key={c.id} value={c.slug}>{c.nameAr}</option>)}
                       </select>
                     </div>
-                    <div className="space-y-2 text-right">
+                    <div className="space-y-2 text-start">
                       <Label>رابط الصورة</Label>
                       <input 
                         value={formData.imageUrl} 
                         onChange={e => setFormData({...formData, imageUrl: e.target.value})}
                         placeholder="https://..." 
-                        className="flex h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
                     </div>
                   </div>
-                  <div className="space-y-2 text-right">
-                    <div className="flex items-center justify-between">
+                  <div className="space-y-2 text-start">
+                    <div className="flex items-center justify-between flex-row-reverse">
+                      <Label>الوصف</Label>
                       <Button 
                         type="button" 
                         variant="outline" 
@@ -335,13 +330,12 @@ export default function AdminPage() {
                       >
                         {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "توليد الوصف بالذكاء الاصطناعي"}
                       </Button>
-                      <Label>الوصف</Label>
                     </div>
                     <textarea 
                       value={formData.description} 
                       onChange={e => setFormData({...formData, description: e.target.value})}
                       placeholder="اكتب وصفاً جذاباً..." 
-                      className="flex min-h-[140px] w-full rounded-2xl border border-input bg-background px-4 py-3 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      className="flex min-h-[140px] w-full rounded-2xl border border-input bg-background px-4 py-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     />
                   </div>
                 </div>
@@ -368,7 +362,7 @@ export default function AdminPage() {
           <TabsContent value="products">
             <Card className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white">
               <CardHeader className="bg-primary/5 p-8 border-b">
-                <CardTitle className="text-2xl font-bold font-headline text-right">قائمة المنتجات</CardTitle>
+                <CardTitle className="text-2xl font-bold font-headline text-start">قائمة المنتجات</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 {productsLoading ? (
@@ -377,9 +371,9 @@ export default function AdminPage() {
                   <Table>
                     <TableHeader className="bg-muted/30">
                       <TableRow>
-                        <TableHead className="text-right py-6">الصورة</TableHead>
-                        <TableHead className="text-right">الاسم</TableHead>
-                        <TableHead className="text-right">السعر</TableHead>
+                        <TableHead className="text-start py-6">الصورة</TableHead>
+                        <TableHead className="text-start">الاسم</TableHead>
+                        <TableHead className="text-start">السعر</TableHead>
                         <TableHead className="text-center">الإجراءات</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -398,8 +392,8 @@ export default function AdminPage() {
                               />
                             </div>
                           </TableCell>
-                          <TableCell className="font-bold">{product.name}</TableCell>
-                          <TableCell className="font-bold text-primary">${product.price?.toFixed(2)}</TableCell>
+                          <TableCell className="font-bold text-start">{product.name}</TableCell>
+                          <TableCell className="font-bold text-primary text-start">${product.price?.toFixed(2)}</TableCell>
                           <TableCell>
                             <div className="flex justify-center gap-2">
                               <Button 
@@ -444,21 +438,21 @@ export default function AdminPage() {
           <TabsContent value="settings">
             <Card className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white">
               <CardHeader className="bg-primary/5 p-8 border-b">
-                <CardTitle className="text-2xl font-bold font-headline text-right">إعدادات الموقع</CardTitle>
+                <CardTitle className="text-2xl font-bold font-headline text-start">إعدادات الموقع</CardTitle>
               </CardHeader>
               <CardContent className="p-8 space-y-8">
                 <div className="space-y-4">
-                  <div className="flex items-center gap-3 text-xl font-bold justify-end">
-                    صورة الـ Hero Banner <ImageIcon className="h-6 w-6 text-primary" />
+                  <div className="flex items-center gap-3 text-xl font-bold justify-start">
+                    <ImageIcon className="h-6 w-6 text-primary" /> صورة الـ Hero Banner
                   </div>
                   <div className="grid gap-6 md:grid-cols-2 items-end">
-                    <div className="space-y-2 text-right">
+                    <div className="space-y-2 text-start">
                       <Label>رابط الصورة</Label>
                       <input 
                         placeholder="https://..." 
                         value={heroUrl}
                         onChange={e => setHeroUrl(e.target.value)}
-                        className="flex h-12 w-full rounded-2xl border border-input bg-background px-4 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="flex h-12 w-full rounded-2xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
                     </div>
                     <Button onClick={updateHero} className="rounded-full h-12 gap-2 font-bold shadow-md bg-[#D4AF37] hover:bg-[#B8962D]">
