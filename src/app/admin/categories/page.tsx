@@ -41,6 +41,7 @@ import {
   Tags, 
   Loader2, 
   ChevronLeft,
+  ChevronRight,
   AlertTriangle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -50,6 +51,7 @@ import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import Link from 'next/link';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { useTranslation } from '@/hooks/use-translation';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
@@ -59,6 +61,7 @@ export default function AdminCategoriesPage() {
   const auth = useAuth();
   const { user, loading: authLoading } = useUser();
   const { toast } = useToast();
+  const { t, lang } = useTranslation();
   const [isAdding, setIsAdding] = useState(false);
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -87,22 +90,20 @@ export default function AdminCategoriesPage() {
 
   if (!isAdmin && !authLoading) {
     return (
-      <div className="min-h-screen flex flex-col" dir="rtl">
+      <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 flex items-center justify-center bg-muted/20">
           <Card className="max-w-md text-center p-8 rounded-3xl shadow-xl">
             <div className="bg-destructive/10 text-destructive p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="h-8 w-8" />
             </div>
-            <CardTitle className="text-2xl text-destructive mb-4">وصول مرفوض أو جلسة مفقودة</CardTitle>
+            <CardTitle className="text-2xl text-destructive mb-4">{t.sessionWarning}</CardTitle>
             <p className="text-muted-foreground mb-6">
-              ليس لديك الصلاحيات الكافية، أو أن المتصفح فقد بيانات تسجيل الدخول بسبب قيود الأمان.
-              <br/><br/>
-              <b>حل مقترح:</b> يرجى فتح الموقع في نافذة مستقلة (New Tab) بدلاً من الإطار الحالي.
+              You do not have enough permissions or the session is lost.
             </p>
             <div className="flex flex-col gap-3">
-              <Button onClick={() => window.open(window.location.href, '_blank')} className="rounded-full h-12">فتح في نافذة جديدة</Button>
-              <Button onClick={() => window.location.href = '/login'} variant="outline" className="rounded-full h-12">الذهاب لصفحة الدخول</Button>
+              <Button onClick={() => window.open(window.location.href, '_blank')} className="rounded-full h-12">Open in New Tab</Button>
+              <Button onClick={() => window.location.href = '/login'} variant="outline" className="rounded-full h-12">Login Page</Button>
             </div>
           </Card>
         </main>
@@ -113,7 +114,7 @@ export default function AdminCategoriesPage() {
 
   const saveCategory = () => {
     if (!db || !formData.nameAr || !formData.slug) {
-      toast({ variant: 'destructive', title: 'خطأ', description: 'يرجى إكمال جميع الحقول المطلوبة.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Please complete all fields.' });
       return;
     }
     
@@ -129,7 +130,7 @@ export default function AdminCategoriesPage() {
       const docRef = doc(db, 'categories', isEditing);
       updateDoc(docRef, payload)
         .then(() => {
-          toast({ title: 'تم التحديث', description: 'تم تحديث القسم بنجاح.' });
+          toast({ title: 'Updated', description: t.categoryUpdated });
           resetForm();
         })
         .catch(async () => {
@@ -140,7 +141,7 @@ export default function AdminCategoriesPage() {
       (payload as any).createdAt = serverTimestamp();
       addDoc(collection(db, 'categories'), payload)
         .then(() => {
-          toast({ title: 'تمت الإضافة', description: 'تمت إضافة القسم الجديد بنجاح.' });
+          toast({ title: 'Success', description: t.categoryAdded });
           resetForm();
         })
         .catch(async () => {
@@ -151,20 +152,12 @@ export default function AdminCategoriesPage() {
   };
 
   const deleteCategory = (id: string, slug: string) => {
-    if (!isAdmin || !db) {
-      if (!user) {
-        alert('عذراً، الجلسة منتهية أو مفقودة. يرجى فتح الموقع في نافذة جديدة أو إعادة تسجيل الدخول.');
-      }
-      return;
-    }
-
-    // Immediate user intent confirmation
-    if (!window.confirm('هل أنت متأكد من حذف هذا القسم؟')) return;
+    if (!isAdmin || !db) return;
+    if (!window.confirm(t.confirmDelete)) return;
 
     setDeletingId(id);
     const docRef = doc(db, 'categories', id);
 
-    // Optimized: Run the product check but don't block the UI unnecessarily long
     const productCheckQuery = query(
       collection(db, 'products'),
       where('category', '==', slug),
@@ -174,7 +167,7 @@ export default function AdminCategoriesPage() {
     getDocs(productCheckQuery)
       .then((snapshot) => {
         if (!snapshot.empty) {
-          const proceed = window.confirm('تنبيه: هذا القسم يحتوي على منتجات. حذفه قد يؤثر على عرضها. هل تريد المتابعة على أي حال؟');
+          const proceed = window.confirm('Warning: This category has products. Deleting it may affect their display. Proceed anyway?');
           if (!proceed) {
             setDeletingId(null);
             return;
@@ -183,23 +176,16 @@ export default function AdminCategoriesPage() {
         
         deleteDoc(docRef)
           .then(() => {
-            toast({ title: 'تم الحذف', description: 'تم إزالة القسم بنجاح.' });
+            toast({ title: 'Deleted', description: 'Category removed.' });
           })
           .catch((err) => {
-            if (!auth?.currentUser) {
-              toast({ variant: 'destructive', title: 'جلسة مفقودة', description: 'يرجى فتح الموقع في نافذة جديدة لإتمام العملية.' });
-            } else {
-              toast({ variant: 'destructive', title: 'خطأ في الصلاحيات', description: 'عذراً، لا تملك صلاحية الحذف من قاعدة البيانات.' });
-            }
             errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' }));
           })
           .finally(() => setDeletingId(null));
       })
-      .catch((e) => {
-        // If check fails, try to delete anyway if the user confirmed the first prompt
+      .catch(() => {
         deleteDoc(docRef)
-          .then(() => toast({ title: 'تم الحذف', description: 'تم إزالة القسم بنجاح.' }))
-          .catch(() => toast({ variant: 'destructive', title: 'خطأ', description: 'فشل في حذف القسم.' }))
+          .then(() => toast({ title: 'Deleted', description: 'Category removed.' }))
           .finally(() => setDeletingId(null));
       });
   };
@@ -212,58 +198,58 @@ export default function AdminCategoriesPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted/10" dir="rtl">
+    <div className="min-h-screen flex flex-col bg-muted/10">
       <Header />
       <main className="flex-1 container mx-auto px-4 py-12">
         <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6">
-          <div className="text-right">
+          <div className="text-start">
             <Link href="/admin" className="text-primary flex items-center gap-1 mb-2 hover:underline">
-              <ChevronLeft className="h-4 w-4" /> العودة للوحة التحكم
+              {lang === 'ar' ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />} {t.backToDashboard}
             </Link>
             <h1 className="text-4xl font-black font-headline text-primary flex items-center gap-3">
-              <Tags className="h-10 w-10" /> إدارة الأقسام
+              <Tags className="h-10 w-10" /> {t.manageCategories}
             </h1>
           </div>
           
           <Dialog open={isAdding || !!isEditing} onOpenChange={(val) => !val && resetForm()}>
             <DialogTrigger asChild>
               <Button onClick={() => setIsAdding(true)} className="rounded-full h-14 px-8 text-lg font-bold shadow-lg gap-2 bg-[#D4AF37] hover:bg-[#B8962D]">
-                <Plus className="h-6 w-6" /> إضافة قسم جديد
+                <Plus className="h-6 w-6" /> {t.addNewCategory}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md rounded-3xl">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-bold font-headline">
+                <DialogTitle className="text-2xl font-bold font-headline text-start">
                   {isEditing ? 'تعديل القسم' : 'إضافة قسم جديد'}
                 </DialogTitle>
               </DialogHeader>
               <div className="grid gap-6 py-4">
-                <div className="space-y-2 text-right">
+                <div className="space-y-2 text-start">
                   <Label>اسم القسم (بالعربية)</Label>
                   <input 
                     value={formData.nameAr} 
                     onChange={e => setFormData({...formData, nameAr: e.target.value})}
                     placeholder="مثال: المكياج" 
-                    className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
                 </div>
-                <div className="space-y-2 text-right">
+                <div className="space-y-2 text-start">
                   <Label>المعرف (Slug)</Label>
                   <input 
                     value={formData.slug} 
                     onChange={e => setFormData({...formData, slug: e.target.value})}
                     placeholder="example: makeup" 
-                    className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
                 </div>
-                <div className="space-y-2 text-right">
+                <div className="space-y-2 text-start">
                   <Label>ترتيب العرض</Label>
                   <input 
                     type="number"
                     value={formData.displayOrder} 
                     onChange={e => setFormData({...formData, displayOrder: e.target.value})}
                     placeholder="0" 
-                    className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
                 </div>
               </div>
@@ -273,7 +259,7 @@ export default function AdminCategoriesPage() {
                   disabled={saving}
                   className="w-full rounded-full h-14 text-lg font-bold bg-[#D4AF37] hover:bg-[#B8962D] shadow-lg"
                 >
-                  {saving ? <Loader2 className="h-6 w-6 animate-spin" /> : (isEditing ? 'حفظ التعديلات' : 'إضافة القسم')}
+                  {saving ? <Loader2 className="h-6 w-6 animate-spin" /> : (isEditing ? t.save : t.save)}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -282,7 +268,7 @@ export default function AdminCategoriesPage() {
 
         <Card className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white">
           <CardHeader className="bg-primary/5 p-8 border-b">
-            <CardTitle className="text-2xl font-bold font-headline text-right">قائمة الأقسام</CardTitle>
+            <CardTitle className="text-2xl font-bold font-headline text-start">{t.categoryList}</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {categoriesLoading ? (
@@ -291,9 +277,9 @@ export default function AdminCategoriesPage() {
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow>
-                    <TableHead className="text-right">الاسم</TableHead>
-                    <TableHead className="text-right">المعرف (Slug)</TableHead>
-                    <TableHead className="text-center">الإجراءات</TableHead>
+                    <TableHead className="text-start">الاسم (AR)</TableHead>
+                    <TableHead className="text-start">Slug</TableHead>
+                    <TableHead className="text-center">{t.actions}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -334,7 +320,7 @@ export default function AdminCategoriesPage() {
                 </TableBody>
               </Table>
             ) : (
-              <div className="py-20 text-center text-muted-foreground">لا توجد أقسام حالياً.</div>
+              <div className="py-20 text-center text-muted-foreground">No categories found.</div>
             )}
           </CardContent>
         </Card>

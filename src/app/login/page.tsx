@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -22,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LogIn, UserPlus, Phone, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { useTranslation } from '@/hooks/use-translation';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
@@ -31,6 +31,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useUser();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -38,7 +39,6 @@ export default function LoginPage() {
   const [otp, setOtp] = useState('');
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
-  // Redirect if already logged in
   useEffect(() => {
     if (!authLoading && user) {
       const isAdmin = user.email === ADMIN_EMAIL || user.phoneNumber === ADMIN_PHONE;
@@ -60,7 +60,7 @@ export default function LoginPage() {
     try {
       await signInWithPopup(auth, new GoogleAuthProvider());
     } catch (error) {
-      toast({ variant: 'destructive', title: 'خطأ', description: 'فشل تسجيل الدخول بواسطة Google.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to login with Google.' });
     } finally {
       setLoading(false);
     }
@@ -70,12 +70,12 @@ export default function LoginPage() {
     if (!auth) return;
     
     if (!email || !password) {
-      toast({ variant: 'destructive', title: 'تنبيه', description: 'يرجى إدخال البريد الإلكتروني وكلمة المرور.' });
+      toast({ variant: 'destructive', title: 'Warning', description: 'Please enter email and password.' });
       return;
     }
 
     if (!validateEmail(email)) {
-      toast({ variant: 'destructive', title: 'خطأ', description: 'البريد الإلكتروني غير صحيح.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Invalid email address.' });
       return;
     }
 
@@ -83,8 +83,7 @@ export default function LoginPage() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error: any) {
-      let errorMessage = 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
-      toast({ variant: 'destructive', title: 'فشل العملية', description: errorMessage });
+      toast({ variant: 'destructive', title: 'Login Failed', description: 'Invalid email or password.' });
     } finally {
       setLoading(false);
     }
@@ -102,7 +101,7 @@ export default function LoginPage() {
   const handlePhoneSignIn = async () => {
     if (!auth) return;
     if (!phone) {
-      toast({ variant: 'destructive', title: 'تنبيه', description: 'يرجى إدخال رقم الهاتف.' });
+      toast({ variant: 'destructive', title: 'Warning', description: 'Please enter phone number.' });
       return;
     }
     setLoading(true);
@@ -111,9 +110,9 @@ export default function LoginPage() {
       const verifier = (window as any).recaptchaVerifier;
       const result = await signInWithPhoneNumber(auth, phone, verifier);
       setConfirmationResult(result);
-      toast({ title: 'تم إرسال الكود', description: 'يرجى التحقق من هاتفك.' });
+      toast({ title: 'Code Sent', description: 'Please check your phone.' });
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'خطأ', description: 'فشل إرسال كود التحقق. تأكد من الرقم.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to send verification code.' });
     } finally {
       setLoading(false);
     }
@@ -125,7 +124,7 @@ export default function LoginPage() {
     try {
       await confirmationResult.confirm(otp);
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'خطأ', description: 'كود التحقق غير صحيح.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Invalid verification code.' });
     } finally {
       setLoading(false);
     }
@@ -140,50 +139,50 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted/20" dir="rtl">
+    <div className="min-h-screen flex flex-col bg-muted/20">
       <Header />
       <main className="flex-1 flex items-center justify-center p-6 py-12">
         <Card className="w-full max-w-md border-none shadow-2xl rounded-[32px] overflow-hidden bg-white">
           <CardHeader className="bg-primary/5 py-10 text-center border-b border-primary/10">
-            <CardTitle className="text-3xl font-bold font-headline text-primary">تسجيل الدخول</CardTitle>
-            <p className="text-muted-foreground mt-2">أهلاً بك مجدداً في YourGroceriesUSA</p>
+            <CardTitle className="text-3xl font-bold font-headline text-primary">{t.loginTitle}</CardTitle>
+            <p className="text-muted-foreground mt-2">{t.loginSubtitle}</p>
           </CardHeader>
           <CardContent className="p-8">
             <Tabs defaultValue="email" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-8 bg-muted/50 p-1 rounded-full">
-                <TabsTrigger value="email" className="rounded-full py-2">بريد إلكتروني</TabsTrigger>
-                <TabsTrigger value="phone" className="rounded-full py-2">رقم الهاتف</TabsTrigger>
+                <TabsTrigger value="email" className="rounded-full py-2">{t.emailLogin}</TabsTrigger>
+                <TabsTrigger value="phone" className="rounded-full py-2">{t.phoneLogin}</TabsTrigger>
               </TabsList>
 
               <TabsContent value="email" className="space-y-4">
-                <div className="space-y-2 text-right">
-                  <Label htmlFor="email">البريد الإلكتروني</Label>
+                <div className="space-y-2 text-start">
+                  <Label htmlFor="email">{t.email}</Label>
                   <Input 
                     id="email" 
                     type="email" 
                     placeholder="example@mail.com"
-                    className="rounded-2xl h-12 text-right" 
+                    className="rounded-2xl h-12 text-start" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
-                <div className="space-y-2 text-right">
-                  <Label htmlFor="password">كلمة المرور</Label>
+                <div className="space-y-2 text-start">
+                  <Label htmlFor="password">{t.password}</Label>
                   <Input 
                     id="password" 
                     type="password" 
                     placeholder="******"
-                    className="rounded-2xl h-12 text-right" 
+                    className="rounded-2xl h-12 text-start" 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
                 <Button onClick={handleEmailLogin} disabled={loading} className="w-full rounded-full h-12 mt-4 gap-2 text-lg font-bold shadow-lg">
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />} دخول
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />} {t.loginBtn}
                 </Button>
                 <div className="text-center pt-4">
                    <Link href="/register" className="text-primary font-bold hover:underline flex items-center justify-center gap-2">
-                     <UserPlus className="h-4 w-4" /> إنشاء حساب جديد
+                     <UserPlus className="h-4 w-4" /> {t.registerLink}
                    </Link>
                 </div>
               </TabsContent>
@@ -191,35 +190,35 @@ export default function LoginPage() {
               <TabsContent value="phone" className="space-y-4">
                 {!confirmationResult ? (
                   <div className="space-y-4">
-                    <div className="space-y-2 text-right">
-                      <Label htmlFor="phone">رقم الهاتف (مع رمز الدولة)</Label>
+                    <div className="space-y-2 text-start">
+                      <Label htmlFor="phone">{t.phoneLabel}</Label>
                       <Input 
                         id="phone" 
                         placeholder="+962XXXXXXXXX" 
-                        className="rounded-2xl h-12 text-right" 
+                        className="rounded-2xl h-12 text-start" 
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                       />
                     </div>
                     <Button onClick={handlePhoneSignIn} disabled={loading} className="w-full rounded-full h-12 gap-2 text-lg font-bold">
-                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className="h-4 w-4" />} إرسال الكود
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className="h-4 w-4" />} {t.sendCode}
                     </Button>
                     <div id="recaptcha-container"></div>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="space-y-2 text-right">
-                      <Label htmlFor="otp">كود التحقق</Label>
+                    <div className="space-y-2 text-start">
+                      <Label htmlFor="otp">{t.otpLabel}</Label>
                       <Input 
                         id="otp" 
                         placeholder="123456" 
-                        className="rounded-2xl h-12 text-right" 
+                        className="rounded-2xl h-12 text-start" 
                         value={otp}
                         onChange={(e) => setOtp(e.target.value)}
                       />
                     </div>
                     <Button onClick={handleVerifyOtp} disabled={loading} className="w-full rounded-full h-12 text-lg font-bold">
-                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "تحقق وتأكيد"}
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t.verifyAndConfirm}
                     </Button>
                   </div>
                 )}
@@ -231,7 +230,7 @@ export default function LoginPage() {
                 <span className="w-full border-t"></span>
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-muted-foreground font-bold">أو</span>
+                <span className="bg-white px-2 text-muted-foreground font-bold">{t.or}</span>
               </div>
             </div>
 
@@ -242,7 +241,7 @@ export default function LoginPage() {
                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81.38z" fill="#FBBC05" />
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
               </svg>
-              متابعة باستخدام Google
+              {t.googleLogin}
             </Button>
           </CardContent>
         </Card>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -17,12 +16,14 @@ import { Loader2, MapPin, Phone, User as UserIcon, Edit3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { useTranslation } from '@/hooks/use-translation';
 
 export default function ProfileCompletionPage() {
   const db = useFirestore();
   const { user, loading: authLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [saving, setSaving] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -56,18 +57,16 @@ export default function ProfileCompletionPage() {
 
     try {
       if (formData.phoneNumber) {
-        // Targeted Query for Phone Uniqueness
         const phoneQuery = query(
           collection(db, 'users'),
           where('phoneNumber', '==', formData.phoneNumber)
         );
         
         const querySnapshot = await getDocs(phoneQuery).catch(async (err) => {
-          const pErr = new FirestorePermissionError({
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: 'users',
             operation: 'list',
-          });
-          errorEmitter.emit('permission-error', pErr);
+          }));
           throw err;
         });
         
@@ -76,8 +75,8 @@ export default function ProfileCompletionPage() {
         if (duplicate) {
           toast({ 
             variant: 'destructive', 
-            title: 'رقم الهاتف مستخدم', 
-            description: 'رقم الهاتف هذا مسجل مسبقاً.' 
+            title: 'Phone in use', 
+            description: t.phoneInUse 
           });
           setSaving(false);
           return;
@@ -97,16 +96,15 @@ export default function ProfileCompletionPage() {
       
       setDoc(targetDocRef, profileData, { merge: true })
         .then(() => {
-          toast({ title: "تم التحديث", description: "تم حفظ بياناتك بنجاح." });
+          toast({ title: "Success", description: t.profileUpdated });
           router.push('/');
         })
-        .catch(async (serverError) => {
-          const pErr = new FirestorePermissionError({
+        .catch(async () => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: targetDocRef.path,
             operation: 'write',
             requestResourceData: profileData,
-          });
-          errorEmitter.emit('permission-error', pErr);
+          }));
           setSaving(false);
         });
 
@@ -126,7 +124,7 @@ export default function ProfileCompletionPage() {
   const hasExistingData = !!profile?.address;
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted/20" dir="rtl">
+    <div className="min-h-screen flex flex-col bg-muted/20">
       <Header />
       <main className="flex-1 flex items-center justify-center p-6 py-12">
         <Card className="w-full max-w-lg border-none shadow-2xl rounded-[32px] overflow-hidden bg-white">
@@ -137,53 +135,53 @@ export default function ProfileCompletionPage() {
                </div>
             </div>
             <CardTitle className="text-3xl font-bold font-headline text-primary">
-              {hasExistingData ? 'تعديل الملف الشخصي' : 'بيانات التوصيل'}
+              {hasExistingData ? t.profileTitleEdit : t.profileTitle}
             </CardTitle>
-            <p className="text-muted-foreground mt-2 px-6 text-lg text-right">
+            <p className="text-muted-foreground mt-2 px-6 text-lg text-start">
               {hasExistingData 
-                ? 'تأكد من أن عنوان التوصيل ورقم الهاتف صحيحين دائماً.' 
-                : 'نحتاج هذه البيانات لتسهيل عملية وصول مشترياتك لباب منزلك.'}
+                ? t.profileSubtitleEdit 
+                : t.profileSubtitle}
             </p>
           </CardHeader>
           <CardContent className="p-10">
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2 text-right">
-                <Label htmlFor="fullName" className="font-bold flex items-center gap-2 justify-end text-lg">
-                  الاسم الكامل <UserIcon className="h-4 w-4 text-primary" />
+              <div className="space-y-2 text-start">
+                <Label htmlFor="fullName" className="font-bold flex items-center gap-2 justify-start text-lg">
+                  {t.fullName} <UserIcon className="h-4 w-4 text-primary" />
                 </Label>
                 <Input 
                   id="fullName" 
-                  placeholder="أدخل اسمك بالكامل" 
+                  placeholder={t.namePlaceholder} 
                   required
-                  className="rounded-2xl h-14 text-right bg-muted/30 border-none" 
+                  className="rounded-2xl h-14 text-start bg-muted/30 border-none" 
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                 />
               </div>
 
-              <div className="space-y-2 text-right">
-                <Label htmlFor="phone" className="font-bold flex items-center gap-2 justify-end text-lg">
-                   رقم الهاتف <Phone className="h-4 w-4 text-primary" />
+              <div className="space-y-2 text-start">
+                <Label htmlFor="phone" className="font-bold flex items-center gap-2 justify-start text-lg">
+                   {t.phoneLogin} <Phone className="h-4 w-4 text-primary" />
                 </Label>
                 <Input 
                   id="phone" 
-                  placeholder="05XXXXXXXX" 
+                  placeholder={t.phonePlaceholder} 
                   required
-                  className="rounded-2xl h-14 text-right bg-muted/30 border-none" 
+                  className="rounded-2xl h-14 text-start bg-muted/30 border-none" 
                   value={formData.phoneNumber}
                   onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                 />
               </div>
 
-              <div className="space-y-2 text-right">
-                <Label htmlFor="address" className="font-bold flex items-center gap-2 justify-end text-lg">
-                   عنوان التوصيل بالتفصيل <MapPin className="h-4 w-4 text-primary" />
+              <div className="space-y-2 text-start">
+                <Label htmlFor="address" className="font-bold flex items-center gap-2 justify-start text-lg">
+                   {t.deliveryAddress} <MapPin className="h-4 w-4 text-primary" />
                 </Label>
                 <Textarea 
                   id="address" 
-                  placeholder="المدينة، الحي، اسم الشارع، رقم المبنى..." 
+                  placeholder={t.addressPlaceholder} 
                   required
-                  className="rounded-3xl min-h-[140px] text-right bg-muted/30 border-none p-4" 
+                  className="rounded-3xl min-h-[140px] text-start bg-muted/30 border-none p-4" 
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 />
@@ -192,10 +190,10 @@ export default function ProfileCompletionPage() {
               <Button disabled={saving} type="submit" className="w-full h-16 rounded-full text-xl font-bold shadow-xl mt-6">
                 {saving ? (
                   <div className="flex items-center gap-2">
-                    <Loader2 className="h-6 w-6 animate-spin" /> جاري الحفظ...
+                    <Loader2 className="h-6 w-6 animate-spin" /> ...
                   </div>
                 ) : (
-                  hasExistingData ? "حفظ التغييرات" : "حفظ والمتابعة"
+                  hasExistingData ? t.saveChanges : t.saveAndContinue
                 )}
               </Button>
             </form>

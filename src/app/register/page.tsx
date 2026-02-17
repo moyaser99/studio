@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -17,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { useTranslation } from '@/hooks/use-translation';
 
 export default function RegisterPage() {
   const auth = useAuth();
@@ -24,6 +24,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useUser();
   const { toast } = useToast();
+  const { t } = useTranslation();
   
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -48,50 +49,46 @@ export default function RegisterPage() {
     if (!auth || !db) return;
 
     if (!formData.fullName || !formData.email || !formData.password || !formData.phoneNumber) {
-      toast({ variant: 'destructive', title: 'تنبيه', description: 'يرجى إكمال جميع الحقول.' });
+      toast({ variant: 'destructive', title: 'Warning', description: 'Please complete all fields.' });
       return;
     }
 
     if (!validateEmail(formData.email)) {
-      toast({ variant: 'destructive', title: 'خطأ', description: 'البريد الإلكتروني غير صحيح.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Invalid email address.' });
       return;
     }
 
     setLoading(true);
 
     try {
-      // 1. UNIQUE PHONE CHECK (Targeted Query)
       const phoneQuery = query(
         collection(db, 'users'),
         where('phoneNumber', '==', formData.phoneNumber)
       );
       
       const querySnapshot = await getDocs(phoneQuery).catch(async (err) => {
-        const pErr = new FirestorePermissionError({
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: 'users',
           operation: 'list',
-        });
-        errorEmitter.emit('permission-error', pErr);
+        }));
         throw err;
       });
       
       if (!querySnapshot.empty) {
         toast({ 
           variant: 'destructive', 
-          title: 'رقم الهاتف مستخدم', 
-          description: 'رقم الهاتف هذا مسجل مسبقاً.' 
+          title: 'Phone in use', 
+          description: t.phoneInUse 
         });
         setLoading(false);
         return;
       }
 
-      // 2. CREATE USER
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const newUser = userCredential.user;
 
       await updateProfile(newUser, { displayName: formData.fullName });
 
-      // 3. SAVE TO FIRESTORE (Atomic UID usage)
       const userProfile = {
         fullName: formData.fullName,
         email: formData.email,
@@ -103,25 +100,24 @@ export default function RegisterPage() {
       const userDocRef = doc(db, 'users', newUser.uid);
       setDoc(userDocRef, userProfile, { merge: true })
         .then(() => {
-          toast({ title: 'تم التسجيل بنجاح', description: 'أهلاً بك في YourGroceriesUSA.' });
+          toast({ title: 'Success', description: 'Welcome to YourGroceriesUSA.' });
           router.replace('/');
         })
-        .catch(async (serverError) => {
-          const pErr = new FirestorePermissionError({
+        .catch(async () => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: userDocRef.path,
             operation: 'write',
             requestResourceData: userProfile,
-          });
-          errorEmitter.emit('permission-error', pErr);
+          }));
           setLoading(false);
         });
 
     } catch (error: any) {
-      let errorMessage = 'فشل إنشاء الحساب. يرجى المحاولة لاحقاً.';
+      let errorMessage = 'Failed to create account. Please try again.';
       if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'هذا البريد الإلكتروني مسجل مسبقاً، يرجى تسجيل الدخول.';
+        errorMessage = 'This email is already registered.';
       }
-      toast({ variant: 'destructive', title: 'خطأ في التسجيل', description: errorMessage });
+      toast({ variant: 'destructive', title: 'Registration Error', description: errorMessage });
       setLoading(false);
     }
   };
@@ -135,66 +131,66 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted/20" dir="rtl">
+    <div className="min-h-screen flex flex-col bg-muted/20">
       <Header />
       <main className="flex-1 flex items-center justify-center p-6 py-12">
         <Card className="w-full max-w-md border-none shadow-2xl rounded-[32px] overflow-hidden bg-white">
           <CardHeader className="bg-primary/5 py-10 text-center border-b border-primary/10">
-            <CardTitle className="text-3xl font-bold font-headline text-primary">مستخدم جديد</CardTitle>
-            <p className="text-muted-foreground mt-2">انضم إلينا واستمتع بتجربة تسوق فريدة</p>
+            <CardTitle className="text-3xl font-bold font-headline text-primary">{t.registerTitle}</CardTitle>
+            <p className="text-muted-foreground mt-2">{t.registerSubtitle}</p>
           </CardHeader>
           <CardContent className="p-8">
             <form onSubmit={handleRegister} className="space-y-5">
-              <div className="space-y-2 text-right">
-                <Label htmlFor="fullName" className="flex items-center gap-2 justify-end">
-                  الاسم الكامل <User className="h-4 w-4 text-primary" />
+              <div className="space-y-2 text-start">
+                <Label htmlFor="fullName" className="flex items-center gap-2 justify-start">
+                  {t.fullName} <User className="h-4 w-4 text-primary" />
                 </Label>
                 <Input 
                   id="fullName" 
-                  placeholder="مثال: أحمد محمد"
-                  className="rounded-2xl h-12 text-right" 
+                  placeholder={t.namePlaceholder}
+                  className="rounded-2xl h-12 text-start" 
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   required
                 />
               </div>
 
-              <div className="space-y-2 text-right">
-                <Label htmlFor="email" className="flex items-center gap-2 justify-end">
-                  البريد الإلكتروني <Mail className="h-4 w-4 text-primary" />
+              <div className="space-y-2 text-start">
+                <Label htmlFor="email" className="flex items-center gap-2 justify-start">
+                  {t.email} <Mail className="h-4 w-4 text-primary" />
                 </Label>
                 <Input 
                   id="email" 
                   type="email"
                   placeholder="example@mail.com"
-                  className="rounded-2xl h-12 text-right" 
+                  className="rounded-2xl h-12 text-start" 
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
                 />
               </div>
 
-              <div className="space-y-2 text-right">
-                <Label htmlFor="phone" className="flex items-center gap-2 justify-end">
-                  رقم الهاتف <Phone className="h-4 w-4 text-primary" />
+              <div className="space-y-2 text-start">
+                <Label htmlFor="phone" className="flex items-center gap-2 justify-start">
+                  {t.phoneLogin} <Phone className="h-4 w-4 text-primary" />
                 </Label>
                 <Input 
                   id="phone" 
                   placeholder="+962XXXXXXXXX"
-                  className="rounded-2xl h-12 text-right" 
+                  className="rounded-2xl h-12 text-start" 
                   value={formData.phoneNumber}
                   onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                   required
                 />
               </div>
 
-              <div className="space-y-2 text-right">
-                <Label htmlFor="password">كلمة المرور</Label>
+              <div className="space-y-2 text-start">
+                <Label htmlFor="password">{t.password}</Label>
                 <Input 
                   id="password" 
                   type="password" 
                   placeholder="******"
-                  className="rounded-2xl h-12 text-right" 
+                  className="rounded-2xl h-12 text-start" 
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   required
@@ -203,15 +199,15 @@ export default function RegisterPage() {
 
               <Button type="submit" disabled={loading} className="w-full rounded-full h-14 mt-6 gap-2 text-lg font-bold">
                 {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <UserPlus className="h-6 w-6" />}
-                إنشاء الحساب
+                {t.registerBtn}
               </Button>
             </form>
 
             <div className="mt-8 text-center">
               <p className="text-muted-foreground">
-                لديك حساب بالفعل؟{' '}
+                {t.alreadyHaveAccount}{' '}
                 <Link href="/login" className="text-primary font-bold hover:underline">
-                  تسجيل الدخول
+                  {t.loginTitle}
                 </Link>
               </p>
             </div>
