@@ -10,9 +10,12 @@ import {
   orderBy, 
   where, 
   getDocs,
-  limit
+  limit,
+  addDoc, 
+  updateDoc, 
+  serverTimestamp
 } from 'firebase/firestore';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -47,7 +50,6 @@ import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import Link from 'next/link';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
@@ -115,7 +117,7 @@ export default function AdminCategoriesPage() {
           toast({ title: 'تم التحديث', description: 'تم تحديث القسم بنجاح.' });
           resetForm();
         })
-        .catch(async (err) => {
+        .catch(async () => {
           errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: payload }));
         })
         .finally(() => setSaving(false));
@@ -126,7 +128,7 @@ export default function AdminCategoriesPage() {
           toast({ title: 'تمت الإضافة', description: 'تمت إضافة القسم الجديد بنجاح.' });
           resetForm();
         })
-        .catch(async (err) => {
+        .catch(async () => {
           errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'categories', operation: 'create', requestResourceData: payload }));
         })
         .finally(() => setSaving(false));
@@ -134,14 +136,7 @@ export default function AdminCategoriesPage() {
   };
 
   const deleteCategory = async (id: string, slug: string) => {
-    console.log('[Debug] Attempting to delete Category ID:', id);
-    
-    if (!isAdmin) {
-      alert('عذراً، لا تملك صلاحية الحذف');
-      return;
-    }
-
-    if (!db) return;
+    if (!isAdmin || !db) return;
 
     const productCheckQuery = query(
       collection(db, 'products'),
@@ -164,19 +159,16 @@ export default function AdminCategoriesPage() {
       
       deleteDoc(docRef)
         .then(() => {
-          console.log('[Debug] Category deleted successfully');
           toast({ title: 'تم الحذف', description: 'تم إزالة القسم بنجاح.' });
         })
-        .catch((err) => {
-          console.error('[Debug] Deletion failed:', err);
-          alert('خطأ في الحذف: ' + err.message);
+        .catch(() => {
+          toast({ variant: 'destructive', title: 'خطأ', description: 'عذراً، لا تملك صلاحية الحذف.' });
           errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' }));
         })
         .finally(() => setDeletingId(null));
         
     } catch (e: any) {
-      console.error('[Debug] Check failed:', e);
-      alert('خطأ في التحقق من البيانات: ' + e.message);
+      toast({ variant: 'destructive', title: 'خطأ', description: 'فشل في التحقق من البيانات.' });
     }
   };
 

@@ -13,7 +13,7 @@ import {
   serverTimestamp 
 } from 'firebase/firestore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -42,7 +42,6 @@ import {
   Package, 
   Settings, 
   Loader2, 
-  Sparkles,
   Image as ImageIcon,
   Save,
   Tags
@@ -160,7 +159,7 @@ export default function AdminPage() {
           toast({ title: 'تم التحديث', description: 'تم تحديث المنتج بنجاح.' });
           resetForm();
         })
-        .catch(async (err) => {
+        .catch(async () => {
           errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: payload }));
         })
         .finally(() => setSaving(false));
@@ -171,7 +170,7 @@ export default function AdminPage() {
           toast({ title: 'تمت الإضافة', description: 'تمت إضافة المنتج الجديد بنجاح.' });
           resetForm();
         })
-        .catch(async (err) => {
+        .catch(async () => {
           errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'products', operation: 'create', requestResourceData: payload }));
         })
         .finally(() => setSaving(false));
@@ -179,14 +178,7 @@ export default function AdminPage() {
   };
 
   const deleteProduct = (id: string) => {
-    console.log('[Debug] Attempting to delete Product ID:', id);
-    
-    if (!isAdmin) {
-      alert('عذراً، لا تملك صلاحية الحذف');
-      return;
-    }
-
-    if (!db) return;
+    if (!isAdmin || !db) return;
     if (!window.confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
     
     setDeletingId(id);
@@ -194,12 +186,10 @@ export default function AdminPage() {
     
     deleteDoc(docRef)
       .then(() => {
-        console.log('[Debug] Product deleted successfully');
         toast({ title: 'تم الحذف', description: 'تم إزالة المنتج بنجاح.' });
       })
-      .catch((err) => {
-        console.error('[Debug] Deletion failed:', err);
-        alert('خطأ في الحذف: ' + err.message);
+      .catch(() => {
+        toast({ variant: 'destructive', title: 'خطأ', description: 'عذراً، لا تملك صلاحية الحذف.' });
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' }));
       })
       .finally(() => setDeletingId(null));
@@ -222,7 +212,7 @@ export default function AdminPage() {
       .then(() => {
         toast({ title: 'تم التحديث', description: 'تم تغيير صورة الـ Hero Banner بنجاح.' });
       })
-      .catch(async (err) => {
+      .catch(async () => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update' }));
       });
   };
