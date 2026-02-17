@@ -57,8 +57,6 @@ import Link from 'next/link';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
-export const maxDuration = 120;
-
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
 const PLACEHOLDER_IMAGE = 'https://picsum.photos/seed/placeholder/200/200';
@@ -289,7 +287,7 @@ export default function AdminPage() {
                         value={formData.name} 
                         onChange={e => setFormData({...formData, name: e.target.value})}
                         placeholder="مثال: كريم أساس فاخر" 
-                        className="flex h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="flex h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
                     </div>
                     <div className="space-y-2 text-right">
@@ -299,7 +297,7 @@ export default function AdminPage() {
                         value={formData.price} 
                         onChange={e => setFormData({...formData, price: e.target.value})}
                         placeholder="0.00" 
-                        className="flex h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="flex h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
                     </div>
                   </div>
@@ -307,7 +305,7 @@ export default function AdminPage() {
                     <div className="space-y-2 text-right">
                       <Label>القسم</Label>
                       <select 
-                        className="w-full h-12 rounded-xl border border-input bg-background px-3 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="w-full h-12 rounded-xl border border-input bg-background px-3 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         value={formData.category}
                         onChange={e => setFormData({...formData, category: e.target.value})}
                       >
@@ -321,7 +319,7 @@ export default function AdminPage() {
                         value={formData.imageUrl} 
                         onChange={e => setFormData({...formData, imageUrl: e.target.value})}
                         placeholder="https://..." 
-                        className="flex h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="flex h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
                     </div>
                   </div>
@@ -343,7 +341,7 @@ export default function AdminPage() {
                       value={formData.description} 
                       onChange={e => setFormData({...formData, description: e.target.value})}
                       placeholder="اكتب وصفاً جذاباً..." 
-                      className="flex min-h-[140px] w-full rounded-2xl border border-input bg-background px-4 py-3 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="flex min-h-[140px] w-full rounded-2xl border border-input bg-background px-4 py-3 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     />
                   </div>
                 </div>
@@ -460,7 +458,7 @@ export default function AdminPage() {
                         placeholder="https://..." 
                         value={heroUrl}
                         onChange={e => setHeroUrl(e.target.value)}
-                        className="flex h-12 w-full rounded-2xl border border-input bg-background px-4 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="flex h-12 w-full rounded-2xl border border-input bg-background px-4 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
                     </div>
                     <Button onClick={updateHero} className="rounded-full h-12 gap-2 font-bold shadow-md bg-[#D4AF37] hover:bg-[#B8962D]">

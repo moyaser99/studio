@@ -51,8 +51,6 @@ import Link from 'next/link';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
-export const maxDuration = 60;
-
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
 
@@ -246,7 +244,7 @@ export default function AdminCategoriesPage() {
                     value={formData.nameAr} 
                     onChange={e => setFormData({...formData, nameAr: e.target.value})}
                     placeholder="مثال: المكياج" 
-                    className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
                 </div>
                 <div className="space-y-2 text-right">
@@ -255,7 +253,7 @@ export default function AdminCategoriesPage() {
                     value={formData.slug} 
                     onChange={e => setFormData({...formData, slug: e.target.value})}
                     placeholder="example: makeup" 
-                    className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
                 </div>
                 <div className="space-y-2 text-right">
@@ -265,7 +263,7 @@ export default function AdminCategoriesPage() {
                     value={formData.displayOrder} 
                     onChange={e => setFormData({...formData, displayOrder: e.target.value})}
                     placeholder="0" 
-                    className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
                 </div>
               </div>
