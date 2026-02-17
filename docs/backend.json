@@ -125,11 +125,11 @@
   "firestore": {
     "/products/{productId}": {
       "schema": "Product",
-      "description": "PUBLIC_READ: Allow any user to read products. ADMIN_WRITE: Restricted to mohammad.dd.my@gmail.com."
+      "description": "PUBLIC_READ: Allow any user to read products. ADMIN_WRITE: Restricted to mohammad.dd.my@gmail.com or phone +962780334074."
     },
     "/categories/{categoryId}": {
       "schema": "Category",
-      "description": "PUBLIC_READ: All can view categories. ADMIN_WRITE: Only admin can manage categories."
+      "description": "PUBLIC_READ: All can view categories. ADMIN_WRITE: Restricted to mohammad.dd.my@gmail.com or phone +962780334074."
     },
     "/users/{userId}": {
       "schema": "UserProfile",
@@ -137,7 +137,7 @@
     },
     "/siteSettings/heroSection": {
       "schema": "HeroImage",
-      "description": "PUBLIC_READ: Visible to all. ADMIN_WRITE: Restricted to mohammad.dd.my@gmail.com."
+      "description": "PUBLIC_READ: Visible to all. ADMIN_WRITE: Restricted to mohammad.dd.my@gmail.com or phone +962780334074."
     }
   }
 }

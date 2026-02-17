@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -161,8 +162,8 @@ export default function AdminCategoriesPage() {
         .then(() => {
           toast({ title: 'تم الحذف', description: 'تم إزالة القسم بنجاح.' });
         })
-        .catch(() => {
-          toast({ variant: 'destructive', title: 'خطأ', description: 'عذراً، لا تملك صلاحية الحذف.' });
+        .catch((err) => {
+          toast({ variant: 'destructive', title: 'خطأ في الصلاحيات', description: 'عذراً، لا تملك صلاحية الحذف من قاعدة البيانات.' });
           errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' }));
         })
         .finally(() => setDeletingId(null));
