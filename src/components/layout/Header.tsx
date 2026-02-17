@@ -1,24 +1,29 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ShoppingBag, Search, User, Menu, Settings, Loader2, LogOut, LogIn } from 'lucide-react';
+import { ShoppingBag, Search, User, Menu, Settings, Loader2, LogOut, LogIn, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useUser, useAuth, useFirestore, useCollection } from '@/firebase';
 import { signOut } from 'firebase/auth';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { query, collection, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
+
+const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
+const ADMIN_PHONE = '+962780334074';
 
 export default function Header() {
   const { user, loading } = useUser();
   const auth = useAuth();
   const db = useFirestore();
   const router = useRouter();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   
+  const isAdminPage = pathname?.startsWith('/admin');
+
   // Dynamic categories for sidebar
   const categoriesQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -27,7 +32,7 @@ export default function Header() {
   const { data: categories } = useCollection(categoriesQuery);
 
   // Admin logic
-  const isAdmin = user?.email === 'mohammad.dd.my@gmail.com' || user?.phoneNumber === '+962780334074';
+  const isAdmin = user?.email === ADMIN_EMAIL || user?.phoneNumber === ADMIN_PHONE;
 
   const handleLogout = async () => {
     if (!auth) return;
@@ -118,46 +123,64 @@ export default function Header() {
             </Link>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="hidden sm:flex rounded-full hover:bg-primary/5">
-              <Search className="h-5 w-5" />
-            </Button>
-            
-            {isAdmin && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="hidden sm:flex rounded-full text-primary hover:bg-primary/10"
-                onClick={() => navigateTo('/admin')}
-              >
-                <Settings className="h-5 w-5" />
-              </Button>
+          <div className="flex items-center gap-4">
+            {/* Session Debugging Indicator for Admin Pages */}
+            {isAdminPage && (
+              <div className="hidden lg:flex items-center gap-2">
+                {!loading && !user ? (
+                  <div className="flex items-center gap-1.5 bg-destructive/10 text-destructive text-[10px] px-3 py-1 rounded-full font-bold border border-destructive/20 animate-pulse">
+                    <AlertCircle className="h-3 w-3" />
+                    Session not detected - please open in a new tab
+                  </div>
+                ) : user && (
+                  <div className="text-[10px] text-muted-foreground bg-muted/50 px-3 py-1 rounded-full border">
+                    Admin: <span className="font-bold text-primary">{user.email || user.phoneNumber}</span>
+                  </div>
+                )}
+              </div>
             )}
 
-            {loading ? (
-              <div className="w-10 h-10 flex items-center justify-center">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              </div>
-            ) : user ? (
-              <div className="flex items-center gap-2">
-                <Link href="/profile-completion">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="hidden sm:flex rounded-full hover:bg-primary/5">
+                <Search className="h-5 w-5" />
+              </Button>
+              
+              {isAdmin && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="hidden sm:flex rounded-full text-primary hover:bg-primary/10"
+                  onClick={() => navigateTo('/admin')}
+                >
+                  <Settings className="h-5 w-5" />
+                </Button>
+              )}
+
+              {loading ? (
+                <div className="w-10 h-10 flex items-center justify-center">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                </div>
+              ) : user ? (
+                <div className="flex items-center gap-2">
+                  <Link href="/profile-completion">
+                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5">
+                      <User className="h-5 w-5" />
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <Link href="/login">
                   <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5">
                     <User className="h-5 w-5" />
                   </Button>
                 </Link>
-              </div>
-            ) : (
-              <Link href="/login">
-                <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5">
-                  <User className="h-5 w-5" />
-                </Button>
-              </Link>
-            )}
+              )}
 
-            <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-primary/5">
-              <ShoppingBag className="h-5 w-5" />
-              <span className="absolute top-1 right-1 h-2 w-2 bg-primary rounded-full border border-white"></span>
-            </Button>
+              <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-primary/5">
+                <ShoppingBag className="h-5 w-5" />
+                <span className="absolute top-1 right-1 h-2 w-2 bg-primary rounded-full border border-white"></span>
+              </Button>
+            </div>
           </div>
         </div>
       </div>

@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { useState } from 'react';
-import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
+import { useFirestore, useCollection, useUser, useDoc, useAuth } from '@/firebase';
 import { 
   collection, 
   addDoc, 
@@ -45,7 +44,8 @@ import {
   Loader2, 
   Image as ImageIcon,
   Save,
-  Tags
+  Tags,
+  AlertTriangle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow';
@@ -61,6 +61,7 @@ const ADMIN_PHONE = '+962780334074';
 
 export default function AdminPage() {
   const db = useFirestore();
+  const auth = useAuth();
   const { user, loading: authLoading } = useUser();
   const { toast } = useToast();
   const [isAdding, setIsAdding] = useState(false);
@@ -107,14 +108,28 @@ export default function AdminPage() {
     </div>
   );
 
-  if (!isAdmin) {
+  if (!isAdmin && !authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/20">
-        <Card className="max-w-md text-center p-8 rounded-3xl">
-          <CardTitle className="text-2xl text-destructive mb-4">وصول مرفوض</CardTitle>
-          <p className="text-muted-foreground mb-6">ليس لديك الصلاحيات الكافية للوصول لهذه الصفحة.</p>
-          <Button onClick={() => window.location.href = '/'} className="rounded-full">العودة للرئيسية</Button>
-        </Card>
+      <div className="min-h-screen flex flex-col" dir="rtl">
+        <Header />
+        <main className="flex-1 flex items-center justify-center bg-muted/20">
+          <Card className="max-w-md text-center p-8 rounded-3xl shadow-xl">
+            <div className="bg-destructive/10 text-destructive p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="h-8 w-8" />
+            </div>
+            <CardTitle className="text-2xl text-destructive mb-4">وصول مرفوض أو جلسة مفقودة</CardTitle>
+            <p className="text-muted-foreground mb-6">
+              ليس لديك الصلاحيات الكافية، أو أن المتصفح فقد بيانات تسجيل الدخول بسبب قيود الأمان.
+              <br/><br/>
+              <b>حل مقترح:</b> يرجى فتح الموقع في نافذة مستقلة (New Tab) بدلاً من الإطار الحالي.
+            </p>
+            <div className="flex flex-col gap-3">
+              <Button onClick={() => window.open(window.location.href, '_blank')} className="rounded-full h-12">فتح في نافذة جديدة</Button>
+              <Button onClick={() => window.location.href = '/login'} variant="outline" className="rounded-full h-12">الذهاب لصفحة الدخول</Button>
+            </div>
+          </Card>
+        </main>
+        <Footer />
       </div>
     );
   }
@@ -179,7 +194,12 @@ export default function AdminPage() {
   };
 
   const deleteProduct = (id: string) => {
-    if (!isAdmin || !db) return;
+    if (!isAdmin || !db) {
+      if (!user) {
+         alert('عذراً، الجلسة منتهية أو مفقودة. يرجى فتح الموقع في نافذة جديدة أو إعادة تسجيل الدخول.');
+      }
+      return;
+    }
     if (!window.confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
     
     setDeletingId(id);
@@ -190,7 +210,11 @@ export default function AdminPage() {
         toast({ title: 'تم الحذف', description: 'تم إزالة المنتج بنجاح.' });
       })
       .catch((err) => {
-        toast({ variant: 'destructive', title: 'خطأ في الصلاحيات', description: 'عذراً، لا تملك صلاحية الحذف من قاعدة البيانات.' });
+        if (!auth?.currentUser) {
+           toast({ variant: 'destructive', title: 'جلسة مفقودة', description: 'يرجى فتح الموقع في نافذة جديدة لإتمام العملية.' });
+        } else {
+           toast({ variant: 'destructive', title: 'خطأ في الصلاحيات', description: 'عذراً، لا تملك صلاحية الحذف من قاعدة البيانات.' });
+        }
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' }));
       })
       .finally(() => setDeletingId(null));
@@ -251,21 +275,21 @@ export default function AdminPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2 text-right">
                       <Label>اسم المنتج</Label>
-                      <Input 
+                      <input 
                         value={formData.name} 
                         onChange={e => setFormData({...formData, name: e.target.value})}
                         placeholder="مثال: كريم أساس فاخر" 
-                        className="rounded-xl"
+                        className="flex h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       />
                     </div>
                     <div className="space-y-2 text-right">
                       <Label>السعر ($)</Label>
-                      <Input 
+                      <input 
                         type="number"
                         value={formData.price} 
                         onChange={e => setFormData({...formData, price: e.target.value})}
                         placeholder="0.00" 
-                        className="rounded-xl"
+                        className="flex h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       />
                     </div>
                   </div>
@@ -273,7 +297,7 @@ export default function AdminPage() {
                     <div className="space-y-2 text-right">
                       <Label>القسم</Label>
                       <select 
-                        className="w-full h-10 rounded-xl border border-input bg-background px-3"
+                        className="w-full h-12 rounded-xl border border-input bg-background px-3 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         value={formData.category}
                         onChange={e => setFormData({...formData, category: e.target.value})}
                       >
@@ -283,11 +307,11 @@ export default function AdminPage() {
                     </div>
                     <div className="space-y-2 text-right">
                       <Label>رابط الصورة</Label>
-                      <Input 
+                      <input 
                         value={formData.imageUrl} 
                         onChange={e => setFormData({...formData, imageUrl: e.target.value})}
                         placeholder="https://..." 
-                        className="rounded-xl"
+                        className="flex h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       />
                     </div>
                   </div>
@@ -299,23 +323,23 @@ export default function AdminPage() {
                         size="sm" 
                         onClick={handleAiDescription}
                         disabled={aiLoading}
-                        className="rounded-full gap-2"
+                        className="rounded-full gap-2 h-10 px-4"
                       >
-                        توليد الوصف بالذكاء الاصطناعي
+                        {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "توليد الوصف بالذكاء الاصطناعي"}
                       </Button>
                       <Label>الوصف</Label>
                     </div>
-                    <Textarea 
+                    <textarea 
                       value={formData.description} 
                       onChange={e => setFormData({...formData, description: e.target.value})}
                       placeholder="اكتب وصفاً جذاباً..." 
-                      className="rounded-xl min-h-[120px]"
+                      className="flex min-h-[140px] w-full rounded-2xl border border-input bg-background px-4 py-3 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     />
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button onClick={saveProduct} disabled={saving} className="w-full rounded-full h-12 text-lg font-bold bg-[#D4AF37] hover:bg-[#B8962D]">
-                    {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : (isEditing ? 'حفظ التعديلات' : 'إضافة المنتج')}
+                  <Button onClick={saveProduct} disabled={saving} className="w-full rounded-full h-14 text-lg font-bold bg-[#D4AF37] hover:bg-[#B8962D] shadow-lg">
+                    {saving ? <Loader2 className="h-6 w-6 animate-spin" /> : (isEditing ? 'حفظ التعديلات' : 'إضافة المنتج')}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -324,11 +348,11 @@ export default function AdminPage() {
         </div>
 
         <Tabs defaultValue="products" className="space-y-8">
-          <TabsList className="bg-white p-1 rounded-full shadow-sm border h-14 w-full max-w-md mx-auto grid grid-cols-2">
-            <TabsTrigger value="products" className="rounded-full gap-2 font-bold text-lg">
+          <TabsList className="bg-white p-1 rounded-full shadow-sm border h-16 w-full max-w-md mx-auto grid grid-cols-2">
+            <TabsTrigger value="products" className="rounded-full gap-2 font-bold text-lg h-14 data-[state=active]:bg-primary data-[state=active]:text-white">
               <Package className="h-5 w-5" /> المنتجات
             </TabsTrigger>
-            <TabsTrigger value="settings" className="rounded-full gap-2 font-bold text-lg">
+            <TabsTrigger value="settings" className="rounded-full gap-2 font-bold text-lg h-14 data-[state=active]:bg-primary data-[state=active]:text-white">
               <Settings className="h-5 w-5" /> الإعدادات
             </TabsTrigger>
           </TabsList>
@@ -336,7 +360,7 @@ export default function AdminPage() {
           <TabsContent value="products">
             <Card className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white">
               <CardHeader className="bg-primary/5 p-8 border-b">
-                <CardTitle className="text-2xl font-bold font-headline">قائمة المنتجات</CardTitle>
+                <CardTitle className="text-2xl font-bold font-headline text-right">قائمة المنتجات</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 {productsLoading ? (
@@ -355,7 +379,7 @@ export default function AdminPage() {
                       {products.map((product: any) => (
                         <TableRow key={product.id} className="hover:bg-primary/5 transition-colors">
                           <TableCell>
-                            <div className="h-16 w-16 rounded-2xl overflow-hidden bg-muted">
+                            <div className="h-16 w-16 rounded-2xl overflow-hidden bg-muted border">
                               <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" />
                             </div>
                           </TableCell>
@@ -366,7 +390,7 @@ export default function AdminPage() {
                               <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="rounded-full text-[#D4AF37]"
+                                className="rounded-full text-[#D4AF37] hover:bg-[#D4AF37]/10"
                                 onClick={() => {
                                   setIsEditing(product.id);
                                   setFormData({
@@ -384,7 +408,7 @@ export default function AdminPage() {
                                 variant="ghost" 
                                 size="icon" 
                                 disabled={deletingId === product.id}
-                                className="rounded-full text-destructive"
+                                className="rounded-full text-destructive hover:bg-destructive/10"
                                 onClick={() => deleteProduct(product.id)}
                               >
                                 {deletingId === product.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
@@ -396,7 +420,7 @@ export default function AdminPage() {
                     </TableBody>
                   </Table>
                 ) : (
-                  <div className="py-20 text-center">لا توجد منتجات حالياً.</div>
+                  <div className="py-20 text-center text-muted-foreground">لا توجد منتجات حالياً.</div>
                 )}
               </CardContent>
             </Card>
@@ -405,24 +429,24 @@ export default function AdminPage() {
           <TabsContent value="settings">
             <Card className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white">
               <CardHeader className="bg-primary/5 p-8 border-b">
-                <CardTitle className="text-2xl font-bold font-headline">إعدادات الموقع</CardTitle>
+                <CardTitle className="text-2xl font-bold font-headline text-right">إعدادات الموقع</CardTitle>
               </CardHeader>
               <CardContent className="p-8 space-y-8">
                 <div className="space-y-4">
-                  <div className="flex items-center gap-3 text-xl font-bold">
-                    <ImageIcon className="h-6 w-6 text-primary" /> صورة الـ Hero Banner
+                  <div className="flex items-center gap-3 text-xl font-bold justify-end">
+                    صورة الـ Hero Banner <ImageIcon className="h-6 w-6 text-primary" />
                   </div>
                   <div className="grid gap-6 md:grid-cols-2 items-end">
                     <div className="space-y-2 text-right">
                       <Label>رابط الصورة</Label>
-                      <Input 
+                      <input 
                         placeholder="https://..." 
                         value={heroUrl}
                         onChange={e => setHeroUrl(e.target.value)}
-                        className="rounded-2xl h-12"
+                        className="flex h-12 w-full rounded-2xl border border-input bg-background px-4 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       />
                     </div>
-                    <Button onClick={updateHero} className="rounded-full h-12 gap-2 font-bold shadow-md bg-[#D4AF37]">
+                    <Button onClick={updateHero} className="rounded-full h-12 gap-2 font-bold shadow-md bg-[#D4AF37] hover:bg-[#B8962D]">
                       <Save className="h-5 w-5" /> حفظ التغييرات
                     </Button>
                   </div>

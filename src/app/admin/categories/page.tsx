@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { useState } from 'react';
-import { useFirestore, useCollection, useUser } from '@/firebase';
+import { useFirestore, useCollection, useUser, useAuth } from '@/firebase';
 import { 
   collection, 
   deleteDoc, 
@@ -18,7 +17,6 @@ import {
 } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { 
   Table, 
@@ -42,7 +40,8 @@ import {
   Trash2, 
   Tags, 
   Loader2, 
-  ChevronLeft
+  ChevronLeft,
+  AlertTriangle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/layout/Header';
@@ -57,6 +56,7 @@ const ADMIN_PHONE = '+962780334074';
 
 export default function AdminCategoriesPage() {
   const db = useFirestore();
+  const auth = useAuth();
   const { user, loading: authLoading } = useUser();
   const { toast } = useToast();
   const [isAdding, setIsAdding] = useState(false);
@@ -85,14 +85,28 @@ export default function AdminCategoriesPage() {
     </div>
   );
 
-  if (!isAdmin) {
+  if (!isAdmin && !authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/20">
-        <Card className="max-w-md text-center p-8 rounded-3xl">
-          <CardTitle className="text-2xl text-destructive mb-4">وصول مرفوض</CardTitle>
-          <p className="text-muted-foreground mb-6">ليس لديك الصلاحيات الكافية للوصول لهذه الصفحة.</p>
-          <Button onClick={() => window.location.href = '/'} className="rounded-full">العودة للرئيسية</Button>
-        </Card>
+      <div className="min-h-screen flex flex-col" dir="rtl">
+        <Header />
+        <main className="flex-1 flex items-center justify-center bg-muted/20">
+          <Card className="max-w-md text-center p-8 rounded-3xl shadow-xl">
+            <div className="bg-destructive/10 text-destructive p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="h-8 w-8" />
+            </div>
+            <CardTitle className="text-2xl text-destructive mb-4">وصول مرفوض أو جلسة مفقودة</CardTitle>
+            <p className="text-muted-foreground mb-6">
+              ليس لديك الصلاحيات الكافية، أو أن المتصفح فقد بيانات تسجيل الدخول بسبب قيود الأمان.
+              <br/><br/>
+              <b>حل مقترح:</b> يرجى فتح الموقع في نافذة مستقلة (New Tab) بدلاً من الإطار الحالي.
+            </p>
+            <div className="flex flex-col gap-3">
+              <Button onClick={() => window.open(window.location.href, '_blank')} className="rounded-full h-12">فتح في نافذة جديدة</Button>
+              <Button onClick={() => window.location.href = '/login'} variant="outline" className="rounded-full h-12">الذهاب لصفحة الدخول</Button>
+            </div>
+          </Card>
+        </main>
+        <Footer />
       </div>
     );
   }
@@ -137,7 +151,12 @@ export default function AdminCategoriesPage() {
   };
 
   const deleteCategory = async (id: string, slug: string) => {
-    if (!isAdmin || !db) return;
+    if (!isAdmin || !db) {
+      if (!user) {
+        alert('عذراً، الجلسة منتهية أو مفقودة. يرجى فتح الموقع في نافذة جديدة أو إعادة تسجيل الدخول.');
+      }
+      return;
+    }
 
     const productCheckQuery = query(
       collection(db, 'products'),
@@ -163,7 +182,11 @@ export default function AdminCategoriesPage() {
           toast({ title: 'تم الحذف', description: 'تم إزالة القسم بنجاح.' });
         })
         .catch((err) => {
-          toast({ variant: 'destructive', title: 'خطأ في الصلاحيات', description: 'عذراً، لا تملك صلاحية الحذف من قاعدة البيانات.' });
+          if (!auth?.currentUser) {
+            toast({ variant: 'destructive', title: 'جلسة مفقودة', description: 'يرجى فتح الموقع في نافذة جديدة لإتمام العملية.' });
+          } else {
+            toast({ variant: 'destructive', title: 'خطأ في الصلاحيات', description: 'عذراً، لا تملك صلاحية الحذف من قاعدة البيانات.' });
+          }
           errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' }));
         })
         .finally(() => setDeletingId(null));
@@ -209,30 +232,30 @@ export default function AdminCategoriesPage() {
               <div className="grid gap-6 py-4">
                 <div className="space-y-2 text-right">
                   <Label>اسم القسم (بالعربية)</Label>
-                  <Input 
+                  <input 
                     value={formData.nameAr} 
                     onChange={e => setFormData({...formData, nameAr: e.target.value})}
                     placeholder="مثال: المكياج" 
-                    className="rounded-xl h-12"
+                    className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
                 <div className="space-y-2 text-right">
                   <Label>المعرف (Slug)</Label>
-                  <Input 
+                  <input 
                     value={formData.slug} 
                     onChange={e => setFormData({...formData, slug: e.target.value})}
                     placeholder="example: makeup" 
-                    className="rounded-xl h-12"
+                    className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
                 <div className="space-y-2 text-right">
                   <Label>ترتيب العرض</Label>
-                  <Input 
+                  <input 
                     type="number"
                     value={formData.displayOrder} 
                     onChange={e => setFormData({...formData, displayOrder: e.target.value})}
                     placeholder="0" 
-                    className="rounded-xl h-12"
+                    className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
               </div>
@@ -240,9 +263,9 @@ export default function AdminCategoriesPage() {
                 <Button 
                   onClick={saveCategory} 
                   disabled={saving}
-                  className="w-full rounded-full h-12 text-lg font-bold bg-[#D4AF37] hover:bg-[#B8962D]"
+                  className="w-full rounded-full h-14 text-lg font-bold bg-[#D4AF37] hover:bg-[#B8962D] shadow-lg"
                 >
-                  {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : (isEditing ? 'حفظ التعديلات' : 'إضافة القسم')}
+                  {saving ? <Loader2 className="h-6 w-6 animate-spin" /> : (isEditing ? 'حفظ التعديلات' : 'إضافة القسم')}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -251,7 +274,7 @@ export default function AdminCategoriesPage() {
 
         <Card className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white">
           <CardHeader className="bg-primary/5 p-8 border-b">
-            <CardTitle className="text-2xl font-bold font-headline">قائمة الأقسام</CardTitle>
+            <CardTitle className="text-2xl font-bold font-headline text-right">قائمة الأقسام</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {categoriesLoading ? (
@@ -275,7 +298,7 @@ export default function AdminCategoriesPage() {
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="rounded-full text-[#D4AF37]"
+                            className="rounded-full text-[#D4AF37] hover:bg-[#D4AF37]/10"
                             onClick={() => {
                               setIsEditing(cat.id);
                               setFormData({
@@ -291,7 +314,7 @@ export default function AdminCategoriesPage() {
                             variant="ghost" 
                             size="icon" 
                             disabled={deletingId === cat.id}
-                            className="rounded-full text-destructive"
+                            className="rounded-full text-destructive hover:bg-destructive/10"
                             onClick={() => deleteCategory(cat.id, cat.slug)}
                           >
                             {deletingId === cat.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
@@ -303,7 +326,7 @@ export default function AdminCategoriesPage() {
                 </TableBody>
               </Table>
             ) : (
-              <div className="py-20 text-center">لا توجد أقسام حالياً.</div>
+              <div className="py-20 text-center text-muted-foreground">لا توجد أقسام حالياً.</div>
             )}
           </CardContent>
         </Card>

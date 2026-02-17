@@ -1,9 +1,8 @@
-
 'use client';
 
 import { initializeApp, getApps, FirebaseApp, getApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
-import { getAuth, Auth } from "firebase/auth";
+import { getAuth, Auth, setPersistence, browserLocalPersistence } from "firebase/auth";
 
 export const firebaseConfig = {
   apiKey: "AIzaSyBSddySKMJUmlTCFS3eKIEmkLYM73FzfJA",
@@ -36,6 +35,11 @@ export function getFirebaseInstances(): FirebaseInstances | null {
     const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
     const firestore = getFirestore(app);
     const auth = getAuth(app);
+
+    // Ensure local persistence for better iframe/dev environment support
+    setPersistence(auth, browserLocalPersistence).catch((err) => {
+      console.warn("Failed to set auth persistence:", err);
+    });
 
     const instances = { app, firestore, auth };
     globalForFirebase.__firebase_instances = instances;
