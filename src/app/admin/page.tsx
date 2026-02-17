@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -70,7 +69,6 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Form States
   const [formData, setFormData] = useState({
     name: '',
     price: '',
@@ -81,7 +79,6 @@ export default function AdminPage() {
 
   const [heroUrl, setHeroUrl] = useState('');
 
-  // Queries
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, 'products'), orderBy('createdAt', 'desc'));
@@ -182,21 +179,27 @@ export default function AdminPage() {
   };
 
   const deleteProduct = (id: string) => {
+    console.log('[Debug] Attempting to delete Product ID:', id);
+    
     if (!isAdmin) {
-      toast({ variant: 'destructive', title: 'فشل العملية', description: 'عذراً، لا تملك صلاحية الحذف' });
+      alert('عذراً، لا تملك صلاحية الحذف');
       return;
     }
 
-    if (!db || !confirm('هل أنت متأكد من حذف هذا المنتج نهائياً؟')) return;
+    if (!db) return;
+    if (!window.confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
     
     setDeletingId(id);
     const docRef = doc(db, 'products', id);
     
     deleteDoc(docRef)
       .then(() => {
-        toast({ title: 'تم الحذف', description: 'تم إزالة المنتج من المخزون بنجاح.' });
+        console.log('[Debug] Product deleted successfully');
+        toast({ title: 'تم الحذف', description: 'تم إزالة المنتج بنجاح.' });
       })
-      .catch(async (err) => {
+      .catch((err) => {
+        console.error('[Debug] Deletion failed:', err);
+        alert('خطأ في الحذف: ' + err.message);
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' }));
       })
       .finally(() => setDeletingId(null));
@@ -233,12 +236,11 @@ export default function AdminPage() {
             <h1 className="text-4xl font-black font-headline text-primary flex items-center gap-3">
               <LayoutDashboard className="h-10 w-10" /> لوحة التحكم
             </h1>
-            <p className="text-muted-foreground mt-2 text-lg">إدارة منتجات YourGroceriesUSA وإعدادات الموقع</p>
           </div>
           
           <div className="flex gap-4">
             <Link href="/admin/categories">
-              <Button variant="outline" className="rounded-full h-14 px-8 text-lg font-bold border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/10 gap-2">
+              <Button variant="outline" className="rounded-full h-14 px-8 text-lg font-bold border-[#D4AF37] text-[#D4AF37] gap-2">
                 <Tags className="h-6 w-6" /> إدارة الأقسام
               </Button>
             </Link>
@@ -306,9 +308,8 @@ export default function AdminPage() {
                         size="sm" 
                         onClick={handleAiDescription}
                         disabled={aiLoading}
-                        className="rounded-full gap-2 border-primary/30 text-primary hover:bg-primary/5"
+                        className="rounded-full gap-2"
                       >
-                        {aiLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                         توليد الوصف بالذكاء الاصطناعي
                       </Button>
                       <Label>الوصف</Label>
@@ -316,14 +317,14 @@ export default function AdminPage() {
                     <Textarea 
                       value={formData.description} 
                       onChange={e => setFormData({...formData, description: e.target.value})}
-                      placeholder="اكتب وصفاً جذاباً للمنتج..." 
+                      placeholder="اكتب وصفاً جذاباً..." 
                       className="rounded-xl min-h-[120px]"
                     />
                   </div>
                 </div>
                 <DialogFooter>
                   <Button onClick={saveProduct} disabled={saving} className="w-full rounded-full h-12 text-lg font-bold bg-[#D4AF37] hover:bg-[#B8962D]">
-                    {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : (isEditing ? 'حفظ التعديلات' : 'إضافة المنتج للمخزون')}
+                    {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : (isEditing ? 'حفظ التعديلات' : 'إضافة المنتج')}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -345,7 +346,6 @@ export default function AdminPage() {
             <Card className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white">
               <CardHeader className="bg-primary/5 p-8 border-b">
                 <CardTitle className="text-2xl font-bold font-headline">قائمة المنتجات</CardTitle>
-                <CardDescription>إدارة المخزون الحالي للمتجر</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 {productsLoading ? (
@@ -356,7 +356,6 @@ export default function AdminPage() {
                       <TableRow>
                         <TableHead className="text-right py-6">الصورة</TableHead>
                         <TableHead className="text-right">الاسم</TableHead>
-                        <TableHead className="text-right">القسم</TableHead>
                         <TableHead className="text-right">السعر</TableHead>
                         <TableHead className="text-center">الإجراءات</TableHead>
                       </TableRow>
@@ -369,15 +368,14 @@ export default function AdminPage() {
                               <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" />
                             </div>
                           </TableCell>
-                          <TableCell className="font-bold text-lg">{product.name}</TableCell>
-                          <TableCell className="text-muted-foreground">{product.categoryName}</TableCell>
+                          <TableCell className="font-bold">{product.name}</TableCell>
                           <TableCell className="font-bold text-primary">${product.price?.toFixed(2)}</TableCell>
                           <TableCell>
                             <div className="flex justify-center gap-2">
                               <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="rounded-full text-[#D4AF37] hover:bg-yellow-50"
+                                className="rounded-full text-[#D4AF37]"
                                 onClick={() => {
                                   setIsEditing(product.id);
                                   setFormData({
@@ -395,7 +393,7 @@ export default function AdminPage() {
                                 variant="ghost" 
                                 size="icon" 
                                 disabled={deletingId === product.id}
-                                className="rounded-full text-destructive hover:bg-destructive/5"
+                                className="rounded-full text-destructive"
                                 onClick={() => deleteProduct(product.id)}
                               >
                                 {deletingId === product.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
@@ -407,7 +405,7 @@ export default function AdminPage() {
                     </TableBody>
                   </Table>
                 ) : (
-                  <div className="py-20 text-center text-muted-foreground">لا توجد منتجات حالياً.</div>
+                  <div className="py-20 text-center">لا توجد منتجات حالياً.</div>
                 )}
               </CardContent>
             </Card>
@@ -417,16 +415,15 @@ export default function AdminPage() {
             <Card className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white">
               <CardHeader className="bg-primary/5 p-8 border-b">
                 <CardTitle className="text-2xl font-bold font-headline">إعدادات الموقع</CardTitle>
-                <CardDescription>تحديث المظهر العام والعناصر الترويجية</CardDescription>
               </CardHeader>
               <CardContent className="p-8 space-y-8">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3 text-xl font-bold">
-                    <ImageIcon className="h-6 w-6 text-primary" /> صورة الـ Hero Banner الرئيسية
+                    <ImageIcon className="h-6 w-6 text-primary" /> صورة الـ Hero Banner
                   </div>
                   <div className="grid gap-6 md:grid-cols-2 items-end">
                     <div className="space-y-2 text-right">
-                      <Label>رابط الصورة الجديدة</Label>
+                      <Label>رابط الصورة</Label>
                       <Input 
                         placeholder="https://..." 
                         value={heroUrl}
@@ -434,18 +431,10 @@ export default function AdminPage() {
                         className="rounded-2xl h-12"
                       />
                     </div>
-                    <Button onClick={updateHero} className="rounded-full h-12 gap-2 font-bold shadow-md bg-[#D4AF37] hover:bg-[#B8962D]">
-                      <Save className="h-5 w-5" /> حفظ الصورة الجديدة
+                    <Button onClick={updateHero} className="rounded-full h-12 gap-2 font-bold shadow-md bg-[#D4AF37]">
+                      <Save className="h-5 w-5" /> حفظ التغييرات
                     </Button>
                   </div>
-                  {heroData?.imageUrl && (
-                    <div className="mt-6">
-                      <Label className="block mb-2 text-muted-foreground">المعاينة الحالية:</Label>
-                      <div className="relative aspect-video rounded-[2rem] overflow-hidden border-4 border-white shadow-2xl">
-                        <img src={heroData.imageUrl} className="w-full h-full object-cover" alt="Hero Preview" />
-                      </div>
-                    </div>
-                  )}
                 </div>
               </CardContent>
             </Card>

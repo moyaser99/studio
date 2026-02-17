@@ -1,18 +1,14 @@
-
 'use client';
 
 import React, { useState } from 'react';
 import { useFirestore, useCollection, useUser } from '@/firebase';
 import { 
   collection, 
-  addDoc, 
-  updateDoc, 
   deleteDoc, 
   doc, 
   query, 
   orderBy, 
-  serverTimestamp,
-  where,
+  where, 
   getDocs,
   limit
 } from 'firebase/firestore';
@@ -51,6 +47,7 @@ import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import Link from 'next/link';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
@@ -64,14 +61,12 @@ export default function AdminCategoriesPage() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Form States
   const [formData, setFormData] = useState({
     nameAr: '',
     slug: '',
     displayOrder: '0',
   });
 
-  // Queries
   const categoriesQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, 'categories'), orderBy('displayOrder', 'asc'));
@@ -139,14 +134,15 @@ export default function AdminCategoriesPage() {
   };
 
   const deleteCategory = async (id: string, slug: string) => {
+    console.log('[Debug] Attempting to delete Category ID:', id);
+    
     if (!isAdmin) {
-      toast({ variant: 'destructive', title: 'فشل العملية', description: 'عذراً، لا تملك صلاحية الحذف' });
+      alert('عذراً، لا تملك صلاحية الحذف');
       return;
     }
 
     if (!db) return;
 
-    // Check for products
     const productCheckQuery = query(
       collection(db, 'products'),
       where('category', '==', slug),
@@ -154,35 +150,33 @@ export default function AdminCategoriesPage() {
     );
     
     try {
-      const productSnapshot = await getDocs(productCheckQuery).catch(async (err) => {
-        const pErr = new FirestorePermissionError({
-          path: 'products',
-          operation: 'list',
-        });
-        errorEmitter.emit('permission-error', pErr);
-        throw err;
-      });
+      const productSnapshot = await getDocs(productCheckQuery);
+      const hasProducts = !productSnapshot.empty;
+      
+      const confirmMsg = hasProducts 
+        ? 'هذا القسم يحتوي على منتجات. حذفه سيؤثر على عرضها. هل أنت متأكد؟' 
+        : 'هل أنت متأكد من حذف هذا القسم؟';
 
-      if (!productSnapshot.empty) {
-        if (!confirm('هذا القسم يحتوي على منتجات مرتبطة به. حذف القسم سيؤدي لاختفاء المنتجات من صفحات الموقع. هل أنت متأكد؟')) return;
-      } else {
-        if (!confirm('هل أنت متأكد من حذف هذا القسم نهائياً؟')) return;
-      }
+      if (!window.confirm(confirmMsg)) return;
 
       setDeletingId(id);
       const docRef = doc(db, 'categories', id);
       
       deleteDoc(docRef)
         .then(() => {
+          console.log('[Debug] Category deleted successfully');
           toast({ title: 'تم الحذف', description: 'تم إزالة القسم بنجاح.' });
         })
-        .catch(async (err) => {
+        .catch((err) => {
+          console.error('[Debug] Deletion failed:', err);
+          alert('خطأ في الحذف: ' + err.message);
           errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' }));
         })
         .finally(() => setDeletingId(null));
         
-    } catch (e) {
-      // Handled by emitter
+    } catch (e: any) {
+      console.error('[Debug] Check failed:', e);
+      alert('خطأ في التحقق من البيانات: ' + e.message);
     }
   };
 
@@ -205,7 +199,6 @@ export default function AdminCategoriesPage() {
             <h1 className="text-4xl font-black font-headline text-primary flex items-center gap-3">
               <Tags className="h-10 w-10" /> إدارة الأقسام
             </h1>
-            <p className="text-muted-foreground mt-2 text-lg">إدارة تصنيفات المنتجات في YourGroceriesUSA</p>
           </div>
           
           <Dialog open={isAdding || !!isEditing} onOpenChange={(val) => !val && resetForm()}>
@@ -238,7 +231,6 @@ export default function AdminCategoriesPage() {
                     placeholder="example: makeup" 
                     className="rounded-xl h-12"
                   />
-                  <p className="text-xs text-muted-foreground">يُستخدم في رابط الصفحة (مثلاً: /category/makeup)</p>
                 </div>
                 <div className="space-y-2 text-right">
                   <Label>ترتيب العرض</Label>
@@ -266,8 +258,7 @@ export default function AdminCategoriesPage() {
 
         <Card className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white">
           <CardHeader className="bg-primary/5 p-8 border-b">
-            <CardTitle className="text-2xl font-bold font-headline">قائمة الأقسام الحالية</CardTitle>
-            <CardDescription>هذه الأقسام تظهر في الصفحة الرئيسية والقائمة الجانبية</CardDescription>
+            <CardTitle className="text-2xl font-bold font-headline">قائمة الأقسام</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {categoriesLoading ? (
@@ -276,24 +267,22 @@ export default function AdminCategoriesPage() {
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow>
-                    <TableHead className="text-right py-6">الاسم (عربي)</TableHead>
+                    <TableHead className="text-right">الاسم</TableHead>
                     <TableHead className="text-right">المعرف (Slug)</TableHead>
-                    <TableHead className="text-right">الترتيب</TableHead>
                     <TableHead className="text-center">الإجراءات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {categories.map((cat: any) => (
                     <TableRow key={cat.id} className="hover:bg-primary/5 transition-colors">
-                      <TableCell className="font-bold text-lg">{cat.nameAr}</TableCell>
-                      <TableCell className="text-muted-foreground font-code">{cat.slug}</TableCell>
-                      <TableCell>{cat.displayOrder}</TableCell>
+                      <TableCell className="font-bold">{cat.nameAr}</TableCell>
+                      <TableCell>{cat.slug}</TableCell>
                       <TableCell>
                         <div className="flex justify-center gap-2">
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="rounded-full text-[#D4AF37] hover:bg-yellow-50"
+                            className="rounded-full text-[#D4AF37]"
                             onClick={() => {
                               setIsEditing(cat.id);
                               setFormData({
@@ -309,7 +298,7 @@ export default function AdminCategoriesPage() {
                             variant="ghost" 
                             size="icon" 
                             disabled={deletingId === cat.id}
-                            className="rounded-full text-destructive hover:bg-destructive/5"
+                            className="rounded-full text-destructive"
                             onClick={() => deleteCategory(cat.id, cat.slug)}
                           >
                             {deletingId === cat.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
@@ -321,7 +310,7 @@ export default function AdminCategoriesPage() {
                 </TableBody>
               </Table>
             ) : (
-              <div className="py-20 text-center text-muted-foreground">لا توجد أقسام حالياً.</div>
+              <div className="py-20 text-center">لا توجد أقسام حالياً.</div>
             )}
           </CardContent>
         </Card>
