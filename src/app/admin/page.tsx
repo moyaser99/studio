@@ -57,6 +57,8 @@ import Link from 'next/link';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
+export const maxDuration = 120;
+
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
 const PLACEHOLDER_IMAGE = 'https://picsum.photos/seed/placeholder/200/200';

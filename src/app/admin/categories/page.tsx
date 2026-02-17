@@ -51,6 +51,8 @@ import Link from 'next/link';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
+export const maxDuration = 60;
+
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
 
@@ -150,7 +152,7 @@ export default function AdminCategoriesPage() {
     }
   };
 
-  const deleteCategory = async (id: string, slug: string) => {
+  const deleteCategory = (id: string, slug: string) => {
     if (!isAdmin || !db) {
       if (!user) {
         alert('عذراً، الجلسة منتهية أو مفقودة. يرجى فتح الموقع في نافذة جديدة أو إعادة تسجيل الدخول.');
@@ -158,42 +160,50 @@ export default function AdminCategoriesPage() {
       return;
     }
 
+    // Immediate user intent confirmation
+    if (!window.confirm('هل أنت متأكد من حذف هذا القسم؟')) return;
+
+    setDeletingId(id);
+    const docRef = doc(db, 'categories', id);
+
+    // Optimized: Run the product check but don't block the UI unnecessarily long
     const productCheckQuery = query(
       collection(db, 'products'),
       where('category', '==', slug),
       limit(1)
     );
     
-    try {
-      const productSnapshot = await getDocs(productCheckQuery);
-      const hasProducts = !productSnapshot.empty;
-      
-      const confirmMsg = hasProducts 
-        ? 'هذا القسم يحتوي على منتجات. حذفه سيؤثر على عرضها. هل أنت متأكد؟' 
-        : 'هل أنت متأكد من حذف هذا القسم؟';
-
-      if (!window.confirm(confirmMsg)) return;
-
-      setDeletingId(id);
-      const docRef = doc(db, 'categories', id);
-      
-      deleteDoc(docRef)
-        .then(() => {
-          toast({ title: 'تم الحذف', description: 'تم إزالة القسم بنجاح.' });
-        })
-        .catch((err) => {
-          if (!auth?.currentUser) {
-            toast({ variant: 'destructive', title: 'جلسة مفقودة', description: 'يرجى فتح الموقع في نافذة جديدة لإتمام العملية.' });
-          } else {
-            toast({ variant: 'destructive', title: 'خطأ في الصلاحيات', description: 'عذراً، لا تملك صلاحية الحذف من قاعدة البيانات.' });
+    getDocs(productCheckQuery)
+      .then((snapshot) => {
+        if (!snapshot.empty) {
+          const proceed = window.confirm('تنبيه: هذا القسم يحتوي على منتجات. حذفه قد يؤثر على عرضها. هل تريد المتابعة على أي حال؟');
+          if (!proceed) {
+            setDeletingId(null);
+            return;
           }
-          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' }));
-        })
-        .finally(() => setDeletingId(null));
+        }
         
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: 'خطأ', description: 'فشل في التحقق من البيانات.' });
-    }
+        deleteDoc(docRef)
+          .then(() => {
+            toast({ title: 'تم الحذف', description: 'تم إزالة القسم بنجاح.' });
+          })
+          .catch((err) => {
+            if (!auth?.currentUser) {
+              toast({ variant: 'destructive', title: 'جلسة مفقودة', description: 'يرجى فتح الموقع في نافذة جديدة لإتمام العملية.' });
+            } else {
+              toast({ variant: 'destructive', title: 'خطأ في الصلاحيات', description: 'عذراً، لا تملك صلاحية الحذف من قاعدة البيانات.' });
+            }
+            errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' }));
+          })
+          .finally(() => setDeletingId(null));
+      })
+      .catch((e) => {
+        // If check fails, try to delete anyway if the user confirmed the first prompt
+        deleteDoc(docRef)
+          .then(() => toast({ title: 'تم الحذف', description: 'تم إزالة القسم بنجاح.' }))
+          .catch(() => toast({ variant: 'destructive', title: 'خطأ', description: 'فشل في حذف القسم.' }))
+          .finally(() => setDeletingId(null));
+      });
   };
 
   const resetForm = () => {
