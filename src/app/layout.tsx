@@ -1,7 +1,9 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { FirebaseClientProvider } from '@/firebase';
+import { LanguageProvider } from '@/context/language-context';
 
 export const metadata: Metadata = {
   title: 'YourGroceriesUSA - منتجات تجميل وأساسيات فاخرة',
@@ -22,8 +24,10 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased selection:bg-primary selection:text-white" suppressHydrationWarning>
         <FirebaseClientProvider>
-          {children}
-          <Toaster />
+          <LanguageProvider>
+            {children}
+            <Toaster />
+          </LanguageProvider>
         </FirebaseClientProvider>
       </body>
     </html>

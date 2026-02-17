@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -51,27 +52,27 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Link href={`/product/${product.id}`}>
-      <Card className="group overflow-hidden transition-all hover:shadow-lg border-none bg-secondary/10 rounded-3xl h-full">
+      <Card className="group overflow-hidden transition-all duration-300 hover:shadow-lg border-none bg-secondary/10 rounded-3xl h-full">
         <div className="relative aspect-square overflow-hidden">
           {useOptimized ? (
             <Image
               src={displayImage}
               alt={displayName}
               fill
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
               data-ai-hint="product photo"
             />
           ) : (
             <img
               src={displayImage}
               alt={displayName}
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/error/600/600';
               }}
             />
           )}
-          <Badge className="absolute end-2 top-2 bg-primary/90 rounded-full px-3">
+          <Badge className="absolute start-2 top-2 bg-primary/90 rounded-full px-3 transition-all duration-300">
             {displayCategory}
           </Badge>
         </div>

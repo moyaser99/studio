@@ -8,7 +8,11 @@
       "properties": {
         "name": {
           "type": "string",
-          "description": "The name of the product"
+          "description": "The name of the product in Arabic"
+        },
+        "nameEn": {
+          "type": "string",
+          "description": "The name of the product in English"
         },
         "price": {
           "type": "number",
@@ -20,7 +24,11 @@
         },
         "categoryName": {
           "type": "string",
-          "description": "The display name of the category"
+          "description": "The display name of the category in Arabic"
+        },
+        "categoryNameEn": {
+          "type": "string",
+          "description": "The display name of the category in English"
         },
         "imageUrl": {
           "type": "string",
@@ -51,6 +59,10 @@
         "nameAr": {
           "type": "string",
           "description": "Arabic name of the category"
+        },
+        "nameEn": {
+          "type": "string",
+          "description": "English name of the category"
         },
         "slug": {
           "type": "string",

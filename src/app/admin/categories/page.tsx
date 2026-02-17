@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -69,6 +70,7 @@ export default function AdminCategoriesPage() {
 
   const [formData, setFormData] = useState({
     nameAr: '',
+    nameEn: '',
     slug: '',
     displayOrder: '0',
   });
@@ -118,6 +120,7 @@ export default function AdminCategoriesPage() {
     setSaving(true);
     const payload = {
       nameAr: formData.nameAr,
+      nameEn: formData.nameEn,
       slug: formData.slug.toLowerCase().trim(),
       displayOrder: parseInt(formData.displayOrder) || 0,
       updatedAt: serverTimestamp(),
@@ -188,14 +191,14 @@ export default function AdminCategoriesPage() {
   };
 
   const resetForm = () => {
-    setFormData({ nameAr: '', slug: '', displayOrder: '0' });
+    setFormData({ nameAr: '', nameEn: '', slug: '', displayOrder: '0' });
     setIsAdding(false);
     setIsEditing(null);
     setSaving(false);
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted/10" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen flex flex-col bg-muted/10 transition-all duration-300" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Header />
       <main className="flex-1 container mx-auto px-4 py-12">
         <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6">
@@ -226,6 +229,15 @@ export default function AdminCategoriesPage() {
                   <input 
                     value={formData.nameAr} 
                     onChange={e => setFormData({...formData, nameAr: e.target.value})}
+                    placeholder="Ex: مكياج" 
+                    className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  />
+                </div>
+                <div className="space-y-2 text-start">
+                  <Label>{t.categoryNameEn}</Label>
+                  <input 
+                    value={formData.nameEn} 
+                    onChange={e => setFormData({...formData, nameEn: e.target.value})}
                     placeholder="Ex: Makeup" 
                     className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
@@ -274,7 +286,7 @@ export default function AdminCategoriesPage() {
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow>
-                    <TableHead className="text-start">{lang === 'ar' ? 'الاسم (AR)' : 'Name (AR)'}</TableHead>
+                    <TableHead className="text-start">{lang === 'ar' ? 'الاسم' : 'Name'}</TableHead>
                     <TableHead className="text-start">{t.categorySlug}</TableHead>
                     <TableHead className="text-center">{t.actions}</TableHead>
                   </TableRow>
@@ -282,7 +294,9 @@ export default function AdminCategoriesPage() {
                 <TableBody>
                   {categories.map((cat: any) => (
                     <TableRow key={cat.id} className="hover:bg-primary/5 transition-colors">
-                      <TableCell className="font-bold text-start">{cat.nameAr}</TableCell>
+                      <TableCell className="font-bold text-start">
+                        {lang === 'ar' ? cat.nameAr : (cat.nameEn || cat.nameAr)}
+                      </TableCell>
                       <TableCell className="text-start">{cat.slug}</TableCell>
                       <TableCell>
                         <div className="flex justify-center gap-2">
@@ -294,6 +308,7 @@ export default function AdminCategoriesPage() {
                               setIsEditing(cat.id);
                               setFormData({
                                 nameAr: cat.nameAr,
+                                nameEn: cat.nameEn || '',
                                 slug: cat.slug,
                                 displayOrder: cat.displayOrder.toString(),
                               });

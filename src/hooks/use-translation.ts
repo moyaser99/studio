@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useLanguage } from '@/context/language-context';
 
 const translations = {
   ar: {
@@ -56,13 +57,15 @@ const translations = {
     backToDashboard: 'العودة للوحة التحكم',
     manageCategories: 'إدارة الأقسام',
     addNewCategory: 'إضافة قسم جديد',
-    categoryNameAr: 'اسم القسم (بالعربية)',
+    categoryNameAr: 'الاسم (بالعربية)',
+    categoryNameEn: 'الاسم (بالإنجليزية)',
     categorySlug: 'المعرف (Slug)',
     displayOrder: 'ترتيب العرض',
     categoryList: 'قائمة الأقسام',
     actions: 'الإجراءات',
     addNewProduct: 'إضافة منتج جديد',
-    productName: 'اسم المنتج',
+    productName: 'الاسم (بالعربية)',
+    productNameEn: 'الاسم (بالإنجليزية)',
     productPrice: 'السعر ($)',
     productCategory: 'القسم',
     productImage: 'رابط الصورة',
@@ -119,7 +122,8 @@ const translations = {
     adminDashboard: 'لوحة التحكم',
     products: 'المنتجات',
     settings: 'الإعدادات',
-    productNameLabel: 'اسم المنتج',
+    productNameLabel: 'الاسم (AR)',
+    productNameEnLabel: 'الاسم (EN)',
     priceLabel: 'السعر',
     imageLabel: 'الصورة',
     categoryLabel: 'القسم',
@@ -190,13 +194,15 @@ const translations = {
     backToDashboard: 'Back to Dashboard',
     manageCategories: 'Manage Categories',
     addNewCategory: 'Add New Category',
-    categoryNameAr: 'Category Name (Arabic)',
+    categoryNameAr: 'Name (AR)',
+    categoryNameEn: 'Name (EN)',
     categorySlug: 'Slug',
     displayOrder: 'Display Order',
     categoryList: 'Category List',
     actions: 'Actions',
     addNewProduct: 'Add New Product',
-    productName: 'Product Name',
+    productName: 'Name (AR)',
+    productNameEn: 'Name (EN)',
     productPrice: 'Price ($)',
     productCategory: 'Category',
     productImage: 'Image URL',
@@ -253,7 +259,8 @@ const translations = {
     adminDashboard: 'Admin Dashboard',
     products: 'Products',
     settings: 'Settings',
-    productNameLabel: 'Product Name',
+    productNameLabel: 'Name (AR)',
+    productNameEnLabel: 'Name (EN)',
     priceLabel: 'Price',
     imageLabel: 'Image URL',
     categoryLabel: 'Category',
@@ -274,27 +281,6 @@ const translations = {
 };
 
 export function useTranslation() {
-  const [lang, setLang] = useState<'ar' | 'en'>('ar');
-
-  useEffect(() => {
-    const savedLang = localStorage.getItem('app-lang') as 'ar' | 'en';
-    if (savedLang) {
-      setLang(savedLang);
-      document.documentElement.dir = savedLang === 'ar' ? 'rtl' : 'ltr';
-      document.documentElement.lang = savedLang;
-    } else {
-      document.documentElement.dir = 'rtl';
-      document.documentElement.lang = 'ar';
-    }
-  }, []);
-
-  const toggleLang = () => {
-    const newLang = lang === 'ar' ? 'en' : 'ar';
-    setLang(newLang);
-    localStorage.setItem('app-lang', newLang);
-    document.documentElement.dir = newLang === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = newLang;
-  };
-
+  const { lang, toggleLang } = useLanguage();
   return { t: translations[lang], lang, toggleLang };
 }

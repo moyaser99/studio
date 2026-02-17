@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -73,6 +74,7 @@ export default function AdminPage() {
 
   const [formData, setFormData] = useState({
     name: '',
+    nameEn: '',
     price: '',
     category: '',
     imageUrl: '',
@@ -143,7 +145,8 @@ export default function AdminPage() {
     }
     setAiLoading(true);
     try {
-      const categoryName = categories?.find((c: any) => c.slug === formData.category)?.nameAr || formData.category;
+      const selectedCat = categories?.find((c: any) => c.slug === formData.category);
+      const categoryName = selectedCat?.nameAr || formData.category;
       const res = await generateProductDescription({
         productName: formData.name,
         category: categoryName,
@@ -161,12 +164,15 @@ export default function AdminPage() {
   const saveProduct = () => {
     if (!db) return;
     setSaving(true);
-    const categoryName = categories?.find((c: any) => c.slug === formData.category)?.nameAr || '';
+    const selectedCat = categories?.find((c: any) => c.slug === formData.category);
+    const categoryName = selectedCat?.nameAr || '';
+    const categoryNameEn = selectedCat?.nameEn || selectedCat?.slug || '';
     
     const payload: any = {
       ...formData,
       price: parseFloat(formData.price) || 0,
       categoryName,
+      categoryNameEn,
       updatedAt: serverTimestamp(),
     };
 
@@ -213,7 +219,7 @@ export default function AdminPage() {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', price: '', category: categories?.[0]?.slug || '', imageUrl: '', description: '' });
+    setFormData({ name: '', nameEn: '', price: '', category: categories?.[0]?.slug || '', imageUrl: '', description: '' });
     setIsAdding(false);
     setIsEditing(null);
     setSaving(false);
@@ -235,7 +241,7 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted/10" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen flex flex-col bg-muted/10 transition-all duration-300" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Header />
       <main className="flex-1 container mx-auto px-4 py-12">
         <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6">
@@ -275,6 +281,17 @@ export default function AdminPage() {
                       />
                     </div>
                     <div className="space-y-2 text-start">
+                      <Label>{t.productNameEnLabel}</Label>
+                      <input 
+                        value={formData.nameEn} 
+                        onChange={e => setFormData({...formData, nameEn: e.target.value})}
+                        placeholder="Ex: Luxury Cream" 
+                        className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2 text-start">
                       <Label>{t.productPrice}</Label>
                       <input 
                         type="number"
@@ -284,8 +301,6 @@ export default function AdminPage() {
                         className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
                     </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2 text-start">
                       <Label>{t.categoryLabel}</Label>
                       <select 
@@ -297,15 +312,15 @@ export default function AdminPage() {
                         {categories?.map((c: any) => <option key={c.id} value={c.slug}>{lang === 'ar' ? c.nameAr : (c.nameEn || c.slug)}</option>)}
                       </select>
                     </div>
-                    <div className="space-y-2 text-start">
-                      <Label>{t.imageLabel}</Label>
-                      <input 
-                        value={formData.imageUrl} 
-                        onChange={e => setFormData({...formData, imageUrl: e.target.value})}
-                        placeholder="https://..." 
-                        className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      />
-                    </div>
+                  </div>
+                  <div className="space-y-2 text-start">
+                    <Label>{t.imageLabel}</Label>
+                    <input 
+                      value={formData.imageUrl} 
+                      onChange={e => setFormData({...formData, imageUrl: e.target.value})}
+                      placeholder="https://..." 
+                      className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    />
                   </div>
                   <div className="space-y-2 text-start">
                     <div className="flex items-center justify-between">
@@ -382,7 +397,9 @@ export default function AdminPage() {
                               />
                             </div>
                           </TableCell>
-                          <TableCell className="font-bold text-start">{product.name}</TableCell>
+                          <TableCell className="font-bold text-start">
+                            {lang === 'ar' ? product.name : (product.nameEn || product.name)}
+                          </TableCell>
                           <TableCell className="font-bold text-primary text-start">${product.price?.toFixed(2)}</TableCell>
                           <TableCell>
                             <div className="flex justify-center gap-2">
@@ -394,6 +411,7 @@ export default function AdminPage() {
                                   setIsEditing(product.id);
                                   setFormData({
                                     name: product.name,
+                                    nameEn: product.nameEn || '',
                                     price: product.price.toString(),
                                     category: product.category,
                                     imageUrl: product.imageUrl,
