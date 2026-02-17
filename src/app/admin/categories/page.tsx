@@ -50,6 +50,8 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import Link from 'next/link';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
@@ -112,10 +114,14 @@ export default function AdminCategoriesPage() {
     };
 
     if (isEditing) {
-      updateDoc(doc(db, 'categories', isEditing), payload)
+      const docRef = doc(db, 'categories', isEditing);
+      updateDoc(docRef, payload)
         .then(() => {
           toast({ title: 'تم التحديث', description: 'تم تحديث القسم بنجاح.' });
           resetForm();
+        })
+        .catch(async (err) => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: payload }));
         })
         .finally(() => setSaving(false));
     } else {
@@ -124,6 +130,9 @@ export default function AdminCategoriesPage() {
         .then(() => {
           toast({ title: 'تمت الإضافة', description: 'تمت إضافة القسم الجديد بنجاح.' });
           resetForm();
+        })
+        .catch(async (err) => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'categories', operation: 'create', requestResourceData: payload }));
         })
         .finally(() => setSaving(false));
     }
@@ -138,22 +147,41 @@ export default function AdminCategoriesPage() {
       where('category', '==', slug),
       limit(1)
     );
-    const productSnapshot = await getDocs(productCheckQuery);
+    
+    try {
+      const productSnapshot = await getDocs(productCheckQuery).catch(async (err) => {
+        const pErr = new FirestorePermissionError({
+          path: 'products',
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', pErr);
+        throw err;
+      });
 
-    if (!productSnapshot.empty) {
-      if (!confirm('هذا القسم يحتوي على منتجات مرتبطة به. هل أنت متأكد من حذفه؟ قد يؤدي هذا لاختفاء المنتجات من صفحات القسم.')) return;
-    } else {
-      if (!confirm('هل أنت متأكد من حذف هذا القسم؟')) return;
+      if (!productSnapshot.empty) {
+        if (!confirm('هذا القسم يحتوي على منتجات مرتبطة به. هل أنت متأكد من حذفه؟ قد يؤدي هذا لاختفاء المنتجات من صفحات القسم.')) return;
+      } else {
+        if (!confirm('هل أنت متأكد من حذف هذا القسم؟')) return;
+      }
+
+      const docRef = doc(db, 'categories', id);
+      deleteDoc(docRef)
+        .then(() => {
+          toast({ title: 'تم الحذف', description: 'تمت إزالة القسم بنجاح.' });
+        })
+        .catch(async (err) => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' }));
+        });
+    } catch (e) {
+      // Handled by emitter
     }
-
-    deleteDoc(doc(db, 'categories', id));
-    toast({ title: 'تم الحذف', description: 'تمت إزالة القسم بنجاح.' });
   };
 
   const resetForm = () => {
     setFormData({ nameAr: '', slug: '', displayOrder: '0' });
     setIsAdding(false);
     setIsEditing(null);
+    setSaving(false);
   };
 
   return (

@@ -55,6 +55,8 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import Link from 'next/link';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
@@ -66,6 +68,7 @@ export default function AdminPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Form States
   const [formData, setFormData] = useState({
@@ -143,45 +146,73 @@ export default function AdminPage() {
 
   const saveProduct = () => {
     if (!db) return;
+    setSaving(true);
     const categoryName = categories?.find((c: any) => c.slug === formData.category)?.nameAr || '';
     
     const payload: any = {
       ...formData,
-      price: parseFloat(formData.price),
+      price: parseFloat(formData.price) || 0,
       categoryName,
       updatedAt: serverTimestamp(),
     };
 
     if (isEditing) {
-      updateDoc(doc(db, 'products', isEditing), payload);
-      toast({ title: 'تم التحديث', description: 'تم تحديث المنتج بنجاح.' });
+      const docRef = doc(db, 'products', isEditing);
+      updateDoc(docRef, payload)
+        .then(() => {
+          toast({ title: 'تم التحديث', description: 'تم تحديث المنتج بنجاح.' });
+          resetForm();
+        })
+        .catch(async (err) => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: payload }));
+        })
+        .finally(() => setSaving(false));
     } else {
       payload.createdAt = serverTimestamp();
-      addDoc(collection(db, 'products'), payload);
-      toast({ title: 'تمت الإضافة', description: 'تمت إضافة المنتج الجديد بنجاح.' });
+      addDoc(collection(db, 'products'), payload)
+        .then(() => {
+          toast({ title: 'تمت الإضافة', description: 'تمت إضافة المنتج الجديد بنجاح.' });
+          resetForm();
+        })
+        .catch(async (err) => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'products', operation: 'create', requestResourceData: payload }));
+        })
+        .finally(() => setSaving(false));
     }
-    resetForm();
   };
 
   const deleteProduct = (id: string) => {
     if (!db || !confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
-    deleteDoc(doc(db, 'products', id));
-    toast({ title: 'تم الحذف', description: 'تم إزالة المنتج من المخزون.' });
+    const docRef = doc(db, 'products', id);
+    deleteDoc(docRef)
+      .then(() => {
+        toast({ title: 'تم الحذف', description: 'تم إزالة المنتج من المخزون.' });
+      })
+      .catch(async (err) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' }));
+      });
   };
 
   const resetForm = () => {
     setFormData({ name: '', price: '', category: categories?.[0]?.slug || '', imageUrl: '', description: '' });
     setIsAdding(false);
     setIsEditing(null);
+    setSaving(false);
   };
 
   const updateHero = () => {
     if (!db || !heroUrl) return;
-    updateDoc(doc(db, 'siteSettings', 'heroSection'), {
+    const docRef = doc(db, 'siteSettings', 'heroSection');
+    updateDoc(docRef, {
       imageUrl: heroUrl,
       updatedAt: serverTimestamp()
-    });
-    toast({ title: 'تم التحديث', description: 'تم تغيير صورة الـ Hero Banner بنجاح.' });
+    })
+      .then(() => {
+        toast({ title: 'تم التحديث', description: 'تم تغيير صورة الـ Hero Banner بنجاح.' });
+      })
+      .catch(async (err) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update' }));
+      });
   };
 
   return (
@@ -282,8 +313,8 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button onClick={saveProduct} className="w-full rounded-full h-12 text-lg font-bold bg-[#D4AF37] hover:bg-[#B8962D]">
-                    {isEditing ? 'حفظ التعديلات' : 'إضافة المنتج للمخزون'}
+                  <Button onClick={saveProduct} disabled={saving} className="w-full rounded-full h-12 text-lg font-bold bg-[#D4AF37] hover:bg-[#B8962D]">
+                    {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : (isEditing ? 'حفظ التعديلات' : 'إضافة المنتج للمخزون')}
                   </Button>
                 </DialogFooter>
               </DialogContent>
