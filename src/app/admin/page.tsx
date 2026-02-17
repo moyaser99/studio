@@ -46,8 +46,7 @@ import {
   Sparkles,
   Image as ImageIcon,
   Save,
-  Tags,
-  ChevronRight
+  Tags
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow';
@@ -69,6 +68,7 @@ export default function AdminPage() {
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Form States
   const [formData, setFormData] = useState({
@@ -182,15 +182,24 @@ export default function AdminPage() {
   };
 
   const deleteProduct = (id: string) => {
-    if (!db || !confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
+    if (!isAdmin) {
+      toast({ variant: 'destructive', title: 'فشل العملية', description: 'عذراً، لا تملك صلاحية الحذف' });
+      return;
+    }
+
+    if (!db || !confirm('هل أنت متأكد من حذف هذا المنتج نهائياً؟')) return;
+    
+    setDeletingId(id);
     const docRef = doc(db, 'products', id);
+    
     deleteDoc(docRef)
       .then(() => {
-        toast({ title: 'تم الحذف', description: 'تم إزالة المنتج من المخزون.' });
+        toast({ title: 'تم الحذف', description: 'تم إزالة المنتج من المخزون بنجاح.' });
       })
       .catch(async (err) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' }));
-      });
+      })
+      .finally(() => setDeletingId(null));
   };
 
   const resetForm = () => {
@@ -385,10 +394,11 @@ export default function AdminPage() {
                               <Button 
                                 variant="ghost" 
                                 size="icon" 
+                                disabled={deletingId === product.id}
                                 className="rounded-full text-destructive hover:bg-destructive/5"
                                 onClick={() => deleteProduct(product.id)}
                               >
-                                <Trash2 className="h-5 w-5" />
+                                {deletingId === product.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
                               </Button>
                             </div>
                           </TableCell>

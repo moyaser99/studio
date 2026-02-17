@@ -42,7 +42,6 @@ import {
   Trash2, 
   Tags, 
   Loader2, 
-  ArrowRight,
   ChevronLeft
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -63,6 +62,7 @@ export default function AdminCategoriesPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Form States
   const [formData, setFormData] = useState({
@@ -139,6 +139,11 @@ export default function AdminCategoriesPage() {
   };
 
   const deleteCategory = async (id: string, slug: string) => {
+    if (!isAdmin) {
+      toast({ variant: 'destructive', title: 'فشل العملية', description: 'عذراً، لا تملك صلاحية الحذف' });
+      return;
+    }
+
     if (!db) return;
 
     // Check for products
@@ -159,19 +164,23 @@ export default function AdminCategoriesPage() {
       });
 
       if (!productSnapshot.empty) {
-        if (!confirm('هذا القسم يحتوي على منتجات مرتبطة به. هل أنت متأكد من حذفه؟ قد يؤدي هذا لاختفاء المنتجات من صفحات القسم.')) return;
+        if (!confirm('هذا القسم يحتوي على منتجات مرتبطة به. حذف القسم سيؤدي لاختفاء المنتجات من صفحات الموقع. هل أنت متأكد؟')) return;
       } else {
-        if (!confirm('هل أنت متأكد من حذف هذا القسم؟')) return;
+        if (!confirm('هل أنت متأكد من حذف هذا القسم نهائياً؟')) return;
       }
 
+      setDeletingId(id);
       const docRef = doc(db, 'categories', id);
+      
       deleteDoc(docRef)
         .then(() => {
-          toast({ title: 'تم الحذف', description: 'تمت إزالة القسم بنجاح.' });
+          toast({ title: 'تم الحذف', description: 'تم إزالة القسم بنجاح.' });
         })
         .catch(async (err) => {
           errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' }));
-        });
+        })
+        .finally(() => setDeletingId(null));
+        
     } catch (e) {
       // Handled by emitter
     }
@@ -299,10 +308,11 @@ export default function AdminCategoriesPage() {
                           <Button 
                             variant="ghost" 
                             size="icon" 
+                            disabled={deletingId === cat.id}
                             className="rounded-full text-destructive hover:bg-destructive/5"
                             onClick={() => deleteCategory(cat.id, cat.slug)}
                           >
-                            <Trash2 className="h-5 w-5" />
+                            {deletingId === cat.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
                           </Button>
                         </div>
                       </TableCell>
