@@ -117,7 +117,7 @@ export default function AdminPage() {
 
   if (!isAdmin && !authLoading) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <Header />
         <main className="flex-1 flex items-center justify-center bg-muted/20">
           <Card className="max-w-md text-center p-8 rounded-3xl shadow-xl">
@@ -235,7 +235,7 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted/10">
+    <div className="min-h-screen flex flex-col bg-muted/10" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Header />
       <main className="flex-1 container mx-auto px-4 py-12">
         <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6">
@@ -257,14 +257,14 @@ export default function AdminPage() {
                   <Plus className="h-6 w-6" /> {t.addNewProduct}
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl rounded-3xl overflow-y-auto max-h-[90vh]">
+              <DialogContent className="max-w-2xl rounded-3xl overflow-y-auto max-h-[90vh]" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-bold font-headline text-start">
                     {isEditing ? t.editProduct : t.addNewProduct}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-6 py-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2 text-start">
                       <Label>{t.productNameLabel}</Label>
                       <input 
@@ -285,7 +285,7 @@ export default function AdminPage() {
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2 text-start">
                       <Label>{t.categoryLabel}</Label>
                       <select 

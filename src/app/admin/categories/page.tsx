@@ -90,7 +90,7 @@ export default function AdminCategoriesPage() {
 
   if (!isAdmin && !authLoading) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <Header />
         <main className="flex-1 flex items-center justify-center bg-muted/20">
           <Card className="max-w-md text-center p-8 rounded-3xl shadow-xl">
@@ -195,13 +195,13 @@ export default function AdminCategoriesPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted/10">
+    <div className="min-h-screen flex flex-col bg-muted/10" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Header />
       <main className="flex-1 container mx-auto px-4 py-12">
         <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6">
           <div className="text-start">
             <Link href="/admin" className="text-primary flex items-center gap-1 mb-2 hover:underline">
-              {lang === 'ar' ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />} {t.backToDashboard}
+              {lang === 'ar' ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />} {t.backToDashboard}
             </Link>
             <h1 className="text-4xl font-black font-headline text-primary flex items-center gap-3">
               <Tags className="h-10 w-10" /> {t.manageCategories}
@@ -214,7 +214,7 @@ export default function AdminCategoriesPage() {
                 <Plus className="h-6 w-6" /> {t.addNewCategory}
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md rounded-3xl">
+            <DialogContent className="max-w-md rounded-3xl" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold font-headline text-start">
                   {isEditing ? t.editCategory : t.addNewCategory}
@@ -282,8 +282,8 @@ export default function AdminCategoriesPage() {
                 <TableBody>
                   {categories.map((cat: any) => (
                     <TableRow key={cat.id} className="hover:bg-primary/5 transition-colors">
-                      <TableCell className="font-bold">{cat.nameAr}</TableCell>
-                      <TableCell>{cat.slug}</TableCell>
+                      <TableCell className="font-bold text-start">{cat.nameAr}</TableCell>
+                      <TableCell className="text-start">{cat.slug}</TableCell>
                       <TableCell>
                         <div className="flex justify-center gap-2">
                           <Button 
