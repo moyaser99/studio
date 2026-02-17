@@ -26,14 +26,12 @@ export default function Header() {
   
   const isAdminPage = pathname?.startsWith('/admin');
 
-  // Dynamic categories for sidebar
   const categoriesQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, 'categories'), orderBy('displayOrder', 'asc'));
   }, [db]);
   const { data: categories } = useCollection(categoriesQuery);
 
-  // Admin logic
   const isAdmin = user?.email === ADMIN_EMAIL || user?.phoneNumber === ADMIN_PHONE;
 
   const handleLogout = async () => {
@@ -63,7 +61,7 @@ export default function Header() {
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side={lang === 'ar' ? 'right' : 'left'} className="w-[300px] sm:w-[350px] bg-white border-l-primary/10 flex flex-col z-[110]">
+              <SheetContent side={lang === 'ar' ? 'right' : 'left'} className="w-[300px] sm:w-[350px] bg-white border-primary/10 flex flex-col z-[110]">
                 <SheetHeader className="pb-6 border-b">
                   <SheetTitle className="text-primary text-start font-headline text-2xl font-black">
                     YourGroceriesUSA
@@ -78,7 +76,7 @@ export default function Header() {
                       onClick={() => navigateTo(`/category/${cat.slug}`)}
                       className="text-lg font-bold hover:text-primary py-3 px-4 rounded-2xl hover:bg-primary/5 transition-all flex items-center justify-between group text-start"
                     >
-                      <span>{lang === 'ar' ? cat.nameAr : cat.slug.charAt(0).toUpperCase() + cat.slug.slice(1)}</span>
+                      <span>{lang === 'ar' ? cat.nameAr : (cat.nameEn || cat.slug.charAt(0).toUpperCase() + cat.slug.slice(1))}</span>
                       <span className="opacity-0 group-hover:opacity-100 transition-opacity">
                         {lang === 'ar' ? '←' : '→'}
                       </span>
@@ -144,7 +142,6 @@ export default function Header() {
             )}
 
             <div className="flex items-center gap-2">
-              {/* Language Toggle Button */}
               <Button 
                 onClick={toggleLang}
                 className="hidden sm:flex rounded-full px-4 h-10 border-2 border-[#D4AF37] bg-[#F8C8DC]/20 text-primary hover:bg-[#F8C8DC]/40 transition-all font-bold gap-2 text-sm"

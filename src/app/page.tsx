@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,15 +7,15 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ProductCard from '@/components/product/ProductCard';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, Package, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, Package, Sparkles } from 'lucide-react';
 import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
 import { collection, query, limit, where, doc, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
+import { useTranslation } from '@/hooks/use-translation';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
 
-// Luxury Fallback styles for different categories
 const FALLBACK_STYLES = [
   'linear-gradient(135deg, #F8C8DC 0%, #D4AF37 100%)',
   'radial-gradient(circle at center, #F8C8DC 40%, #D4AF37 100%)',
@@ -28,6 +27,7 @@ const FALLBACK_STYLES = [
 
 function CategoryImage({ category, index }: { category: any, index: number }) {
   const db = useFirestore();
+  const { lang, t } = useTranslation();
   
   const categoryProductQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -42,6 +42,7 @@ function CategoryImage({ category, index }: { category: any, index: number }) {
 
   const product = products && products.length > 0 ? products[0] : null;
   const productImage = product?.imageUrl || product?.image || (product as any)?.src || null;
+  const isNew = product?.createdAt?.seconds && (Date.now() / 1000 - product.createdAt.seconds < 172800);
   
   const isImageOptimizable = (url: string) => {
     if (!url) return false;
@@ -66,6 +67,7 @@ function CategoryImage({ category, index }: { category: any, index: number }) {
 
   const useOptimized = isImageOptimizable(productImage);
   const fallbackStyle = FALLBACK_STYLES[index % FALLBACK_STYLES.length];
+  const catName = lang === 'ar' ? category.nameAr : (category.nameEn || category.slug);
 
   return (
     <div className="relative aspect-square rounded-full overflow-hidden border-2 border-transparent group-hover:border-primary transition-all p-1 bg-white shadow-sm">
@@ -78,19 +80,26 @@ function CategoryImage({ category, index }: { category: any, index: number }) {
           {useOptimized ? (
             <Image
               src={productImage}
-              alt={category.nameAr}
+              alt={catName}
               fill
               className="object-cover transition-transform duration-500 group-hover:scale-110"
             />
           ) : (
             <img
               src={productImage}
-              alt={category.nameAr}
+              alt={catName}
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
               }}
             />
+          )}
+          {isNew && (
+            <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <span className="bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform">
+                {t.new}
+              </span>
+            </div>
           )}
         </div>
       ) : (
@@ -108,6 +117,7 @@ function CategoryImage({ category, index }: { category: any, index: number }) {
 export default function Home() {
   const db = useFirestore();
   const { user, loading: authLoading } = useUser();
+  const { t, lang } = useTranslation();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -141,7 +151,7 @@ export default function Home() {
 
   if (!mounted) {
     return (
-      <div className="flex min-h-screen flex-col" dir="rtl">
+      <div className="flex min-h-screen flex-col">
         <Header />
         <main className="flex-1">
           <div className="w-full h-[600px] bg-[#F8E8E8] flex items-center justify-center">
@@ -154,7 +164,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col" dir="rtl">
+    <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1 overflow-x-hidden">
         {/* Luxury Full-Width Hero Section */}
@@ -167,32 +177,32 @@ export default function Home() {
             backgroundRepeat: 'no-repeat'
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-l from-white/95 via-white/60 to-transparent md:from-white/80 md:via-white/40" />
+          <div className="absolute inset-0 bg-gradient-to-start from-white/95 via-white/60 to-transparent md:from-white/80 md:via-white/40" />
           
           <div className="container relative mx-auto px-4 md:px-6 z-10">
-            <div className="max-w-[800px] space-y-8 text-right pr-4 md:pr-12">
+            <div className="max-w-[800px] space-y-8 text-start ps-4 md:ps-12">
               <div className="space-y-4">
-                <div className="flex items-center gap-2 justify-end text-primary font-bold tracking-widest animate-in fade-in slide-in-from-right-5 duration-700">
-                  <Sparkles className="h-5 w-5" /> مجموعة حصرية من أمريكا
+                <div className="flex items-center gap-2 justify-start text-primary font-bold tracking-widest animate-in fade-in slide-in-from-start-5 duration-700">
+                  <Sparkles className="h-5 w-5" /> {t.exclusiveFromUSA}
                 </div>
-                <h1 className="text-5xl font-bold tracking-tight sm:text-7xl lg:text-8xl text-foreground font-headline leading-[1.1] animate-in fade-in slide-in-from-right-10 duration-1000">
-                  ارتقِ بأساسياتك <br/>
-                  <span className="text-primary">اليومية</span>
+                <h1 className="text-5xl font-bold tracking-tight sm:text-7xl lg:text-8xl text-foreground font-headline leading-[1.1] animate-in fade-in slide-in-from-start-10 duration-1000">
+                  {t.elevateDaily.split(' ').slice(0, 2).join(' ')} <br/>
+                  <span className="text-primary">{t.elevateDaily.split(' ').slice(2).join(' ')}</span>
                 </h1>
-                <p className="max-w-[600px] text-muted-foreground text-xl md:text-3xl leading-relaxed font-medium animate-in fade-in slide-in-from-right-10 duration-1000 delay-200">
-                  اكتشف مختاراتنا الفاخرة من منتجات العناية والجمال ونمط الحياة الراقي.
+                <p className="max-w-[600px] text-muted-foreground text-xl md:text-3xl leading-relaxed font-medium animate-in fade-in slide-in-from-start-10 duration-1000 delay-200">
+                  {t.luxurySelection}
                 </p>
               </div>
               <div className="flex flex-wrap gap-5 animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-300">
                 <Link href="/products">
                   <Button size="lg" className="bg-primary hover:bg-primary/90 text-white px-12 h-16 rounded-full text-xl font-bold shadow-2xl transition-all hover:scale-105">
-                    تسوق المجموعة
+                    {t.shopCollection}
                   </Button>
                 </Link>
                 {isAdmin && (
                   <Link href="/admin">
                     <Button variant="outline" size="lg" className="border-primary/50 bg-white/50 backdrop-blur-md text-primary hover:bg-primary/10 px-12 h-16 rounded-full font-bold text-lg shadow-xl">
-                      إدارة المتجر
+                      {t.manageStore}
                     </Button>
                   </Link>
                 )}
@@ -211,13 +221,13 @@ export default function Home() {
         <section className="py-24 bg-white">
           <div className="container mx-auto px-4 md:px-6">
             <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-4">
-              <div className="text-right">
-                <h2 className="text-4xl font-bold tracking-tight font-headline mb-4">تسوق حسب القسم</h2>
-                <p className="text-muted-foreground text-lg">مجموعاتنا المختارة بعناية لتناسب ذوقك الرفيع</p>
+              <div className="text-start">
+                <h2 className="text-4xl font-bold tracking-tight font-headline mb-4">{t.shopByCategory}</h2>
+                <p className="text-muted-foreground text-lg">{t.carefullySelected}</p>
               </div>
               <Link href="/products">
                 <Button variant="ghost" className="text-primary gap-2 hover:bg-primary/5 rounded-full text-lg">
-                  استكشف الكل <ArrowLeft className="h-5 w-5" />
+                  {t.exploreAll} {lang === 'ar' ? <ArrowLeft className="h-5 w-5" /> : <ArrowRight className="h-5 w-5" />}
                 </Button>
               </Link>
             </div>
@@ -232,12 +242,14 @@ export default function Home() {
                       category={category} 
                       index={idx}
                     />
-                    <span className="block font-bold text-xl group-hover:text-primary transition-colors">{category.nameAr}</span>
+                    <span className="block font-bold text-xl group-hover:text-primary transition-colors">
+                      {lang === 'ar' ? category.nameAr : (category.nameEn || category.slug)}
+                    </span>
                   </Link>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 text-muted-foreground">لا توجد أقسام حالياً.</div>
+              <div className="text-center py-12 text-muted-foreground">{t.comeBackLater}</div>
             )}
           </div>
         </section>
@@ -245,9 +257,9 @@ export default function Home() {
         {/* Latest Products */}
         <section className="py-24 bg-secondary/5 border-y">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="text-right mb-16">
-              <h2 className="text-4xl font-bold tracking-tight font-headline mb-4">أحدث المنتجات</h2>
-              <p className="text-muted-foreground text-lg">اكتشف آخر ما وصل إلينا من ماركات عالمية فاخرة</p>
+            <div className="text-start mb-16">
+              <h2 className="text-4xl font-bold tracking-tight font-headline mb-4">{t.latestProducts}</h2>
+              <p className="text-muted-foreground text-lg">{t.latestArrivals}</p>
             </div>
             
             {productsLoading ? (
@@ -262,8 +274,10 @@ export default function Home() {
                     product={{
                       id: product.id,
                       name: product.name,
+                      nameEn: product.nameEn,
                       price: product.price,
                       categoryName: product.categoryName,
+                      categoryNameEn: product.categoryNameEn,
                       image: product.imageUrl,
                     }} 
                   />
@@ -275,11 +289,11 @@ export default function Home() {
                   <Package className="h-12 w-12 text-primary/40" />
                 </div>
                 <p className="text-muted-foreground text-xl mb-8">
-                  {isAdmin ? "المخزون فارغ حالياً. ابدأ بإضافة المنتجات." : "لا توجد منتجات حالياً. يرجى العودة لاحقاً."}
+                  {isAdmin ? t.emptyStock : t.comeBackLater}
                 </p>
                 {isAdmin && (
                   <Link href="/admin">
-                     <Button className="rounded-full px-12 h-14 text-xl font-bold shadow-lg bg-[#D4AF37] hover:bg-[#B8962D]">أضف أول منتج</Button>
+                     <Button className="rounded-full px-12 h-14 text-xl font-bold shadow-lg bg-[#D4AF37] hover:bg-[#B8962D]">{t.addFirstProduct}</Button>
                   </Link>
                 )}
               </div>
