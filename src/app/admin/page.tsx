@@ -45,7 +45,8 @@ import {
   Image as ImageIcon,
   Save,
   Tags,
-  AlertTriangle
+  AlertTriangle,
+  AlertCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow';
@@ -58,6 +59,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
+const PLACEHOLDER_IMAGE = 'https://picsum.photos/seed/placeholder/200/200';
 
 export default function AdminPage() {
   const db = useFirestore();
@@ -176,6 +178,9 @@ export default function AdminPage() {
           resetForm();
         })
         .catch(async () => {
+          if (!auth?.currentUser) {
+            toast({ variant: 'destructive', title: 'جلسة مفقودة', description: 'يرجى فتح الموقع في نافذة جديدة.' });
+          }
           errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: payload }));
         })
         .finally(() => setSaving(false));
@@ -187,6 +192,9 @@ export default function AdminPage() {
           resetForm();
         })
         .catch(async () => {
+          if (!auth?.currentUser) {
+            toast({ variant: 'destructive', title: 'جلسة مفقودة', description: 'يرجى فتح الموقع في نافذة جديدة.' });
+          }
           errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'products', operation: 'create', requestResourceData: payload }));
         })
         .finally(() => setSaving(false));
@@ -380,7 +388,14 @@ export default function AdminPage() {
                         <TableRow key={product.id} className="hover:bg-primary/5 transition-colors">
                           <TableCell>
                             <div className="h-16 w-16 rounded-2xl overflow-hidden bg-muted border">
-                              <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" />
+                              <img 
+                                src={product.imageUrl || PLACEHOLDER_IMAGE} 
+                                alt={product.name} 
+                                className="h-full w-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE;
+                                }}
+                              />
                             </div>
                           </TableCell>
                           <TableCell className="font-bold">{product.name}</TableCell>
