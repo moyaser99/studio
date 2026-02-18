@@ -1,7 +1,19 @@
-
 'use client';
 
 import { useLanguage } from '@/context/language-context';
+
+const categoryMapping: Record<string, string> = {
+  'مكياج': 'Makeup',
+  'المكياج': 'Makeup',
+  'العناية بالبشرة': 'Skincare',
+  'العناية بالشعر': 'Haircare',
+  'الفيتامينات': 'Vitamins',
+  'الحقائب': 'Bags',
+  'الساعات': 'Watches',
+  'ساعات': 'Watches',
+  'عطور': 'Perfumes',
+  'نظارات': 'Eyewear',
+};
 
 const translations = {
   ar: {
@@ -86,7 +98,6 @@ const translations = {
     instagram: 'إنستغرام',
     facebook: 'فيسبوك',
     whatsapp: 'واتساب',
-    // Auth & Profile
     loginTitle: 'تسجيل الدخول',
     loginSubtitle: 'أهلاً بك مجدداً في YourGroceriesUSA',
     email: 'البريد الإلكتروني',
@@ -118,7 +129,6 @@ const translations = {
     namePlaceholder: 'أدخل اسمك بالكامل',
     phoneInUse: 'رقم الهاتف هذا مسجل مسبقاً.',
     profileUpdated: 'تم حفظ بياناتك بنجاح.',
-    // Admin Extra
     adminDashboard: 'لوحة التحكم',
     products: 'المنتجات',
     settings: 'الإعدادات',
@@ -139,7 +149,7 @@ const translations = {
     productDeleted: 'تم إزالة المنتج بنجاح.',
     categoryDeleted: 'تم إزالة القسم بنجاح.',
     confirmDeleteProduct: 'هل أنت متأكد من حذف هذا المنتج؟',
-    noProductsFound: 'لا توجد منتجات حالياً.'
+    noProductsFound: 'لا توجد منتجات حالياً.',
   },
   en: {
     home: 'Home',
@@ -223,7 +233,6 @@ const translations = {
     instagram: 'Instagram',
     facebook: 'Facebook',
     whatsapp: 'WhatsApp',
-    // Auth & Profile
     loginTitle: 'Login',
     loginSubtitle: 'Welcome back to YourGroceriesUSA',
     email: 'Email',
@@ -255,7 +264,6 @@ const translations = {
     namePlaceholder: 'Enter your full name',
     phoneInUse: 'This phone number is already registered.',
     profileUpdated: 'Your profile has been saved successfully.',
-    // Admin Extra
     adminDashboard: 'Admin Dashboard',
     products: 'Products',
     settings: 'Settings',
@@ -276,11 +284,17 @@ const translations = {
     productDeleted: 'Product removed successfully.',
     categoryDeleted: 'Category removed successfully.',
     confirmDeleteProduct: 'Are you sure you want to delete this product?',
-    noProductsFound: 'No products found currently.'
+    noProductsFound: 'No products found currently.',
   }
 };
 
 export function useTranslation() {
   const { lang, toggleLang } = useLanguage();
-  return { t: translations[lang], lang, toggleLang };
+
+  const getTranslatedCategory = (categoryName: string) => {
+    if (lang === 'ar') return categoryName;
+    return categoryMapping[categoryName] || categoryMapping[categoryName.trim()] || categoryName;
+  };
+
+  return { t: translations[lang], lang, toggleLang, getTranslatedCategory };
 }

@@ -27,7 +27,7 @@ const FALLBACK_STYLES = [
 
 function CategoryImage({ category, index }: { category: any, index: number }) {
   const db = useFirestore();
-  const { lang, t } = useTranslation();
+  const { lang, t, getTranslatedCategory } = useTranslation();
   
   const categoryProductQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -67,7 +67,7 @@ function CategoryImage({ category, index }: { category: any, index: number }) {
 
   const useOptimized = isImageOptimizable(productImage);
   const fallbackStyle = FALLBACK_STYLES[index % FALLBACK_STYLES.length];
-  const catName = lang === 'ar' ? category.nameAr : (category.nameEn || category.slug);
+  const catName = lang === 'ar' ? category.nameAr : (category.nameEn || getTranslatedCategory(category.nameAr));
 
   return (
     <div className="relative aspect-square rounded-full overflow-hidden border-2 border-transparent group-hover:border-primary transition-all p-1 bg-white shadow-sm">
@@ -117,7 +117,7 @@ function CategoryImage({ category, index }: { category: any, index: number }) {
 export default function Home() {
   const db = useFirestore();
   const { user, loading: authLoading } = useUser();
-  const { t, lang } = useTranslation();
+  const { t, lang, getTranslatedCategory } = useTranslation();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -243,7 +243,7 @@ export default function Home() {
                       index={idx}
                     />
                     <span className="block font-bold text-xl group-hover:text-primary transition-colors">
-                      {lang === 'ar' ? category.nameAr : (category.nameEn || category.slug)}
+                      {lang === 'ar' ? category.nameAr : (category.nameEn || getTranslatedCategory(category.nameAr))}
                     </span>
                   </Link>
                 ))}

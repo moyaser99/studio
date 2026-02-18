@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -65,7 +64,7 @@ export default function AdminPage() {
   const auth = useAuth();
   const { user, loading: authLoading } = useUser();
   const { toast } = useToast();
-  const { lang, t } = useTranslation();
+  const { lang, t, getTranslatedCategory } = useTranslation();
   const [isAdding, setIsAdding] = useState(false);
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
@@ -202,6 +201,7 @@ export default function AdminPage() {
   };
 
   const deleteProduct = (id: string) => {
+    console.log('Attempting to delete ID:', id);
     if (!isAdmin || !db) return;
     if (!window.confirm(t.confirmDeleteProduct)) return;
     
@@ -214,6 +214,7 @@ export default function AdminPage() {
       })
       .catch((err) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' }));
+        alert('Failed to delete: ' + err.message);
       })
       .finally(() => setDeletingId(null));
   };
@@ -309,7 +310,7 @@ export default function AdminPage() {
                         onChange={e => setFormData({...formData, category: e.target.value})}
                       >
                         <option value="" disabled>{t.chooseCategory}</option>
-                        {categories?.map((c: any) => <option key={c.id} value={c.slug}>{lang === 'ar' ? c.nameAr : (c.nameEn || c.slug)}</option>)}
+                        {categories?.map((c: any) => <option key={c.id} value={c.slug}>{lang === 'ar' ? c.nameAr : (c.nameEn || getTranslatedCategory(c.nameAr))}</option>)}
                       </select>
                     </div>
                   </div>
@@ -378,6 +379,7 @@ export default function AdminPage() {
                       <TableRow>
                         <TableHead className="text-start py-6">{t.imageLabel}</TableHead>
                         <TableHead className="text-start">{t.productName}</TableHead>
+                        <TableHead className="text-start">{t.categoryLabel}</TableHead>
                         <TableHead className="text-start">{t.priceLabel}</TableHead>
                         <TableHead className="text-center">{t.actions}</TableHead>
                       </TableRow>
@@ -399,6 +401,9 @@ export default function AdminPage() {
                           </TableCell>
                           <TableCell className="font-bold text-start">
                             {lang === 'ar' ? product.name : (product.nameEn || product.name)}
+                          </TableCell>
+                          <TableCell className="text-start">
+                            {lang === 'ar' ? product.categoryName : (product.categoryNameEn || getTranslatedCategory(product.categoryName))}
                           </TableCell>
                           <TableCell className="font-bold text-primary text-start">${product.price?.toFixed(2)}</TableCell>
                           <TableCell>

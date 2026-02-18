@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -20,7 +19,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const { lang, t } = useTranslation();
+  const { lang, t, getTranslatedCategory } = useTranslation();
 
   const isImageOptimizable = (url: string) => {
     if (!url) return false;
@@ -48,7 +47,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const displayImage = isValidUrl ? product.image : 'https://picsum.photos/seed/placeholder/600/600';
 
   const displayName = lang === 'ar' ? product.name : (product.nameEn || product.name);
-  const displayCategory = lang === 'ar' ? product.categoryName : (product.categoryNameEn || product.categoryName);
+  const displayCategory = lang === 'ar' ? product.categoryName : (product.categoryNameEn || getTranslatedCategory(product.categoryName));
 
   return (
     <Link href={`/product/${product.id}`}>
