@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -34,6 +35,7 @@ function CategoryImage({ category, index }: { category: any, index: number }) {
     return query(
       collection(db, 'products'),
       where('category', '==', category.slug),
+      where('isHidden', '!=', true),
       limit(1)
     );
   }, [db, category.slug]);
@@ -135,7 +137,13 @@ export default function Home() {
 
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
-    return query(collection(db, 'products'), limit(8), orderBy('createdAt', 'desc'));
+    // Using where(isHidden != true) might require a composite index with orderBy(createdAt)
+    // We'll use where('isHidden', '==', false) for better compatibility with existing indexes
+    return query(
+      collection(db, 'products'), 
+      where('isHidden', '!=', true),
+      limit(8)
+    );
   }, [db]);
   
   const { data: products, loading: productsLoading } = useCollection(productsQuery);

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -43,7 +44,9 @@ import {
   Image as ImageIcon,
   Save,
   Tags,
-  AlertTriangle
+  AlertTriangle,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow';
@@ -54,6 +57,7 @@ import Link from 'next/link';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useTranslation } from '@/hooks/use-translation';
+import { Badge } from '@/components/ui/badge';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
@@ -70,6 +74,7 @@ export default function AdminPage() {
   const [aiLoading, setAiLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -188,6 +193,7 @@ export default function AdminPage() {
         .finally(() => setSaving(false));
     } else {
       payload.createdAt = serverTimestamp();
+      payload.isHidden = false; // Default visibility
       addDoc(collection(db, 'products'), payload)
         .then(() => {
           toast({ title: 'Added', description: t.productAdded });
@@ -200,8 +206,26 @@ export default function AdminPage() {
     }
   };
 
+  const toggleVisibility = (id: string, currentStatus: boolean) => {
+    if (!db) return;
+    setTogglingId(id);
+    const docRef = doc(db, 'products', id);
+    const newStatus = !currentStatus;
+    
+    updateDoc(docRef, { isHidden: newStatus })
+      .then(() => {
+        toast({ 
+          title: newStatus ? t.hidden : t.visible, 
+          description: newStatus ? 'Product is now hidden.' : 'Product is now visible.' 
+        });
+      })
+      .catch(() => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update' }));
+      })
+      .finally(() => setTogglingId(null));
+  };
+
   const deleteProduct = (id: string) => {
-    console.log('Attempting to delete ID:', id);
     if (!isAdmin || !db) return;
     if (!window.confirm(t.confirmDeleteProduct)) return;
     
@@ -214,7 +238,6 @@ export default function AdminPage() {
       })
       .catch((err) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'delete' }));
-        alert('Failed to delete: ' + err.message);
       })
       .finally(() => setDeletingId(null));
   };
@@ -386,7 +409,7 @@ export default function AdminPage() {
                     </TableHeader>
                     <TableBody>
                       {products.map((product: any) => (
-                        <TableRow key={product.id} className="hover:bg-primary/5 transition-colors">
+                        <TableRow key={product.id} className={`hover:bg-primary/5 transition-colors ${product.isHidden ? 'opacity-60 grayscale-[0.5]' : ''}`}>
                           <TableCell>
                             <div className="h-16 w-16 rounded-2xl overflow-hidden bg-muted border">
                               <img 
@@ -400,7 +423,10 @@ export default function AdminPage() {
                             </div>
                           </TableCell>
                           <TableCell className="font-bold text-start">
-                            {lang === 'ar' ? product.name : (product.nameEn || product.name)}
+                            <div className="flex flex-col">
+                              <span>{lang === 'ar' ? product.name : (product.nameEn || product.name)}</span>
+                              {product.isHidden && <Badge variant="secondary" className="w-fit text-[10px] mt-1">{t.hidden}</Badge>}
+                            </div>
                           </TableCell>
                           <TableCell className="text-start">
                             {lang === 'ar' ? product.categoryName : (product.categoryNameEn || getTranslatedCategory(product.categoryName))}
@@ -408,6 +434,15 @@ export default function AdminPage() {
                           <TableCell className="font-bold text-primary text-start">${product.price?.toFixed(2)}</TableCell>
                           <TableCell>
                             <div className="flex justify-center gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className={`rounded-full ${product.isHidden ? 'text-muted-foreground' : 'text-primary'} hover:bg-primary/10`}
+                                onClick={() => toggleVisibility(product.id, !!product.isHidden)}
+                                disabled={togglingId === product.id}
+                              >
+                                {togglingId === product.id ? <Loader2 className="h-5 w-5 animate-spin" /> : (product.isHidden ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />)}
+                              </Button>
                               <Button 
                                 variant="ghost" 
                                 size="icon" 

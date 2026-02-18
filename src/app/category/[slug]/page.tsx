@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -39,7 +40,8 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
     if (!db || !slug) return null;
     return query(
       collection(db, 'products'),
-      where('category', '==', slug)
+      where('category', '==', slug),
+      where('isHidden', '!=', true)
     );
   }, [db, slug]);
 

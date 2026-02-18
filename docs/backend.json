@@ -38,6 +38,10 @@
           "type": "string",
           "description": "A detailed description of the product"
         },
+        "isHidden": {
+          "type": "boolean",
+          "description": "Whether the product is hidden from the public store"
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time",

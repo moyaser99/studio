@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect } from 'react';
@@ -5,7 +6,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ProductCard from '@/components/product/ProductCard';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, where } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import { Loader2, PackageSearch } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
@@ -18,10 +19,9 @@ export default function AllProductsPage() {
   const allProductsQuery = useMemoFirebase(() => {
     if (!db) return null;
     try {
-      console.log("[Audit] Constructing global products query...");
       return query(
         collection(db, 'products'),
-        orderBy('createdAt', 'desc')
+        where('isHidden', '!=', true)
       );
     } catch (e) {
       console.error("[Audit] Failed to create products query:", e);
@@ -35,11 +35,6 @@ export default function AllProductsPage() {
   useEffect(() => {
     if (products) {
       console.log(`[Audit] Data verification: Fetched ${products.length} total products.`);
-      const categoryCounts = products.reduce((acc: any, p: any) => {
-        acc[p.categoryName || 'Unknown'] = (acc[p.categoryName || 'Unknown'] || 0) + 1;
-        return acc;
-      }, {});
-      console.log("[Audit] Category distribution:", categoryCounts);
     }
     if (error) {
       console.error("[Audit] Firestore sync error:", error);

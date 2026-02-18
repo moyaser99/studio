@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useLanguage } from '@/context/language-context';
@@ -150,6 +151,10 @@ const translations = {
     categoryDeleted: 'تم إزالة القسم بنجاح.',
     confirmDeleteProduct: 'هل أنت متأكد من حذف هذا المنتج؟',
     noProductsFound: 'لا توجد منتجات حالياً.',
+    hide: 'إخفاء',
+    show: 'إظهار',
+    hidden: 'مخفي',
+    visible: 'مرئي'
   },
   en: {
     home: 'Home',
@@ -285,6 +290,10 @@ const translations = {
     categoryDeleted: 'Category removed successfully.',
     confirmDeleteProduct: 'Are you sure you want to delete this product?',
     noProductsFound: 'No products found currently.',
+    hide: 'Hide',
+    show: 'Show',
+    hidden: 'Hidden',
+    visible: 'Visible'
   }
 };
 
