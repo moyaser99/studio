@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useLanguage } from '@/context/language-context';
@@ -158,7 +157,18 @@ const translations = {
     hidden: 'مخفي',
     visible: 'مرئي',
     stock: 'المخزون',
-    addProductTitle: 'إضافة منتج جديد'
+    addProductTitle: 'إضافة منتج جديد',
+    shoppingCart: 'سلة التسوق',
+    cartEmpty: 'سلتك فارغة حالياً',
+    startShopping: 'ابدأ التسوق الآن',
+    orderSummary: 'ملخص الطلب',
+    subtotal: 'المجموع الفرعي',
+    shippingFee: 'رسوم الشحن',
+    free: 'مجاني',
+    total: 'الإجمالي الكلي',
+    checkout: 'إتمام الطلب',
+    remove: 'إزالة',
+    items: 'منتجات'
   },
   en: {
     home: 'Home',
@@ -301,7 +311,18 @@ const translations = {
     hidden: 'Hidden',
     visible: 'Visible',
     stock: 'Stock',
-    addProductTitle: 'Add New Product'
+    addProductTitle: 'Add New Product',
+    shoppingCart: 'Shopping Cart',
+    cartEmpty: 'Your cart is currently empty',
+    startShopping: 'Start Shopping Now',
+    orderSummary: 'Order Summary',
+    subtotal: 'Subtotal',
+    shippingFee: 'Shipping Fee',
+    free: 'Free',
+    total: 'Grand Total',
+    checkout: 'Checkout',
+    remove: 'Remove',
+    items: 'items'
   }
 };
 
