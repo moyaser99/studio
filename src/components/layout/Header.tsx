@@ -11,6 +11,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { query, collection, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import { useTranslation } from '@/hooks/use-translation';
+import { useCart } from '@/context/CartContext';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
@@ -23,6 +24,7 @@ export default function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const { t, lang, toggleLang } = useTranslation();
+  const { totalItems } = useCart();
   
   const isAdminPage = pathname?.startsWith('/admin');
 
@@ -186,9 +188,16 @@ export default function Header() {
                 </Link>
               )}
 
-              <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-primary/5">
+              <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-primary/5 group">
                 <ShoppingBag className="h-5 w-5" />
-                <span className="absolute top-1 right-1 h-2 w-2 bg-primary rounded-full border border-white"></span>
+                {totalItems > 0 && (
+                  <span 
+                    key={totalItems}
+                    className="absolute -top-1 -right-1 h-5 w-5 bg-[#D4AF37] text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-sm animate-in zoom-in duration-300"
+                  >
+                    {totalItems}
+                  </span>
+                )}
               </Button>
             </div>
           </div>
