@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { FirebaseClientProvider } from '@/firebase';
 import { LanguageProvider } from '@/context/language-context';
+import { CartProvider } from '@/context/CartContext';
 
 export const metadata: Metadata = {
   title: 'YourGroceriesUSA - منتجات تجميل وأساسيات فاخرة',
@@ -25,8 +26,10 @@ export default function RootLayout({
       <body className="font-body antialiased selection:bg-primary selection:text-white" suppressHydrationWarning>
         <FirebaseClientProvider>
           <LanguageProvider>
-            {children}
-            <Toaster />
+            <CartProvider>
+              {children}
+              <Toaster />
+            </CartProvider>
           </LanguageProvider>
         </FirebaseClientProvider>
       </body>
