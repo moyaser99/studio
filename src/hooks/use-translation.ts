@@ -82,7 +82,8 @@ const translations = {
     productPrice: 'السعر ($)',
     productCategory: 'القسم',
     productImage: 'رابط الصورة',
-    productDescription: 'الوصف',
+    productDescription: 'الوصف (بالعربية)',
+    productDescriptionEn: 'الوصف (بالإنجليزية)',
     generateAiDescription: 'توليد الوصف بالذكاء الاصطناعي',
     productList: 'قائمة المنتجات',
     siteSettings: 'إعدادات الموقع',
@@ -138,7 +139,8 @@ const translations = {
     priceLabel: 'السعر',
     imageLabel: 'الصورة',
     categoryLabel: 'القسم',
-    descriptionLabel: 'الوصف',
+    descriptionLabel: 'الوصف (AR)',
+    descriptionEnLabel: 'الوصف (EN)',
     saveProduct: 'حفظ المنتج',
     updateProduct: 'تحديث المنتج',
     editCategory: 'تعديل القسم',
@@ -154,7 +156,9 @@ const translations = {
     hide: 'إخفاء',
     show: 'إظهار',
     hidden: 'مخفي',
-    visible: 'مرئي'
+    visible: 'مرئي',
+    stock: 'المخزون',
+    addProductTitle: 'إضافة منتج جديد'
   },
   en: {
     home: 'Home',
@@ -221,7 +225,8 @@ const translations = {
     productPrice: 'Price ($)',
     productCategory: 'Category',
     productImage: 'Image URL',
-    productDescription: 'Description',
+    productDescription: 'Description (AR)',
+    productDescriptionEn: 'Description (EN)',
     generateAiDescription: 'Generate AI Description',
     productList: 'Product List',
     siteSettings: 'Site Settings',
@@ -277,7 +282,8 @@ const translations = {
     priceLabel: 'Price',
     imageLabel: 'Image URL',
     categoryLabel: 'Category',
-    descriptionLabel: 'Description',
+    descriptionLabel: 'Description (AR)',
+    descriptionEnLabel: 'Description (EN)',
     saveProduct: 'Save Product',
     updateProduct: 'Update Product',
     editCategory: 'Edit Category',
@@ -293,7 +299,9 @@ const translations = {
     hide: 'Hide',
     show: 'Show',
     hidden: 'Hidden',
-    visible: 'Visible'
+    visible: 'Visible',
+    stock: 'Stock',
+    addProductTitle: 'Add New Product'
   }
 };
 
