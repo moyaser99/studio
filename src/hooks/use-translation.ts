@@ -292,6 +292,7 @@ export function useTranslation() {
   const { lang, toggleLang } = useLanguage();
 
   const getTranslatedCategory = (categoryName: string) => {
+    if (!categoryName) return '';
     if (lang === 'ar') return categoryName;
     return categoryMapping[categoryName] || categoryMapping[categoryName.trim()] || categoryName;
   };

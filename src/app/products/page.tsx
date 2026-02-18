@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect } from 'react';
@@ -9,9 +8,11 @@ import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import { Loader2, PackageSearch } from 'lucide-react';
+import { useTranslation } from '@/hooks/use-translation';
 
 export default function AllProductsPage() {
   const db = useFirestore();
+  const { lang, t } = useTranslation();
 
   // Audit Step: Stable Query construction
   const allProductsQuery = useMemoFirebase(() => {
@@ -46,14 +47,14 @@ export default function AllProductsPage() {
   }, [products, error]);
 
   return (
-    <div className="flex min-h-screen flex-col" dir="rtl">
+    <div className="flex min-h-screen flex-col" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Header />
       <main className="flex-1">
         <section className="bg-primary/5 py-12 md:py-20 border-b">
-          <div className="container mx-auto px-4 text-right">
-            <h1 className="text-4xl md:text-5xl font-bold font-headline mb-4">جميع المنتجات</h1>
+          <div className="container mx-auto px-4 text-start">
+            <h1 className="text-4xl md:text-5xl font-bold font-headline mb-4">{t.allProducts}</h1>
             <p className="text-muted-foreground text-lg max-w-2xl">
-              استكشف مجموعتنا الكاملة من المنتجات المختارة بعناية لتناسب أرقى الأذواق.
+              {t.allProductsDesc}
             </p>
           </div>
         </section>
@@ -66,8 +67,8 @@ export default function AllProductsPage() {
               </div>
             ) : error ? (
               <div className="text-center py-20 bg-destructive/5 rounded-3xl border border-destructive/20">
-                <h3 className="text-xl font-bold text-destructive mb-2">حدث خطأ أثناء جلب البيانات</h3>
-                <p className="text-muted-foreground">يرجى التحقق من سجلات الكونسول للتفاصيل.</p>
+                <h3 className="text-xl font-bold text-destructive mb-2">{t.errorOccurred}</h3>
+                <p className="text-muted-foreground">{t.comeBackLater}</p>
               </div>
             ) : products && products.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -77,8 +78,10 @@ export default function AllProductsPage() {
                     product={{
                       id: product.id,
                       name: product.name,
+                      nameEn: product.nameEn,
                       price: product.price,
                       categoryName: product.categoryName,
+                      categoryNameEn: product.categoryNameEn,
                       image: product.imageUrl,
                     }} 
                   />
@@ -89,7 +92,7 @@ export default function AllProductsPage() {
                 <div className="bg-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                   <PackageSearch className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <p className="text-muted-foreground">لا توجد منتجات حالياً في المتجر.</p>
+                <p className="text-muted-foreground">{t.noProductsFound}</p>
               </div>
             )}
           </div>
