@@ -672,7 +672,31 @@ export default function AdminPage() {
                         {stats.lowStock.map((p: any) => (
                           <div key={p.id} className="flex items-center justify-between p-3 bg-destructive/5 rounded-xl border border-destructive/10">
                             <span className="font-medium text-sm truncate max-w-[200px]">{p.name}</span>
-                            <Badge variant="destructive" className="rounded-full">{lang === 'ar' ? 'منخفض:' : 'Low:'} {p.stock}</Badge>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="destructive" className="rounded-full">{lang === 'ar' ? 'منخفض:' : 'Low:'} {p.stock}</Badge>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="h-7 px-2 text-[10px] rounded-full border-[#D4AF37] text-[#D4AF37]"
+                                onClick={() => {
+                                  setIsEditing(p.id);
+                                  setFormData({
+                                    name: p.name,
+                                    nameEn: p.nameEn || '',
+                                    price: p.price.toString(),
+                                    category: p.category,
+                                    imageUrl: p.imageUrl,
+                                    description: p.description || '',
+                                    descriptionEn: p.descriptionEn || '',
+                                    details: p.details || '',
+                                    detailsEn: p.detailsEn || '',
+                                    stock: p.stock?.toString() || '',
+                                  });
+                                }}
+                              >
+                                {lang === 'ar' ? 'تزويد' : 'Restock'}
+                              </Button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -727,11 +751,12 @@ export default function AdminPage() {
                             <span>{lang === 'ar' ? product.name : (product.nameEn || product.name)}</span>
                             <div className="flex gap-2 mt-1">
                               {product.isHidden && <Badge variant="secondary" className="w-fit text-[10px]">{t.hidden}</Badge>}
-                              {product.stock !== undefined && (
-                                <Badge variant={parseInt(product.stock) < 5 ? "destructive" : "outline"} className="w-fit text-[10px]">
-                                  {lang === 'ar' ? 'المخزون:' : 'Stock:'} {product.stock}
-                                </Badge>
-                              )}
+                              <Badge 
+                                variant={parseInt(product.stock) === 0 ? "destructive" : parseInt(product.stock) < 5 ? "secondary" : "outline"} 
+                                className="w-fit text-[10px]"
+                              >
+                                {lang === 'ar' ? 'المخزون:' : 'Stock:'} {product.stock || 0}
+                              </Badge>
                             </div>
                           </div>
                         </TableCell>
@@ -766,8 +791,7 @@ export default function AdminPage() {
                                   descriptionEn: product.descriptionEn || '',
                                   details: product.details || '',
                                   detailsEn: product.detailsEn || '',
-                                  stock: product.stock?.toString() || '',
-                                  ...product // Capture existing metadata like isHidden
+                                  stock: product.stock?.toString() || '0',
                                 });
                               }}
                             >

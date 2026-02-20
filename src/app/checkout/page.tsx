@@ -19,13 +19,14 @@ import {
   ChevronLeft, 
   ChevronRight,
   ShoppingBag,
-  Loader2
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -47,7 +48,7 @@ export default function CheckoutPage() {
     address: ''
   });
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (!formData.fullName || !formData.phone || !formData.city || !formData.address) {
       toast({
         variant: "destructive",
@@ -61,72 +62,101 @@ export default function CheckoutPage() {
 
     setLoading(true);
 
-    const orderData = {
-      customerInfo: {
-        fullName: formData.fullName,
-        phone: formData.phone,
-        city: formData.city,
-        address: formData.address
-      },
-      items: cartItems.map(item => ({
-        id: item.id,
-        name: item.name,
-        nameEn: item.nameEn || '',
-        price: item.price,
-        quantity: item.quantity
-      })),
-      totalPrice,
-      status: 'pending',
-      paymentMethod: 'Cash on Delivery',
-      createdAt: serverTimestamp(),
-      userId: user?.uid || 'guest'
-    };
-
-    // Add order to Firestore
-    addDoc(collection(db, 'orders'), orderData)
-      .then((docRef) => {
-        const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
-        const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
-        const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
-
-        if (serviceId && templateId && publicKey) {
-          emailjs.init(publicKey);
-
-          const orderDetailsString = cartItems
-            .map(item => `${lang === 'ar' ? item.name : (item.nameEn || item.name)} (x${item.quantity})`)
-            .join(', ');
-
-          const templateParams = {
-            order_id: docRef.id,
-            customer_name: formData.fullName,
-            customer_phone: formData.phone,
-            total_price: totalPrice.toFixed(2),
-            order_details: orderDetailsString,
-          };
-
-          emailjs.send(serviceId, templateId, templateParams, publicKey)
-            .then(
-              (result) => console.log('Admin notified successfully:', result.text),
-              (err) => console.error('EmailJS Error Detail:', err.text || err)
-            )
-            .catch(err => console.error('EmailJS critical failure:', err));
+    try {
+      // Step 1: Validate Stock for each item
+      for (const item of cartItems) {
+        const productRef = doc(db, 'products', item.id);
+        const productSnap = await getDoc(productRef);
+        
+        if (productSnap.exists()) {
+          const productData = productSnap.data();
+          const currentStock = productData.stock || 0;
+          
+          if (currentStock < item.quantity) {
+            toast({
+              variant: "destructive",
+              title: lang === 'ar' ? 'عذراً' : 'Sorry',
+              description: `${lang === 'ar' ? item.name : (item.nameEn || item.name)}: ${t.outOfStockError}`,
+              duration: 5000,
+            });
+            setLoading(false);
+            return;
+          }
         }
-      })
-      .catch(async (err) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: 'orders',
-          operation: 'create',
-          requestResourceData: orderData
-        }));
-      });
+      }
 
-    toast({
-      title: lang === 'ar' ? 'شكراً لك' : 'Thank You',
-      description: lang === 'ar' ? 'تم استلام طلبك بنجاح' : 'Your order has been received.',
-    });
-    
-    clearCart();
-    router.push('/checkout/success');
+      // Step 2: Create Order
+      const orderData = {
+        customerInfo: {
+          fullName: formData.fullName,
+          phone: formData.phone,
+          city: formData.city,
+          address: formData.address
+        },
+        items: cartItems.map(item => ({
+          id: item.id,
+          name: item.name,
+          nameEn: item.nameEn || '',
+          price: item.price,
+          quantity: item.quantity
+        })),
+        totalPrice,
+        status: 'pending',
+        paymentMethod: 'Cash on Delivery',
+        createdAt: serverTimestamp(),
+        userId: user?.uid || 'guest'
+      };
+
+      const orderRef = await addDoc(collection(db, 'orders'), orderData);
+
+      // Step 3: Update Stock (Decrement)
+      for (const item of cartItems) {
+        const productRef = doc(db, 'products', item.id);
+        updateDoc(productRef, {
+          stock: increment(-item.quantity)
+        });
+      }
+
+      // Step 4: Notifications (EmailJS)
+      const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
+      const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
+      const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
+
+      if (serviceId && templateId && publicKey) {
+        emailjs.init(publicKey);
+
+        const orderDetailsString = cartItems
+          .map(item => `${lang === 'ar' ? item.name : (item.nameEn || item.name)} (x${item.quantity})`)
+          .join(', ');
+
+        const templateParams = {
+          order_id: orderRef.id,
+          customer_name: formData.fullName,
+          customer_phone: formData.phone,
+          total_price: totalPrice.toFixed(2),
+          order_details: orderDetailsString,
+        };
+
+        emailjs.send(serviceId, templateId, templateParams, publicKey)
+          .catch(err => console.error('EmailJS failure:', err));
+      }
+
+      toast({
+        title: lang === 'ar' ? 'شكراً لك' : 'Thank You',
+        description: lang === 'ar' ? 'تم استلام طلبك بنجاح' : 'Your order has been received.',
+      });
+      
+      clearCart();
+      router.push('/checkout/success');
+
+    } catch (err: any) {
+      console.error(err);
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: 'orders',
+        operation: 'create',
+      }));
+      setLoading(false);
+    }
   };
 
   if (totalItems === 0) {
@@ -270,7 +300,7 @@ export default function CheckoutPage() {
                   {loading ? (
                     <div className="flex items-center gap-2">
                       <Loader2 className="h-5 w-5 animate-spin" />
-                      {lang === 'ar' ? 'جاري الطلب...' : 'Processing...'}
+                      {lang === 'ar' ? 'جاري التحقق...' : 'Verifying...'}
                     </div>
                   ) : (
                     t.placeOrder
