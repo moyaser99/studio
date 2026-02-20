@@ -116,10 +116,12 @@ export default function CartPage() {
                     <span className="text-primary">${totalPrice.toFixed(2)}</span>
                   </div>
                   
-                  <Button className="w-full h-16 rounded-full text-xl font-bold bg-[#D4AF37] hover:bg-[#B8962D] text-white shadow-xl gap-2 mt-4">
-                    {t.checkout}
-                    {lang === 'ar' ? <ArrowLeft className="h-6 w-6" /> : <ArrowRight className="h-6 w-6" />}
-                  </Button>
+                  <Link href="/checkout" className="block w-full">
+                    <Button className="w-full h-16 rounded-full text-xl font-bold bg-[#D4AF37] hover:bg-[#B8962D] text-white shadow-xl gap-2 mt-4">
+                      {t.checkout}
+                      {lang === 'ar' ? <ArrowLeft className="h-6 w-6" /> : <ArrowRight className="h-6 w-6" />}
+                    </Button>
+                  </Link>
                   
                   <Link href="/products" className="block text-center text-primary font-bold hover:underline">
                     {lang === 'ar' ? 'متابعة التسوق' : 'Continue Shopping'}

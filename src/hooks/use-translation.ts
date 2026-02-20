@@ -168,7 +168,14 @@ const translations = {
     total: 'الإجمالي الكلي',
     checkout: 'إتمام الطلب',
     remove: 'إزالة',
-    items: 'منتجات'
+    items: 'منتجات',
+    shippingInfo: 'معلومات الشحن',
+    city: 'المدينة',
+    detailedAddressLabel: 'العنوان التفصيلي',
+    placeOrder: 'إتمام الطلب الآن',
+    checkoutTitle: 'إتمام الشراء',
+    yourOrder: 'طلبك',
+    completeFields: 'يرجى إكمال كافة الحقول'
   },
   en: {
     home: 'Home',
@@ -235,6 +242,7 @@ const translations = {
     productPrice: 'Price ($)',
     productCategory: 'Category',
     productImage: 'Image URL',
+    productImageAr: 'Image URL (AR)',
     productDescription: 'Description (AR)',
     productDescriptionEn: 'Description (EN)',
     generateAiDescription: 'Generate AI Description',
@@ -322,7 +330,14 @@ const translations = {
     total: 'Grand Total',
     checkout: 'Checkout',
     remove: 'Remove',
-    items: 'items'
+    items: 'items',
+    shippingInfo: 'Shipping Info',
+    city: 'City',
+    detailedAddressLabel: 'Detailed Address',
+    placeOrder: 'Place Order Now',
+    checkoutTitle: 'Checkout',
+    yourOrder: 'Your Order',
+    completeFields: 'Please complete all fields'
   }
 };
 
