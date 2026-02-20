@@ -1,7 +1,6 @@
-
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { useCart } from '@/context/CartContext';
@@ -14,18 +13,32 @@ import {
   Minus, 
   ShoppingBag, 
   ArrowRight, 
-  ArrowLeft
+  ArrowLeft,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 
 export default function CartPage() {
-  const { cartItems, updateQuantity, removeFromCart, totalPrice } = useCart();
+  const { cartItems, updateQuantity, removeFromCart, totalPrice, isInitialized } = useCart();
   const { t, lang } = useTranslation();
+  const [mounted, setMounted] = useState(false);
+
+  // Fix hydration mismatch by waiting for component to mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || !isInitialized) {
+    return (
+      <div className="min-h-screen flex flex-col bg-muted/5 items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/5 overflow-x-hidden" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      <Header />
       <main className="flex-1 container mx-auto px-4 py-8 md:py-12">
         <h1 className="text-3xl md:text-4xl font-black font-headline text-primary mb-8 md:mb-10 flex items-center gap-3 justify-start">
           <ShoppingBag className="h-8 w-8 md:h-10 md:w-10" /> {t.shoppingCart}
@@ -145,7 +158,6 @@ export default function CartPage() {
           </div>
         )}
       </main>
-      <Footer />
     </div>
   );
 }
