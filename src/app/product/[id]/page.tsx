@@ -162,18 +162,18 @@ export default function ProductPage() {
             <div className="pt-8 flex flex-col sm:flex-row gap-5">
               <Button 
                 onClick={handleAddToCart}
-                className="flex-1 h-16 rounded-full text-xl font-bold shadow-xl border-2 border-pink-300 bg-[#F8C8DC] text-[#D4AF37] hover:bg-[#F8C8DC]/80 hover:border-[#D4AF37] gap-3 transition-all hover:scale-[1.02]"
+                className="flex-1 h-16 rounded-full text-xl font-bold shadow-xl border-2 border-pink-300 bg-primary text-white hover:bg-[#D4AF37] hover:border-[#D4AF37] gap-3 transition-all hover:scale-[1.02] flex items-center justify-center px-4"
               >
                 <ShoppingCart className="h-6 w-6" />
-                {t.addToCart}
+                <span className="whitespace-normal leading-tight">{t.addToCart}</span>
               </Button>
 
               <Button 
                 onClick={() => window.open(whatsappUrl, '_blank')}
-                className="flex-1 h-16 bg-[#25D366] hover:bg-[#128C7E] text-white gap-3 rounded-full text-xl font-bold shadow-xl transition-all hover:scale-[1.02]"
+                className="flex-1 h-16 bg-[#25D366] hover:bg-[#128C7E] text-white gap-3 rounded-full text-xl font-bold shadow-xl transition-all hover:scale-[1.02] flex items-center justify-center px-4"
               >
                 <MessageCircle className="h-6 w-6 fill-current" />
-                {t.orderOnWhatsapp}
+                <span className="whitespace-normal leading-tight">{t.orderOnWhatsapp}</span>
               </Button>
             </div>
             
