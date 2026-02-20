@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -163,7 +162,7 @@ export default function ProductPage() {
             <div className="pt-8 flex flex-col sm:flex-row gap-5">
               <Button 
                 onClick={handleAddToCart}
-                className="flex-1 h-16 rounded-full text-xl font-bold shadow-xl border-2 border-[#D4AF37] bg-[#F8C8DC] text-[#D4AF37] hover:bg-[#F8C8DC]/80 gap-3 transition-all hover:scale-[1.02]"
+                className="flex-1 h-16 rounded-full text-xl font-bold shadow-xl border-2 border-pink-300 bg-[#F8C8DC] text-[#D4AF37] hover:bg-[#F8C8DC]/80 hover:border-[#D4AF37] gap-3 transition-all hover:scale-[1.02]"
               >
                 <ShoppingCart className="h-6 w-6" />
                 {t.addToCart}
