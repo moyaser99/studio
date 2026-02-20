@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useFirestore, useCollection, useUser } from '@/firebase';
 import { 
   collection, 
@@ -45,7 +45,10 @@ import {
   MapPin,
   Phone,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  Search,
+  X,
+  PackageSearch
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
@@ -66,6 +69,7 @@ export default function AdminOrdersPage() {
   const { t, lang } = useTranslation();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const ordersQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -75,6 +79,21 @@ export default function AdminOrdersPage() {
   const { data: orders, loading: ordersLoading } = useCollection(ordersQuery);
 
   const isAdmin = user?.email === ADMIN_EMAIL || user?.phoneNumber === ADMIN_PHONE;
+
+  // Multi-criteria filter logic (ID, Name, Phone)
+  const filteredOrders = useMemo(() => {
+    if (!orders) return [];
+    if (!searchTerm.trim()) return orders;
+
+    const queryLower = searchTerm.toLowerCase();
+    return orders.filter((order: any) => {
+      const orderIdMatch = order.id?.toLowerCase().includes(queryLower);
+      const nameMatch = order.customerInfo?.fullName?.toLowerCase().includes(queryLower);
+      const phoneMatch = order.customerInfo?.phone?.includes(searchTerm); // Phone is usually exact or prefix
+      
+      return orderIdMatch || nameMatch || phoneMatch;
+    });
+  }, [orders, searchTerm]);
 
   const handleStatusUpdate = (orderId: string, newStatus: string) => {
     if (!db) return;
@@ -173,6 +192,26 @@ export default function AdminOrdersPage() {
               <ClipboardList className="h-10 w-10" /> {t.manageOrders}
             </h1>
           </div>
+
+          {/* Advanced Search Bar */}
+          <div className="relative w-full md:w-96 group">
+            <Search className="absolute start-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-[#D4AF37] transition-colors" />
+            <input
+              type="text"
+              placeholder={lang === 'ar' ? 'ابحث (رقم، اسم، هاتف)...' : 'Search (ID, Name, Phone)...'}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full h-14 ps-12 pe-12 rounded-full border-2 border-primary/10 bg-white text-base focus:outline-none focus:border-[#D4AF37] transition-all shadow-lg"
+            />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm('')}
+                className="absolute end-4 top-1/2 -translate-y-1/2 h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            )}
+          </div>
         </div>
 
         <Card className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white">
@@ -182,7 +221,7 @@ export default function AdminOrdersPage() {
           <CardContent className="p-0">
             {ordersLoading ? (
               <div className="py-20 flex justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary/40" /></div>
-            ) : orders && orders.length > 0 ? (
+            ) : filteredOrders && filteredOrders.length > 0 ? (
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow>
@@ -195,13 +234,16 @@ export default function AdminOrdersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orders.map((order: any) => (
+                  {filteredOrders.map((order: any) => (
                     <TableRow key={order.id} className="hover:bg-primary/5 transition-colors">
                       <TableCell className="font-mono text-xs text-muted-foreground text-start">
                         #{order.id.substring(0, 8).toUpperCase()}
                       </TableCell>
                       <TableCell className="font-bold text-start">
-                        {order.customerInfo?.fullName || 'N/A'}
+                        <div className="flex flex-col">
+                          <span>{order.customerInfo?.fullName || 'N/A'}</span>
+                          <span className="text-xs text-muted-foreground font-normal" dir="ltr">{order.customerInfo?.phone}</span>
+                        </div>
                       </TableCell>
                       <TableCell className="text-start text-sm">
                         {order.createdAt ? format(order.createdAt.toDate(), 'dd/MM/yyyy HH:mm') : 'N/A'}
@@ -316,8 +358,8 @@ export default function AdminOrdersPage() {
               </Table>
             ) : (
               <div className="py-24 text-center text-muted-foreground">
-                <ShoppingBag className="h-16 w-16 mx-auto mb-4 opacity-20" />
-                {t.noProductsFound}
+                <PackageSearch className="h-16 w-16 mx-auto mb-4 opacity-20" />
+                {searchTerm ? (lang === 'ar' ? 'لا توجد نتائج مطابقة لبحثك.' : 'No matching results found.') : t.noProductsFound}
               </div>
             )}
           </CardContent>
