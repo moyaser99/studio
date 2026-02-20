@@ -1,12 +1,12 @@
 
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ProductCard from '@/components/product/ProductCard';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, orderBy, where } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import { Loader2, PackageSearch } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
@@ -15,31 +15,18 @@ export default function AllProductsPage() {
   const db = useFirestore();
   const { lang, t } = useTranslation();
 
-  // Audit Step: Stable Query construction
   const allProductsQuery = useMemoFirebase(() => {
     if (!db) return null;
-    try {
-      return query(
-        collection(db, 'products'),
-        where('isHidden', '!=', true)
-      );
-    } catch (e) {
-      console.error("[Audit] Failed to create products query:", e);
-      return null;
-    }
+    return query(collection(db, 'products'));
   }, [db]);
 
-  const { data: products, loading, error } = useCollection(allProductsQuery);
+  const { data: rawProducts, loading, error } = useCollection(allProductsQuery);
 
-  // Data Verification Step
-  useEffect(() => {
-    if (products) {
-      console.log(`[Audit] Data verification: Fetched ${products.length} total products.`);
-    }
-    if (error) {
-      console.error("[Audit] Firestore sync error:", error);
-    }
-  }, [products, error]);
+  // Client-side filtering for visibility
+  const products = React.useMemo(() => {
+    if (!rawProducts) return [];
+    return rawProducts.filter((p: any) => p.isHidden !== true);
+  }, [rawProducts]);
 
   return (
     <div className="flex min-h-screen flex-col" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
@@ -83,11 +70,11 @@ export default function AllProductsPage() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-20 bg-muted/20 rounded-3xl border-2 border-dashed">
-                <div className="bg-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <PackageSearch className="h-8 w-8 text-muted-foreground" />
+              <div className="text-center py-24 bg-white rounded-[4rem] shadow-xl border border-primary/10 max-w-2xl mx-auto px-10">
+                <div className="bg-primary/5 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-8">
+                  <PackageSearch className="h-10 w-10 text-primary/40" />
                 </div>
-                <p className="text-muted-foreground">{t.noProductsFound}</p>
+                <p className="text-muted-foreground text-xl">{t.noProductsFound}</p>
               </div>
             )}
           </div>

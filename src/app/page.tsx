@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/layout/Header';
@@ -10,7 +10,7 @@ import ProductCard from '@/components/product/ProductCard';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight, Loader2, Package, Sparkles } from 'lucide-react';
 import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
-import { collection, query, limit, where, doc, orderBy } from 'firebase/firestore';
+import { collection, query, limit, doc, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import { useTranslation } from '@/hooks/use-translation';
 
@@ -35,14 +35,17 @@ function CategoryImage({ category, index }: { category: any, index: number }) {
     return query(
       collection(db, 'products'),
       where('category', '==', category.slug),
-      where('isHidden', '!=', true),
-      limit(1)
+      limit(5) // Fetch a few to filter isHidden client-side
     );
   }, [db, category.slug]);
 
-  const { data: products, loading } = useCollection(categoryProductQuery);
+  const { data: rawProducts, loading } = useCollection(categoryProductQuery);
 
-  const product = products && products.length > 0 ? products[0] : null;
+  const product = useMemo(() => {
+    if (!rawProducts) return null;
+    return rawProducts.find((p: any) => p.isHidden !== true);
+  }, [rawProducts]);
+
   const productImage = product?.imageUrl || product?.image || (product as any)?.src || null;
   const isNew = product?.createdAt?.seconds && (Date.now() / 1000 - product.createdAt.seconds < 172800);
   
@@ -137,16 +140,15 @@ export default function Home() {
 
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
-    // Using where(isHidden != true) might require a composite index with orderBy(createdAt)
-    // We'll use where('isHidden', '==', false) for better compatibility with existing indexes
-    return query(
-      collection(db, 'products'), 
-      where('isHidden', '!=', true),
-      limit(8)
-    );
+    return query(collection(db, 'products'), limit(20));
   }, [db]);
   
-  const { data: products, loading: productsLoading } = useCollection(productsQuery);
+  const { data: rawProducts, loading: productsLoading } = useCollection(productsQuery);
+
+  const products = useMemo(() => {
+    if (!rawProducts) return [];
+    return rawProducts.filter((p: any) => p.isHidden !== true).slice(0, 8);
+  }, [rawProducts]);
 
   const categoriesQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -175,7 +177,6 @@ export default function Home() {
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1 overflow-x-hidden">
-        {/* Luxury Full-Width Hero Section */}
         <section 
           className="relative w-full h-[600px] md:h-[800px] flex items-center transition-all duration-700 bg-[#F8E8E8]"
           style={{
@@ -225,7 +226,6 @@ export default function Home() {
           )}
         </section>
 
-        {/* Categories Section */}
         <section className="py-24 bg-white">
           <div className="container mx-auto px-4 md:px-6">
             <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-4">
@@ -262,7 +262,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Latest Products */}
         <section className="py-24 bg-secondary/5 border-y">
           <div className="container mx-auto px-4 md:px-6">
             <div className="text-start mb-16">

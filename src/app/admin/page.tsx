@@ -178,6 +178,7 @@ export default function AdminPage() {
       categoryName,
       categoryNameEn,
       updatedAt: serverTimestamp(),
+      isHidden: false, // Ensure visibility is explicitly set
     };
 
     if (isEditing) {
@@ -193,7 +194,6 @@ export default function AdminPage() {
         .finally(() => setSaving(false));
     } else {
       payload.createdAt = serverTimestamp();
-      payload.isHidden = false; // Default visibility
       addDoc(collection(db, 'products'), payload)
         .then(() => {
           toast({ title: 'Added', description: t.productAdded });

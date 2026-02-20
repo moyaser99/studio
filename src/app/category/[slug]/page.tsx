@@ -6,9 +6,9 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ProductCard from '@/components/product/ProductCard';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { collection, query, where, limit } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
-import { Loader2, ArrowRight } from 'lucide-react';
+import { Loader2, ArrowRight, PackageOpen } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -28,7 +28,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
 
   const db = useFirestore();
 
-  // Fetch category data to get nameAr
+  // Fetch category data to get nameAr/nameEn
   const categoryQuery = useMemoFirebase(() => {
     if (!db || !slug) return null;
     return query(collection(db, 'categories'), where('slug', '==', slug), limit(1));
@@ -38,14 +38,20 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
 
   const productsQuery = useMemoFirebase(() => {
     if (!db || !slug) return null;
+    // We fetch where category slug matches
     return query(
       collection(db, 'products'),
-      where('category', '==', slug),
-      where('isHidden', '!=', true)
+      where('category', '==', slug)
     );
   }, [db, slug]);
 
-  const { data: products, loading, error } = useCollection(productsQuery);
+  const { data: rawProducts, loading, error } = useCollection(productsQuery);
+
+  // Client-side filtering for isHidden to avoid index requirements and missing field issues
+  const products = React.useMemo(() => {
+    if (!rawProducts) return [];
+    return rawProducts.filter((p: any) => p.isHidden !== true);
+  }, [rawProducts]);
 
   const displayCategoryName = category 
     ? (lang === 'ar' ? (category as any).nameAr : ((category as any).nameEn || getTranslatedCategory((category as any).nameAr)))
@@ -63,11 +69,14 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
     );
   }
 
-  if (!category && !loading) {
+  if (!category && !catLoading) {
     return (
       <div className="min-h-screen flex flex-col" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <Header />
         <main className="flex-1 flex flex-col items-center justify-center p-6 space-y-4">
+          <div className="bg-primary/5 p-6 rounded-full mb-4">
+             <PackageOpen className="h-12 w-12 text-primary/40" />
+          </div>
           <h1 className="text-2xl font-bold font-headline">{t.categoryNotFound}</h1>
           <p className="text-muted-foreground">{t.sorryCategoryNotFound}</p>
           <Link href="/">
@@ -123,10 +132,16 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
                 ))}
               </div>
             ) : (
-              <div className="text-center py-20 bg-muted/20 rounded-[3rem] border-2 border-dashed border-primary/20 max-w-2xl mx-auto px-6">
-                <p className="text-muted-foreground text-xl mb-6">{t.noProductsInCategory}</p>
+              <div className="text-center py-24 bg-white rounded-[4rem] shadow-xl border border-primary/10 max-w-2xl mx-auto px-10">
+                <div className="bg-primary/5 w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-10">
+                  <PackageOpen className="h-16 w-16 text-primary/30" />
+                </div>
+                <h2 className="text-3xl font-bold mb-4">{lang === 'ar' ? 'لا توجد منتجات في هذا القسم حالياً' : 'No products in this category yet'}</h2>
+                <p className="text-muted-foreground text-lg mb-10">
+                  {lang === 'ar' ? 'يرجى مراجعة القسم لاحقاً أو استكشاف باقي مجموعتنا الفاخرة.' : 'Please check back later or explore the rest of our luxury collection.'}
+                </p>
                 <Link href="/products">
-                   <Button className="rounded-full px-8 h-12 font-bold shadow-md bg-[#D4AF37] hover:bg-[#B8962D]">{t.exploreAll}</Button>
+                   <Button className="rounded-full px-12 h-16 text-xl font-bold shadow-xl bg-[#D4AF37] hover:bg-[#B8962D]">{t.exploreAll}</Button>
                 </Link>
               </div>
             )}
