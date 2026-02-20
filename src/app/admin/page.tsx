@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useFirestore, useCollection, useUser, useDoc, useAuth } from '@/firebase';
 import { 
   collection, 
@@ -11,7 +11,8 @@ import {
   doc, 
   query, 
   orderBy, 
-  serverTimestamp 
+  serverTimestamp,
+  Timestamp
 } from 'firebase/firestore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,7 +48,14 @@ import {
   AlertTriangle,
   Eye,
   EyeOff,
-  Sparkles
+  Sparkles,
+  BarChart3,
+  TrendingUp,
+  DollarSign,
+  ShoppingCart,
+  Calendar,
+  ArrowUpRight,
+  PackageSearch
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow';
@@ -85,6 +93,7 @@ export default function AdminPage() {
     descriptionEn: '',
     details: '',
     detailsEn: '',
+    stock: '',
   });
 
   const [heroUrl, setHeroUrl] = useState('');
@@ -103,6 +112,13 @@ export default function AdminPage() {
 
   const { data: categories } = useCollection(categoriesQuery);
 
+  const ordersQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+  }, [db]);
+
+  const { data: orders, loading: ordersLoading } = useCollection(ordersQuery);
+
   const heroRef = useMemoFirebase(() => {
     if (!db) return null;
     return doc(db, 'siteSettings', 'heroSection');
@@ -114,6 +130,77 @@ export default function AdminPage() {
       setHeroUrl(heroData.imageUrl);
     }
   }, [heroData]);
+
+  // Analytics Calculation
+  const stats = useMemo(() => {
+    if (!orders) return null;
+
+    const now = new Date();
+    const oneDay = 24 * 60 * 60 * 1000;
+    const sevenDays = 7 * oneDay;
+    const thirtyDays = 30 * oneDay;
+
+    let revenue24h = 0;
+    let revenue7d = 0;
+    let revenue30d = 0;
+    let totalRevenue = 0;
+    let orders24h = 0;
+    let orders7d = 0;
+    let orders30d = 0;
+
+    const productSales: Record<string, { name: string; count: number; revenue: number }> = {};
+
+    orders.forEach((order: any) => {
+      const orderDate = order.createdAt instanceof Timestamp ? order.createdAt.toDate() : new Date(order.createdAt);
+      const diff = now.getTime() - orderDate.getTime();
+      const price = order.totalPrice || 0;
+
+      totalRevenue += price;
+
+      if (diff <= oneDay) {
+        revenue24h += price;
+        orders24h++;
+      }
+      if (diff <= sevenDays) {
+        revenue7d += price;
+        orders7d++;
+      }
+      if (diff <= thirtyDays) {
+        revenue30d += price;
+        orders30d++;
+      }
+
+      // Track top products
+      order.items?.forEach((item: any) => {
+        const id = item.id;
+        if (!productSales[id]) {
+          productSales[id] = { name: item.name, count: 0, revenue: 0 };
+        }
+        productSales[id].count += item.quantity || 1;
+        productSales[id].revenue += (item.price * item.quantity) || 0;
+      });
+    });
+
+    const topSelling = Object.values(productSales)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
+
+    const lowStock = products?.filter((p: any) => p.stock !== undefined && parseInt(p.stock) < 5) || [];
+
+    return {
+      revenue24h,
+      revenue7d,
+      revenue30d,
+      totalRevenue,
+      orders24h,
+      orders7d,
+      orders30d,
+      totalOrders: orders.length,
+      avgOrderValue: orders.length > 0 ? totalRevenue / orders.length : 0,
+      topSelling,
+      lowStock
+    };
+  }, [orders, products]);
 
   const isAdmin = user?.email === ADMIN_EMAIL || user?.phoneNumber === ADMIN_PHONE;
 
@@ -177,6 +264,7 @@ export default function AdminPage() {
     const payload: any = {
       ...formData,
       price: parseFloat(formData.price) || 0,
+      stock: parseInt(formData.stock) || 0,
       categoryName,
       categoryNameEn,
       updatedAt: serverTimestamp(),
@@ -255,6 +343,7 @@ export default function AdminPage() {
       descriptionEn: '',
       details: '',
       detailsEn: '',
+      stock: '',
     });
     setIsAdding(false);
     setIsEditing(null);
@@ -326,7 +415,7 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2 text-start">
                     <Label className="text-lg font-bold">{t.productPrice}</Label>
                     <input 
@@ -334,6 +423,16 @@ export default function AdminPage() {
                       value={formData.price} 
                       onChange={e => setFormData({...formData, price: e.target.value})}
                       placeholder="0.00" 
+                      className="flex h-14 w-full rounded-2xl border-2 border-primary/10 bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                    />
+                  </div>
+                  <div className="space-y-2 text-start">
+                    <Label className="text-lg font-bold">{t.stock}</Label>
+                    <input 
+                      type="number"
+                      value={formData.stock} 
+                      onChange={e => setFormData({...formData, stock: e.target.value})}
+                      placeholder="0" 
                       className="flex h-14 w-full rounded-2xl border-2 border-primary/10 bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
                     />
                   </div>
@@ -441,8 +540,11 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="products" className="space-y-8">
-        <TabsList className="bg-white p-1 rounded-full shadow-sm border h-16 w-full max-w-md mx-auto grid grid-cols-2">
+      <Tabs defaultValue="analytics" className="space-y-8">
+        <TabsList className="bg-white p-1 rounded-full shadow-sm border h-16 w-full max-w-2xl mx-auto grid grid-cols-3">
+          <TabsTrigger value="analytics" className="rounded-full gap-2 font-bold text-lg h-14 data-[state=active]:bg-primary data-[state=active]:text-white">
+            <BarChart3 className="h-5 w-5" /> {lang === 'ar' ? 'التحليلات' : 'Analytics'}
+          </TabsTrigger>
           <TabsTrigger value="products" className="rounded-full gap-2 font-bold text-lg h-14 data-[state=active]:bg-primary data-[state=active]:text-white">
             <Package className="h-5 w-5" /> {t.products}
           </TabsTrigger>
@@ -450,6 +552,141 @@ export default function AdminPage() {
             <Settings className="h-5 w-5" /> {t.settings}
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="analytics" className="space-y-8">
+          {/* Revenue Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="rounded-[2rem] border-none shadow-lg bg-white overflow-hidden hover:shadow-xl transition-all">
+              <CardHeader className="bg-primary/5 p-6 pb-2">
+                <CardTitle className="text-sm font-bold text-muted-foreground flex items-center gap-2 justify-start uppercase tracking-wider">
+                  <Calendar className="h-4 w-4 text-primary" /> {lang === 'ar' ? 'آخر 24 ساعة' : 'Last 24 Hours'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 pt-2 text-start">
+                <div className="text-3xl font-black text-primary">${stats?.revenue24h.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <ShoppingCart className="h-3 w-3" /> {stats?.orders24h} {t.items}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-[2rem] border-none shadow-lg bg-white overflow-hidden hover:shadow-xl transition-all">
+              <CardHeader className="bg-[#D4AF37]/5 p-6 pb-2">
+                <CardTitle className="text-sm font-bold text-muted-foreground flex items-center gap-2 justify-start uppercase tracking-wider">
+                  <TrendingUp className="h-4 w-4 text-[#D4AF37]" /> {lang === 'ar' ? 'آخر 7 أيام' : 'Last 7 Days'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 pt-2 text-start">
+                <div className="text-3xl font-black text-[#D4AF37]">${stats?.revenue7d.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <ShoppingCart className="h-3 w-3" /> {stats?.orders7d} {t.items}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-[2rem] border-none shadow-lg bg-white overflow-hidden hover:shadow-xl transition-all">
+              <CardHeader className="bg-blue-500/5 p-6 pb-2">
+                <CardTitle className="text-sm font-bold text-muted-foreground flex items-center gap-2 justify-start uppercase tracking-wider">
+                  <BarChart3 className="h-4 w-4 text-blue-500" /> {lang === 'ar' ? 'آخر 30 يوم' : 'Last 30 Days'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 pt-2 text-start">
+                <div className="text-3xl font-black text-blue-500">${stats?.revenue30d.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <ShoppingCart className="h-3 w-3" /> {stats?.orders30d} {t.items}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-[2rem] border-none shadow-lg bg-white overflow-hidden hover:shadow-xl transition-all">
+              <CardHeader className="bg-green-500/5 p-6 pb-2">
+                <CardTitle className="text-sm font-bold text-muted-foreground flex items-center gap-2 justify-start uppercase tracking-wider">
+                  <DollarSign className="h-4 w-4 text-green-500" /> {lang === 'ar' ? 'إجمالي الأرباح' : 'Total Revenue'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 pt-2 text-start">
+                <div className="text-3xl font-black text-green-500">${stats?.totalRevenue.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {lang === 'ar' ? 'إجمالي الطلبات:' : 'Total Orders:'} {stats?.totalOrders}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Top Selling Products */}
+            <Card className="rounded-[2.5rem] border-none shadow-xl bg-white overflow-hidden">
+              <CardHeader className="bg-primary/5 p-8 border-b">
+                <CardTitle className="text-2xl font-bold font-headline text-start flex items-center gap-2">
+                  <ArrowUpRight className="h-6 w-6 text-primary" />
+                  {lang === 'ar' ? 'الأكثر مبيعاً' : 'Top Selling Products'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y">
+                  {stats?.topSelling.map((prod: any, idx: number) => (
+                    <div key={idx} className="p-6 flex items-center justify-between hover:bg-muted/30 transition-colors">
+                      <div className="text-start">
+                        <div className="font-bold text-lg">{prod.name}</div>
+                        <div className="text-sm text-muted-foreground">{prod.count} {lang === 'ar' ? 'مبيعات' : 'Sales'}</div>
+                      </div>
+                      <div className="text-xl font-black text-primary">${prod.revenue.toFixed(2)}</div>
+                    </div>
+                  ))}
+                  {(!stats || stats.topSelling.length === 0) && (
+                    <div className="p-12 text-center text-muted-foreground">
+                      {lang === 'ar' ? 'لا توجد بيانات مبيعات بعد' : 'No sales data yet'}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Smart Insights & Alerts */}
+            <div className="space-y-6">
+              <Card className="rounded-[2.5rem] border-none shadow-xl bg-white overflow-hidden h-full">
+                <CardHeader className="bg-[#D4AF37]/5 p-8 border-b">
+                  <CardTitle className="text-2xl font-bold font-headline text-start flex items-center gap-2">
+                    <Sparkles className="h-6 w-6 text-[#D4AF37]" />
+                    {lang === 'ar' ? 'رؤى ذكية' : 'Smart Insights'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-8 space-y-6">
+                  <div className="flex items-center justify-between bg-muted/30 p-6 rounded-[1.5rem] border border-dashed">
+                    <div className="text-start">
+                      <p className="text-sm font-bold text-muted-foreground uppercase">{lang === 'ar' ? 'متوسط قيمة الطلب' : 'Average Order Value'}</p>
+                      <p className="text-3xl font-black text-primary">${stats?.avgOrderValue.toFixed(2)}</p>
+                    </div>
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <TrendingUp className="h-6 w-6 text-primary" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 text-start">
+                    <h4 className="font-bold flex items-center gap-2">
+                      <PackageSearch className="h-5 w-5 text-[#D4AF37]" />
+                      {lang === 'ar' ? 'تنبيهات المخزون' : 'Inventory Alerts'}
+                    </h4>
+                    {stats?.lowStock && stats.lowStock.length > 0 ? (
+                      <div className="space-y-2">
+                        {stats.lowStock.map((p: any) => (
+                          <div key={p.id} className="flex items-center justify-between p-3 bg-destructive/5 rounded-xl border border-destructive/10">
+                            <span className="font-medium text-sm truncate max-w-[200px]">{p.name}</span>
+                            <Badge variant="destructive" className="rounded-full">{lang === 'ar' ? 'منخفض:' : 'Low:'} {p.stock}</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-green-500/5 rounded-xl border border-green-500/10 text-green-600 text-sm font-medium">
+                        {lang === 'ar' ? 'جميع المنتجات متوفرة بشكل جيد.' : 'All products are well stocked.'}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
 
         <TabsContent value="products">
           <Card className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white">
@@ -488,7 +725,14 @@ export default function AdminPage() {
                         <TableCell className="font-bold text-start">
                           <div className="flex flex-col">
                             <span>{lang === 'ar' ? product.name : (product.nameEn || product.name)}</span>
-                            {product.isHidden && <Badge variant="secondary" className="w-fit text-[10px] mt-1">{t.hidden}</Badge>}
+                            <div className="flex gap-2 mt-1">
+                              {product.isHidden && <Badge variant="secondary" className="w-fit text-[10px]">{t.hidden}</Badge>}
+                              {product.stock !== undefined && (
+                                <Badge variant={parseInt(product.stock) < 5 ? "destructive" : "outline"} className="w-fit text-[10px]">
+                                  {lang === 'ar' ? 'المخزون:' : 'Stock:'} {product.stock}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell className="text-start">
@@ -522,6 +766,7 @@ export default function AdminPage() {
                                   descriptionEn: product.descriptionEn || '',
                                   details: product.details || '',
                                   detailsEn: product.detailsEn || '',
+                                  stock: product.stock?.toString() || '',
                                   ...product // Capture existing metadata like isHidden
                                 });
                               }}
