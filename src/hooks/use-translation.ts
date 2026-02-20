@@ -175,7 +175,18 @@ const translations = {
     placeOrder: 'إتمام الطلب الآن',
     checkoutTitle: 'إتمام الشراء',
     yourOrder: 'طلبك',
-    completeFields: 'يرجى إكمال كافة الحقول'
+    completeFields: 'يرجى إكمال كافة الحقول',
+    manageOrders: 'إدارة الطلبات',
+    orderList: 'قائمة الطلبات',
+    orderId: 'رقم الطلب',
+    orderDate: 'التاريخ',
+    viewDetails: 'عرض التفاصيل',
+    updateStatus: 'تحديث الحالة',
+    pending: 'قيد الانتظار',
+    processing: 'قيد التجهيز',
+    shipped: 'تم الشحن',
+    delivered: 'تم التوصيل',
+    cancelled: 'ملغي'
   },
   en: {
     home: 'Home',
@@ -337,7 +348,18 @@ const translations = {
     placeOrder: 'Place Order Now',
     checkoutTitle: 'Checkout',
     yourOrder: 'Your Order',
-    completeFields: 'Please complete all fields'
+    completeFields: 'Please complete all fields',
+    manageOrders: 'Manage Orders',
+    orderList: 'Order List',
+    orderId: 'Order ID',
+    orderDate: 'Date',
+    viewDetails: 'View Details',
+    updateStatus: 'Update Status',
+    pending: 'Pending',
+    processing: 'Processing',
+    shipped: 'Shipped',
+    delivered: 'Delivered',
+    cancelled: 'Cancelled'
   }
 };
 

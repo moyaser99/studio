@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ShoppingBag, Search, User, Menu, Settings, Loader2, LogOut, LogIn, AlertCircle, Globe } from 'lucide-react';
+import { ShoppingBag, Search, User, Menu, Settings, Loader2, LogOut, LogIn, AlertCircle, Globe, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useUser, useAuth, useFirestore, useCollection } from '@/firebase';
@@ -88,12 +88,20 @@ export default function Header() {
                   {isAdmin && (
                     <div className="mt-8 pt-8 border-t">
                       <p className="text-xs font-bold text-primary mb-4 uppercase tracking-widest">{t.administration}</p>
-                      <button 
-                        onClick={() => navigateTo('/admin')}
-                        className="w-full text-lg font-black text-primary py-3 px-4 rounded-2xl bg-primary/5 flex items-center gap-2 justify-start hover:bg-primary/10 transition-colors"
-                      >
-                        <Settings className="h-5 w-5" /> {t.admin}
-                      </button>
+                      <div className="space-y-2">
+                        <button 
+                          onClick={() => navigateTo('/admin')}
+                          className="w-full text-lg font-black text-primary py-3 px-4 rounded-2xl bg-primary/5 flex items-center gap-2 justify-start hover:bg-primary/10 transition-colors"
+                        >
+                          <Settings className="h-5 w-5" /> {t.admin}
+                        </button>
+                        <button 
+                          onClick={() => navigateTo('/admin/orders')}
+                          className="w-full text-lg font-black text-[#D4AF37] py-3 px-4 rounded-2xl bg-[#D4AF37]/5 flex items-center gap-2 justify-start hover:bg-[#D4AF37]/10 transition-colors"
+                        >
+                          <ClipboardList className="h-5 w-5" /> {t.manageOrders}
+                        </button>
+                      </div>
                     </div>
                   )}
                 </nav>
@@ -158,14 +166,24 @@ export default function Header() {
               </Button>
               
               {isAdmin && (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="hidden sm:flex rounded-full text-primary hover:bg-primary/10"
-                  onClick={() => navigateTo('/admin')}
-                >
-                  <Settings className="h-5 w-5" />
-                </Button>
+                <div className="hidden sm:flex items-center gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="rounded-full text-primary hover:bg-primary/10"
+                    onClick={() => navigateTo('/admin')}
+                  >
+                    <Settings className="h-5 w-5" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="rounded-full text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                    onClick={() => navigateTo('/admin/orders')}
+                  >
+                    <ClipboardList className="h-5 w-5" />
+                  </Button>
+                </div>
               )}
 
               {loading ? (
