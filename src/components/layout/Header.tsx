@@ -38,20 +38,23 @@ export default function Header() {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
-  // Reset header visibility whenever the route changes
+  // FAIL-SAFE: Reset header visibility whenever the route changes
   useEffect(() => {
     setIsVisible(true);
     setLastScrollY(0);
+    // Debugging path for Mohammad Jebrel
+    console.log('Route Changed to:', pathname, '| Header visibility reset to: true');
   }, [pathname]);
 
   useEffect(() => {
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
+      // Robust scroll check for different browsers/containers
+      const currentScrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
       
-      // Safety check: force visibility when at the very top of the page
-      if (currentScrollY < 10) {
+      // Safety check: force visibility when at the very top of the page (near 0)
+      if (currentScrollY < 15) {
         setIsVisible(true);
-      } else if (currentScrollY > lastScrollY && currentScrollY > 50) {
+      } else if (currentScrollY > lastScrollY && currentScrollY > 60) {
         setIsVisible(false); // Scrolling down
       } else {
         setIsVisible(true); // Scrolling up
@@ -140,8 +143,8 @@ export default function Header() {
       className={cn(
         "fixed top-0 left-0 right-0 w-full border-b transition-transform duration-300",
         "bg-white/80 backdrop-blur-md border-[#D4AF37]/10",
-        // Force extremely high z-index to ensure it beats all UI components in Admin/Store
-        "z-[1000]",
+        // Force extremely high z-index to ensure it stays on top of Admin tables/sidebars
+        "z-[9999]",
         isVisible ? "translate-y-0" : "-translate-y-full"
       )}
     >
@@ -154,7 +157,7 @@ export default function Header() {
                   <Menu className="h-5 w-5 md:h-6 md:w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side={lang === 'ar' ? 'right' : 'left'} className="w-[85%] sm:w-[350px] bg-white border-primary/10 flex flex-col z-[1100]">
+              <SheetContent side={lang === 'ar' ? 'right' : 'left'} className="w-[85%] sm:w-[350px] bg-white border-primary/10 flex flex-col z-[10000]">
                 <SheetHeader className="pb-6 border-b">
                   <SheetTitle className="text-primary text-start font-headline text-xl md:text-2xl font-black">
                     YourGroceriesUSA
