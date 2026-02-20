@@ -93,21 +93,21 @@ export default function ProductCard({ product }: ProductCardProps) {
         </Badge>
       </Link>
       
-      <CardContent className="p-6 text-start flex flex-col flex-1">
+      <CardContent className="p-4 sm:p-6 text-start flex flex-col flex-1">
         <Link href={`/product/${product.id}`} className="block group-hover:text-primary transition-colors flex-1">
-          <h3 className="line-clamp-2 font-bold text-foreground text-xl leading-snug mb-2">
+          <h3 className="line-clamp-2 font-bold text-foreground text-lg sm:text-xl leading-snug mb-2">
             {displayName}
           </h3>
-          <p className="text-2xl font-black text-primary mb-6">
+          <p className="text-xl sm:text-2xl font-black text-primary mb-4 sm:mb-6">
             ${product.price?.toFixed(2)}
           </p>
         </Link>
         
         <Button 
           onClick={handleAddToCart}
-          className="w-full h-12 rounded-full font-bold gap-2 text-lg shadow-md border-2 border-[#D4AF37] bg-[#F8C8DC] text-[#D4AF37] hover:bg-[#F8C8DC]/80 hover:scale-[1.02] transition-all"
+          className="w-full h-10 sm:h-12 rounded-full font-bold gap-2 text-sm sm:text-lg shadow-md border-2 border-[#D4AF37] bg-[#F8C8DC] text-[#D4AF37] hover:bg-[#F8C8DC]/80 hover:scale-[1.02] transition-all"
         >
-          <ShoppingCart className="h-5 w-5" />
+          <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
           {t.addToCart}
         </Button>
       </CardContent>

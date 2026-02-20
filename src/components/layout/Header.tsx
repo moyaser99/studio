@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ShoppingBag, Search, User, Menu, Settings, Loader2, LogOut, LogIn, AlertCircle, Globe, ClipboardList, X } from 'lucide-react';
+import { ShoppingBag, Search, User, Menu, Settings, Loader2, LogOut, LogIn, Globe, ClipboardList, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useUser, useAuth, useFirestore, useCollection } from '@/firebase';
@@ -13,7 +12,6 @@ import { query, collection, orderBy, where } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import { useTranslation } from '@/hooks/use-translation';
 import { useCart } from '@/context/CartContext';
-import { cn } from '@/lib/utils';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
@@ -33,8 +31,6 @@ export default function Header() {
   const [showResults, setShowResults] = useState(false);
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
   const searchRef = useRef<HTMLDivElement>(null);
-
-  const isAdminPage = pathname?.startsWith('/admin');
 
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -110,7 +106,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-[100] w-full border-b bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80">
-      <div className="container mx-auto px-4 md:px-6">
+      <div className="container mx-auto px-4">
         <div className="flex h-16 md:h-20 items-center justify-between gap-2 md:gap-4">
           <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
             <Sheet open={open} onOpenChange={setOpen}>
@@ -188,7 +184,7 @@ export default function Header() {
             </Sheet>
 
             <Link href="/" className="flex items-center">
-              <span className="font-headline text-lg md:text-2xl font-black tracking-tighter text-primary truncate max-w-[120px] md:max-w-none">
+              <span className="font-headline text-lg md:text-2xl font-black tracking-tighter text-primary truncate max-w-[100px] sm:max-w-none">
                 YourGroceriesUSA
               </span>
             </Link>
@@ -254,15 +250,15 @@ export default function Header() {
             )}
           </div>
 
-          <div className="flex items-center gap-1 md:gap-4 flex-shrink-0">
-            <div className="flex items-center gap-1 md:gap-2">
+          <div className="flex items-center gap-1 sm:gap-4 flex-shrink-0">
+            <div className="flex items-center gap-1 sm:gap-2">
               <Button 
                 onClick={toggleLang}
                 size="sm"
-                className="hidden sm:flex rounded-full px-3 md:px-4 h-9 md:h-10 border-2 border-[#D4AF37] bg-[#F8C8DC]/20 text-primary hover:bg-[#F8C8DC]/40 transition-all font-bold gap-1 md:gap-2 text-xs"
+                className="rounded-full px-2 sm:px-4 h-9 sm:h-10 border-2 border-[#D4AF37] bg-[#F8C8DC]/20 text-primary hover:bg-[#F8C8DC]/40 transition-all font-bold gap-1 text-[10px] sm:text-xs min-w-[45px] sm:min-w-[60px]"
                 variant="ghost"
               >
-                <Globe className="h-3.5 w-3.5 md:h-4 md:w-4 text-[#D4AF37]" />
+                <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#D4AF37]" />
                 {t.langToggle}
               </Button>
 
