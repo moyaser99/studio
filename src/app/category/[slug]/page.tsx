@@ -38,7 +38,6 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
 
   const productsQuery = useMemoFirebase(() => {
     if (!db || !slug) return null;
-    // We fetch where category slug matches
     return query(
       collection(db, 'products'),
       where('category', '==', slug)
@@ -47,7 +46,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
 
   const { data: rawProducts, loading, error } = useCollection(productsQuery);
 
-  // Client-side filtering for isHidden to avoid index requirements and missing field issues
+  // Client-side filtering for isHidden
   const products = React.useMemo(() => {
     if (!rawProducts) return [];
     return rawProducts.filter((p: any) => p.isHidden !== true);
@@ -59,7 +58,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
 
   if (catLoading) {
     return (
-      <div className="min-h-screen flex flex-col" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="min-h-screen flex flex-col overflow-x-hidden" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <Header />
         <main className="flex-1 flex items-center justify-center">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -71,14 +70,14 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
 
   if (!category && !catLoading) {
     return (
-      <div className="min-h-screen flex flex-col" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="min-h-screen flex flex-col overflow-x-hidden" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <Header />
         <main className="flex-1 flex flex-col items-center justify-center p-6 space-y-4">
           <div className="bg-primary/5 p-6 rounded-full mb-4">
              <PackageOpen className="h-12 w-12 text-primary/40" />
           </div>
-          <h1 className="text-2xl font-bold font-headline">{t.categoryNotFound}</h1>
-          <p className="text-muted-foreground">{t.sorryCategoryNotFound}</p>
+          <h1 className="text-xl md:text-2xl font-bold font-headline">{t.categoryNotFound}</h1>
+          <p className="text-muted-foreground text-center">{t.sorryCategoryNotFound}</p>
           <Link href="/">
             <Button variant="outline" className="rounded-full gap-2">
               <ArrowRight className="h-4 w-4" /> {t.backToHome}
@@ -91,13 +90,13 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   }
 
   return (
-    <div className="flex min-h-screen flex-col" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="flex min-h-screen flex-col overflow-x-hidden" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Header />
-      <main className="flex-1">
-        <section className="bg-primary/5 py-12 md:py-20 border-b">
+      <main className="flex-1 w-full overflow-x-hidden">
+        <section className="bg-primary/5 py-10 md:py-20 border-b">
           <div className="container mx-auto px-4 text-start">
-            <h1 className="text-4xl md:text-5xl font-bold font-headline mb-4">{displayCategoryName}</h1>
-            <p className="text-muted-foreground text-lg max-w-2xl">
+            <h1 className="text-3xl md:text-5xl font-bold font-headline mb-4">{displayCategoryName}</h1>
+            <p className="text-muted-foreground text-base md:text-lg max-w-2xl">
               {t.browseOurCollection}
             </p>
           </div>
@@ -110,12 +109,12 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
               </div>
             ) : error ? (
-              <div className="text-center py-20 bg-destructive/5 rounded-3xl border border-destructive/20 max-w-lg mx-auto">
+              <div className="text-center py-20 bg-destructive/5 rounded-3xl border border-destructive/20 max-w-lg mx-auto px-4">
                 <h3 className="text-xl font-bold text-destructive mb-2">{t.errorOccurred}</h3>
                 <p className="text-muted-foreground text-sm">{t.comeBackLater}</p>
               </div>
             ) : products && products.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
                 {products.map((product: any) => (
                   <ProductCard 
                     key={product.id} 
@@ -132,16 +131,16 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
                 ))}
               </div>
             ) : (
-              <div className="text-center py-24 bg-white rounded-[4rem] shadow-xl border border-primary/10 max-w-2xl mx-auto px-10">
-                <div className="bg-primary/5 w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-10">
-                  <PackageOpen className="h-16 w-16 text-primary/30" />
+              <div className="text-center py-16 md:py-24 bg-white rounded-[2rem] md:rounded-[4rem] shadow-xl border border-primary/10 max-w-2xl mx-auto px-6 md:px-10">
+                <div className="bg-primary/5 w-20 h-20 md:w-32 md:h-32 rounded-full flex items-center justify-center mx-auto mb-8 md:mb-10">
+                  <PackageOpen className="h-12 w-12 md:h-16 md:w-16 text-primary/30" />
                 </div>
-                <h2 className="text-3xl font-bold mb-4">{lang === 'ar' ? 'لا توجد منتجات في هذا القسم حالياً' : 'No products in this category yet'}</h2>
-                <p className="text-muted-foreground text-lg mb-10">
+                <h2 className="text-2xl md:text-3xl font-bold mb-4">{lang === 'ar' ? 'لا توجد منتجات في هذا القسم حالياً' : 'No products in this category yet'}</h2>
+                <p className="text-muted-foreground text-base md:text-lg mb-8 md:mb-10">
                   {lang === 'ar' ? 'يرجى مراجعة القسم لاحقاً أو استكشاف باقي مجموعتنا الفاخرة.' : 'Please check back later or explore the rest of our luxury collection.'}
                 </p>
                 <Link href="/products">
-                   <Button className="rounded-full px-12 h-16 text-xl font-bold shadow-xl bg-[#D4AF37] hover:bg-[#B8962D]">{t.exploreAll}</Button>
+                   <Button className="rounded-full px-8 md:px-12 h-12 md:h-16 text-lg md:text-xl font-bold shadow-xl bg-[#D4AF37] hover:bg-[#B8962D]">{t.exploreAll}</Button>
                 </Link>
               </div>
             )}

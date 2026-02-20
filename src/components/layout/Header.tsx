@@ -25,10 +25,10 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const { t, lang, toggleLang, getTranslatedCategory } = useTranslation();
   const { totalItems } = useCart();
   
-  // Search State
   const [searchQuery, setSearchQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
@@ -36,7 +36,6 @@ export default function Header() {
 
   const isAdminPage = pathname?.startsWith('/admin');
 
-  // Fetch all active products for client-side search
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, 'products'), where('isHidden', '!=', true));
@@ -51,7 +50,6 @@ export default function Header() {
 
   const isAdmin = user?.email === ADMIN_EMAIL || user?.phoneNumber === ADMIN_PHONE;
 
-  // Search Logic with Debounce effect
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchQuery.trim() === '' || !allProducts) {
@@ -65,7 +63,7 @@ export default function Header() {
         (p.nameEn && p.nameEn.toLowerCase().includes(queryLower)) ||
         p.categoryName?.toLowerCase().includes(queryLower) ||
         (p.categoryNameEn && p.categoryNameEn.toLowerCase().includes(queryLower))
-      ).slice(0, 6); // Limit results for luxury look
+      ).slice(0, 6);
 
       setFilteredProducts(filtered);
     }, 300);
@@ -73,7 +71,6 @@ export default function Header() {
     return () => clearTimeout(timer);
   }, [searchQuery, allProducts]);
 
-  // Close search results when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -99,6 +96,7 @@ export default function Header() {
     setOpen(false);
     setShowResults(false);
     setSearchQuery('');
+    setMobileSearchOpen(false);
     router.push(path);
   };
 
@@ -106,58 +104,61 @@ export default function Header() {
     e.preventDefault();
     if (searchQuery.trim()) {
       setShowResults(false);
-      // Optional: router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+      setMobileSearchOpen(false);
     }
   };
 
   return (
     <header className="sticky top-0 z-[100] w-full border-b bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80">
       <div className="container mx-auto px-4 md:px-6">
-        <div className="flex h-20 items-center justify-between gap-4">
-          <div className="flex items-center gap-4 flex-shrink-0">
+        <div className="flex h-16 md:h-20 items-center justify-between gap-2 md:gap-4">
+          <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5">
-                  <Menu className="h-6 w-6" />
+                <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5 h-9 w-9 md:h-10 md:w-10">
+                  <Menu className="h-5 w-5 md:h-6 md:w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side={lang === 'ar' ? 'right' : 'left'} className="w-[300px] sm:w-[350px] bg-white border-primary/10 flex flex-col z-[110]">
+              <SheetContent side={lang === 'ar' ? 'right' : 'left'} className="w-[85%] sm:w-[350px] bg-white border-primary/10 flex flex-col z-[110]">
                 <SheetHeader className="pb-6 border-b">
-                  <SheetTitle className="text-primary text-start font-headline text-2xl font-black">
+                  <SheetTitle className="text-primary text-start font-headline text-xl md:text-2xl font-black">
                     YourGroceriesUSA
                   </SheetTitle>
                 </SheetHeader>
                 
-                <nav className="flex flex-col gap-2 mt-8 text-start flex-1 overflow-y-auto">
-                  <p className="text-xs font-bold text-muted-foreground mb-4 uppercase tracking-widest">{t.shopByCategory}</p>
+                <nav className="flex flex-col gap-1 mt-6 text-start flex-1 overflow-y-auto">
+                  <p className="text-[10px] md:text-xs font-bold text-muted-foreground mb-3 uppercase tracking-widest">{t.shopByCategory}</p>
+                  <button
+                    onClick={() => navigateTo('/products')}
+                    className="text-base md:text-lg font-bold hover:text-primary py-2 md:py-3 px-3 md:px-4 rounded-xl md:rounded-2xl hover:bg-primary/5 transition-all flex items-center justify-between group text-start"
+                  >
+                    <span>{t.allProducts}</span>
+                  </button>
                   {categories?.map((cat: any) => (
                     <button
                       key={cat.id}
                       onClick={() => navigateTo(`/category/${cat.slug}`)}
-                      className="text-lg font-bold hover:text-primary py-3 px-4 rounded-2xl hover:bg-primary/5 transition-all flex items-center justify-between group text-start"
+                      className="text-base md:text-lg font-bold hover:text-primary py-2 md:py-3 px-3 md:px-4 rounded-xl md:rounded-2xl hover:bg-primary/5 transition-all flex items-center justify-between group text-start"
                     >
                       <span>{lang === 'ar' ? cat.nameAr : (cat.nameEn || cat.slug.charAt(0).toUpperCase() + cat.slug.slice(1))}</span>
-                      <span className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        {lang === 'ar' ? '←' : '→'}
-                      </span>
                     </button>
                   ))}
                   
                   {isAdmin && (
-                    <div className="mt-8 pt-8 border-t">
-                      <p className="text-xs font-bold text-primary mb-4 uppercase tracking-widest">{t.administration}</p>
+                    <div className="mt-6 pt-6 border-t">
+                      <p className="text-[10px] md:text-xs font-bold text-primary mb-3 uppercase tracking-widest">{t.administration}</p>
                       <div className="space-y-2">
                         <button 
                           onClick={() => navigateTo('/admin')}
-                          className="w-full text-lg font-black text-primary py-3 px-4 rounded-2xl bg-primary/5 flex items-center gap-2 justify-start hover:bg-primary/10 transition-colors"
+                          className="w-full text-base md:text-lg font-black text-primary py-2 md:py-3 px-3 md:px-4 rounded-xl md:rounded-2xl bg-primary/5 flex items-center gap-2 justify-start hover:bg-primary/10"
                         >
-                          <Settings className="h-5 w-5" /> {t.admin}
+                          <Settings className="h-4 w-4 md:h-5 md:w-5" /> {t.admin}
                         </button>
                         <button 
                           onClick={() => navigateTo('/admin/orders')}
-                          className="w-full text-lg font-black text-[#D4AF37] py-3 px-4 rounded-2xl bg-[#D4AF37]/5 flex items-center gap-2 justify-start hover:bg-[#D4AF37]/10 transition-colors"
+                          className="w-full text-base md:text-lg font-black text-[#D4AF37] py-2 md:py-3 px-3 md:px-4 rounded-xl md:rounded-2xl bg-[#D4AF37]/5 flex items-center gap-2 justify-start hover:bg-[#D4AF37]/10"
                         >
-                          <ClipboardList className="h-5 w-5" /> {t.manageOrders}
+                          <ClipboardList className="h-4 w-4 md:h-5 md:w-5" /> {t.manageOrders}
                         </button>
                       </div>
                     </div>
@@ -169,17 +170,17 @@ export default function Header() {
                     <Button 
                       variant="ghost" 
                       onClick={handleLogout} 
-                      className="w-full rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/5 h-12 font-bold gap-2 justify-center"
+                      className="w-full rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/5 h-10 md:h-12 font-bold gap-2 justify-center"
                     >
-                      <LogOut className="h-5 w-5" /> {t.logout}
+                      <LogOut className="h-4 w-4 md:h-5 md:w-5" /> {t.logout}
                     </Button>
                   ) : (
                     <Button 
                       variant="default" 
                       onClick={() => navigateTo('/login')} 
-                      className="w-full rounded-full h-12 font-bold gap-2 shadow-lg"
+                      className="w-full rounded-full h-10 md:h-12 font-bold gap-2 shadow-lg"
                     >
-                      <LogIn className="h-5 w-5" /> {t.login}
+                      <LogIn className="h-4 w-4 md:h-5 md:w-5" /> {t.login}
                     </Button>
                   )}
                 </div>
@@ -187,14 +188,14 @@ export default function Header() {
             </Sheet>
 
             <Link href="/" className="flex items-center">
-              <span className="font-headline text-2xl font-black tracking-tighter text-primary">
+              <span className="font-headline text-lg md:text-2xl font-black tracking-tighter text-primary truncate max-w-[120px] md:max-w-none">
                 YourGroceriesUSA
               </span>
             </Link>
           </div>
 
-          {/* Search Bar Implementation */}
-          <div className="hidden lg:flex flex-1 max-w-xl relative" ref={searchRef}>
+          {/* Desktop Search */}
+          <div className="hidden lg:flex flex-1 max-w-xl relative mx-4" ref={searchRef}>
             <form onSubmit={handleSearchSubmit} className="w-full group">
               <div className="relative">
                 <Search className="absolute start-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-[#D4AF37] transition-colors" />
@@ -207,7 +208,7 @@ export default function Header() {
                     setShowResults(true);
                   }}
                   onFocus={() => setShowResults(true)}
-                  className="w-full h-12 ps-12 pe-12 rounded-full border-2 border-[#F8C8DC] bg-white text-lg focus:outline-none focus:border-[#D4AF37] transition-all shadow-sm"
+                  className="w-full h-11 ps-12 pe-12 rounded-full border-2 border-[#F8C8DC] bg-white text-base md:text-lg focus:outline-none focus:border-[#D4AF37] transition-all shadow-sm"
                 />
                 {searchQuery && (
                   <button 
@@ -224,11 +225,10 @@ export default function Header() {
               </div>
             </form>
 
-            {/* Search Results Dropdown */}
             {showResults && searchQuery.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-3 bg-white rounded-[2rem] shadow-2xl border border-primary/5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="p-4 border-b bg-primary/5">
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-2">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2">
                     {filteredProducts.length > 0 ? t.latestProducts : t.noProductsFound}
                   </p>
                 </div>
@@ -239,124 +239,112 @@ export default function Header() {
                       onClick={() => navigateTo(`/product/${product.id}`)}
                       className="w-full flex items-center gap-4 p-4 hover:bg-primary/5 transition-all group text-start"
                     >
-                      <div className="h-16 w-16 rounded-2xl overflow-hidden bg-muted flex-shrink-0 border">
-                        <img 
-                          src={product.imageUrl || 'https://picsum.photos/seed/placeholder/200/200'} 
-                          alt={product.name} 
-                          className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
+                      <div className="h-14 w-14 rounded-xl overflow-hidden bg-muted flex-shrink-0 border">
+                        <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-bold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
-                          {lang === 'ar' ? product.name : (product.nameEn || product.name)}
-                        </h4>
-                        <p className="text-sm text-muted-foreground">
-                          {lang === 'ar' ? product.categoryName : (product.categoryNameEn || getTranslatedCategory(product.categoryName))}
-                        </p>
+                        <h4 className="font-bold text-foreground text-sm line-clamp-1 group-hover:text-primary transition-colors">{lang === 'ar' ? product.name : (product.nameEn || product.name)}</h4>
+                        <p className="text-xs text-muted-foreground">{lang === 'ar' ? product.categoryName : (product.categoryNameEn || getTranslatedCategory(product.categoryName))}</p>
                       </div>
-                      <div className="text-lg font-black text-[#D4AF37]">
-                        ${product.price?.toFixed(2)}
-                      </div>
+                      <div className="text-base font-black text-[#D4AF37]">${product.price?.toFixed(2)}</div>
                     </button>
                   ))}
-                  {filteredProducts.length === 0 && (
-                    <div className="p-12 text-center text-muted-foreground">
-                      <Search className="h-12 w-12 mx-auto mb-4 opacity-10" />
-                      <p className="text-lg font-medium">{t.noProductsFound}</p>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
           </div>
 
-          <div className="flex items-center gap-4 flex-shrink-0">
-            {isAdminPage && (
-              <div className="hidden xl:flex items-center gap-2">
-                {!loading && !user ? (
-                  <div className="flex items-center gap-1.5 bg-destructive/10 text-destructive text-[10px] px-3 py-1 rounded-full font-bold border border-destructive/20 animate-pulse">
-                    <AlertCircle className="h-3 w-3" />
-                    {t.sessionWarning}
-                  </div>
-                ) : user && (
-                  <div className="text-[10px] text-muted-foreground bg-muted/50 px-3 py-1 rounded-full border">
-                    {t.adminIndicator}: <span className="font-bold text-primary">{user.email || user.phoneNumber}</span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-4 flex-shrink-0">
+            <div className="flex items-center gap-1 md:gap-2">
               <Button 
                 onClick={toggleLang}
-                className="hidden sm:flex rounded-full px-4 h-10 border-2 border-[#D4AF37] bg-[#F8C8DC]/20 text-primary hover:bg-[#F8C8DC]/40 transition-all font-bold gap-2 text-sm"
+                size="sm"
+                className="hidden sm:flex rounded-full px-3 md:px-4 h-9 md:h-10 border-2 border-[#D4AF37] bg-[#F8C8DC]/20 text-primary hover:bg-[#F8C8DC]/40 transition-all font-bold gap-1 md:gap-2 text-xs"
                 variant="ghost"
               >
-                <Globe className="h-4 w-4 text-[#D4AF37]" />
+                <Globe className="h-3.5 w-3.5 md:h-4 md:w-4 text-[#D4AF37]" />
                 {t.langToggle}
               </Button>
 
-              <Button variant="ghost" size="icon" className="lg:hidden rounded-full hover:bg-primary/5">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="lg:hidden rounded-full hover:bg-primary/5 h-9 w-9"
+                onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+              >
                 <Search className="h-5 w-5" />
               </Button>
               
-              {isAdmin && (
-                <div className="hidden sm:flex items-center gap-2">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="rounded-full text-primary hover:bg-primary/10"
-                    onClick={() => navigateTo('/admin')}
-                  >
-                    <Settings className="h-5 w-5" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="rounded-full text-[#D4AF37] hover:bg-[#D4AF37]/10"
-                    onClick={() => navigateTo('/admin/orders')}
-                  >
-                    <ClipboardList className="h-5 w-5" />
-                  </Button>
-                </div>
-              )}
-
-              {loading ? (
-                <div className="w-10 h-10 flex items-center justify-center">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                </div>
-              ) : user ? (
-                <div className="flex items-center gap-2">
-                  <Link href="/profile-completion">
-                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5">
-                      <User className="h-5 w-5" />
-                    </Button>
-                  </Link>
-                </div>
-              ) : (
-                <Link href="/login">
-                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5">
-                    <User className="h-5 w-5" />
-                  </Button>
-                </Link>
-              )}
-
               <Link href="/cart">
-                <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-primary/5 group">
+                <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-primary/5 h-9 w-9 group">
                   <ShoppingBag className="h-5 w-5" />
                   {totalItems > 0 && (
                     <span 
                       key={totalItems}
-                      className="absolute -top-1 -right-1 h-5 w-5 bg-[#D4AF37] text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-sm animate-in zoom-in duration-300"
+                      className="absolute -top-0.5 -right-0.5 h-4 w-4 md:h-5 md:w-5 bg-[#D4AF37] text-white text-[8px] md:text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-sm animate-in zoom-in duration-300"
                     >
                       {totalItems}
                     </span>
                   )}
                 </Button>
               </Link>
+
+              {loading ? (
+                <div className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <Link href={user ? "/profile-completion" : "/login"}>
+                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5 h-9 w-9">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>
+
+        {/* Mobile Search Input Expansion */}
+        {mobileSearchOpen && (
+          <div className="lg:hidden pb-4 px-1 animate-in slide-in-from-top duration-300" ref={searchRef}>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder={t.search}
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setShowResults(true);
+                }}
+                className="w-full h-10 ps-4 pe-10 rounded-full border-2 border-[#F8C8DC] bg-white text-sm focus:outline-none focus:border-[#D4AF37] shadow-sm"
+                autoFocus
+              />
+              <button 
+                onClick={() => setMobileSearchOpen(false)}
+                className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {showResults && searchQuery.length > 0 && (
+              <div className="absolute top-full left-4 right-4 z-[120] mt-2 bg-white rounded-2xl shadow-2xl border border-primary/5 overflow-hidden">
+                {filteredProducts.map((product) => (
+                  <button
+                    key={product.id}
+                    onClick={() => navigateTo(`/product/${product.id}`)}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-primary/5 border-b last:border-0 text-start"
+                  >
+                    <img src={product.imageUrl} className="h-10 w-10 rounded-lg object-cover" />
+                    <div className="flex-1">
+                      <p className="text-xs font-bold line-clamp-1">{lang === 'ar' ? product.name : (product.nameEn || product.name)}</p>
+                      <p className="text-[10px] text-muted-foreground">${product.price?.toFixed(2)}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </header>
   );
