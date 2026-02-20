@@ -41,7 +41,11 @@ export default function Header() {
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+      
+      // Force visibility when at the very top of the page
+      if (currentScrollY < 10) {
+        setIsVisible(true);
+      } else if (currentScrollY > lastScrollY && currentScrollY > 50) {
         setIsVisible(false); // Scrolling down
       } else {
         setIsVisible(true); // Scrolling up
