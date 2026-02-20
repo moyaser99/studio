@@ -7,7 +7,8 @@ import {
   query, 
   orderBy, 
   doc, 
-  updateDoc 
+  updateDoc,
+  deleteDoc
 } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,19 +44,17 @@ import {
   ClipboardList,
   MapPin,
   Phone,
-  Calendar,
-  DollarSign
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import { useTranslation } from '@/hooks/use-translation';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
@@ -66,6 +65,7 @@ export default function AdminOrdersPage() {
   const { toast } = useToast();
   const { t, lang } = useTranslation();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const ordersQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -88,14 +88,40 @@ export default function AdminOrdersPage() {
           description: lang === 'ar' ? 'تم تغيير حالة الطلب بنجاح.' : 'Order status updated successfully.' 
         });
       })
-      .catch(() => {
+      .catch(async () => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: docRef.path,
           operation: 'update',
           requestResourceData: { status: newStatus }
-        } satisfies any));
+        } satisfies SecurityRuleContext));
       })
       .finally(() => setUpdatingId(null));
+  };
+
+  const handleDeleteOrder = (orderId: string) => {
+    if (!db || !isAdmin) return;
+    
+    if (!window.confirm(lang === 'ar' ? 'هل أنت متأكد من حذف هذا الطلب؟' : 'Are you sure you want to delete this order?')) {
+      return;
+    }
+
+    setDeletingId(orderId);
+    const docRef = doc(db, 'orders', orderId);
+
+    deleteDoc(docRef)
+      .then(() => {
+        toast({
+          title: lang === 'ar' ? 'تم الحذف' : 'Deleted',
+          description: lang === 'ar' ? 'تم حذف الطلب بنجاح.' : 'Order has been deleted successfully.'
+        });
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'delete'
+        } satisfies SecurityRuleContext));
+      })
+      .finally(() => setDeletingId(null));
   };
 
   if (authLoading) return (
@@ -106,16 +132,15 @@ export default function AdminOrdersPage() {
 
   if (!isAdmin && !authLoading) {
     return (
-      <div className="min-h-screen flex flex-col" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-        <Header />
-        <main className="flex-1 flex items-center justify-center bg-muted/20">
-          <Card className="max-w-md text-center p-8 rounded-[2rem] shadow-xl">
-             <h2 className="text-2xl font-bold text-destructive mb-4">{t.sessionWarning}</h2>
-             <Link href="/login"><Button className="rounded-full">{t.loginTitle}</Button></Link>
-          </Card>
-        </main>
-        <Footer />
-      </div>
+      <main className="flex-1 flex items-center justify-center bg-muted/20 py-20" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+        <Card className="max-w-md text-center p-8 rounded-[2rem] shadow-xl">
+           <div className="bg-destructive/10 text-destructive p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+             <AlertTriangle className="h-8 w-8" />
+           </div>
+           <h2 className="text-2xl font-bold text-destructive mb-4">{t.sessionWarning}</h2>
+           <Link href="/login"><Button className="rounded-full px-8 h-12">{t.loginTitle}</Button></Link>
+        </Card>
+      </main>
     );
   }
 
@@ -138,7 +163,6 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/10 transition-all duration-300" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      <Header />
       <main className="flex-1 container mx-auto px-4 py-12">
         <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6">
           <div className="text-start">
@@ -270,6 +294,20 @@ export default function AdminOrdersPage() {
                               </div>
                             </DialogContent>
                           </Dialog>
+                          
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="rounded-full text-destructive hover:bg-destructive/10"
+                            onClick={() => handleDeleteOrder(order.id)}
+                            disabled={deletingId === order.id}
+                          >
+                            {deletingId === order.id ? (
+                              <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-5 w-5" />
+                            )}
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -285,7 +323,6 @@ export default function AdminOrdersPage() {
           </CardContent>
         </Card>
       </main>
-      <Footer />
     </div>
   );
 }
