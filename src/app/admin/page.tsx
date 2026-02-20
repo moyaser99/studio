@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -284,7 +285,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen flex flex-col bg-muted/10 transition-all duration-300" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Header />
-      <main className="flex-1 container mx-auto px-4 py-12">
+      <main className="flex-1 container mx-auto px-4 py-12 pt-24 md:pt-32">
         <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6">
           <div className="text-start">
             <h1 className="text-4xl font-black font-headline text-primary flex items-center gap-3">
@@ -304,7 +305,7 @@ export default function AdminPage() {
                   <Plus className="h-6 w-6" /> {t.addNewProduct}
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-4xl rounded-[2.5rem] overflow-y-auto max-h-[90vh]" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+              <DialogContent className="max-w-4xl rounded-[2.5rem] overflow-y-auto max-h-[90vh] z-[1100]" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
                 <DialogHeader>
                   <DialogTitle className="text-3xl font-black font-headline text-start text-primary flex items-center gap-2">
                     {isEditing ? t.editProduct : t.addNewProduct}
