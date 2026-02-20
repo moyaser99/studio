@@ -55,7 +55,9 @@ import {
   ShoppingCart,
   Calendar,
   ArrowUpRight,
-  PackageSearch
+  PackageSearch,
+  Search,
+  X
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow';
@@ -82,6 +84,7 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -130,6 +133,19 @@ export default function AdminPage() {
       setHeroUrl(heroData.imageUrl);
     }
   }, [heroData]);
+
+  // Real-time product search filter
+  const filteredProducts = useMemo(() => {
+    if (!products) return [];
+    if (!searchTerm.trim()) return products;
+    
+    const queryLower = searchTerm.toLowerCase();
+    return products.filter((p: any) => 
+      p.name?.toLowerCase().includes(queryLower) || 
+      (p.nameEn && p.nameEn.toLowerCase().includes(queryLower)) ||
+      p.categoryName?.toLowerCase().includes(queryLower)
+    );
+  }, [products, searchTerm]);
 
   // Analytics Calculation
   const stats = useMemo(() => {
@@ -714,13 +730,35 @@ export default function AdminPage() {
 
         <TabsContent value="products">
           <Card className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white">
-            <CardHeader className="bg-primary/5 p-8 border-b">
-              <CardTitle className="text-2xl font-bold font-headline text-start">{t.productList}</CardTitle>
+            <CardHeader className="bg-primary/5 p-8 border-b space-y-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <CardTitle className="text-2xl font-bold font-headline text-start">{t.productList}</CardTitle>
+                
+                {/* Product Search Bar */}
+                <div className="relative w-full md:w-80 group">
+                  <Search className="absolute start-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-[#D4AF37] transition-colors" />
+                  <input
+                    type="text"
+                    placeholder={lang === 'ar' ? 'ابحث عن منتج...' : 'Search for a product...'}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full h-12 ps-12 pe-12 rounded-full border-2 border-primary/10 bg-background text-sm focus:outline-none focus:border-[#D4AF37] transition-all"
+                  />
+                  {searchTerm && (
+                    <button 
+                      onClick={() => setSearchTerm('')}
+                      className="absolute end-4 top-1/2 -translate-y-1/2 h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  )}
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               {productsLoading ? (
                 <div className="py-20 flex justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary/40" /></div>
-              ) : products && products.length > 0 ? (
+              ) : filteredProducts && filteredProducts.length > 0 ? (
                 <Table>
                   <TableHeader className="bg-muted/30">
                     <TableRow>
@@ -732,7 +770,7 @@ export default function AdminPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {products.map((product: any) => (
+                    {filteredProducts.map((product: any) => (
                       <TableRow key={product.id} className={`hover:bg-primary/5 transition-colors ${product.isHidden ? 'opacity-60 grayscale-[0.5]' : ''}`}>
                         <TableCell>
                           <div className="h-16 w-16 rounded-2xl overflow-hidden bg-muted border">
@@ -813,7 +851,10 @@ export default function AdminPage() {
                   </TableBody>
                 </Table>
               ) : (
-                <div className="py-20 text-center text-muted-foreground">{t.noProductsFound}</div>
+                <div className="py-20 text-center text-muted-foreground">
+                  <PackageSearch className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                  {searchTerm ? (lang === 'ar' ? 'لا توجد نتائج مطابقة لبحثك.' : 'No matching results found.') : t.noProductsFound}
+                </div>
               )}
             </CardContent>
           </Card>
