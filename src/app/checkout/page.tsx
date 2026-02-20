@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -84,47 +85,42 @@ export default function CheckoutPage() {
     // Add order to Firestore
     addDoc(collection(db, 'orders'), orderData)
       .then((docRef) => {
-        // Debugging logs for environment variables
-        console.log('EmailJS Config Verification:', {
-          serviceId: process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID ? 'Present' : 'Missing',
-          templateId: process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID ? 'Present' : 'Missing',
-          publicKey: process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY ? 'Present' : 'Missing'
+        // Prepare variables for EmailJS
+        const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
+        const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
+        const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
+
+        console.log('Attempting Email Notification...', {
+          serviceId: serviceId ? 'OK' : 'MISSING',
+          templateId: templateId ? 'OK' : 'MISSING',
+          publicKey: publicKey ? 'OK' : 'MISSING'
         });
 
-        if (process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY) {
-          emailjs.init(process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY);
+        if (serviceId && templateId && publicKey) {
+          // Initialize EmailJS
+          emailjs.init(publicKey);
+
+          // Build item details string
+          const orderDetailsString = cartItems
+            .map(item => `${lang === 'ar' ? item.name : (item.nameEn || item.name)} (x${item.quantity})`)
+            .join(', ');
+
+          const templateParams = {
+            order_id: docRef.id,
+            customer_name: formData.fullName,
+            customer_phone: formData.phone,
+            total_price: totalPrice.toFixed(2),
+            order_details: orderDetailsString,
+          };
+
+          // Send Email
+          emailjs.send(serviceId, templateId, templateParams, publicKey)
+            .then(
+              (result) => console.log('Admin notified successfully:', result.text),
+              (err) => console.error('EmailJS Error Detail:', err.text || err)
+            )
+            .catch(err => console.error('EmailJS critical failure:', err));
         }
-
-        // Prepare EmailJS params
-        const orderDetailsString = cartItems
-          .map(item => `${lang === 'ar' ? item.name : (item.nameEn || item.name)} (x${item.quantity})`)
-          .join(', ');
-
-        const templateParams = {
-          order_id: docRef.id,
-          customer_name: formData.fullName,
-          customer_phone: formData.phone,
-          total_price: totalPrice.toFixed(2),
-          order_details: orderDetailsString,
-        };
-
-        // Send Email Notification to Admin (Mohammad Jebrel)
-        emailjs.send(
-          process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!,
-          process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID!,
-          templateParams,
-          process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY!
-        ).then(
-          (result) => {
-            console.log('EmailJS Success:', result.text);
-          },
-          (err) => {
-            // Log precise error details for easier debugging
-            console.error('EmailJS Error Detail:', err.text || err);
-          }
-        ).catch(err => {
-          console.error('EmailJS critical failure:', err);
-        });
       })
       .catch(async (err) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -134,7 +130,7 @@ export default function CheckoutPage() {
         }));
       });
 
-    // Proceed with UI cleanup and redirect immediately for a smooth experience
+    // Provide immediate feedback to user
     toast({
       title: lang === 'ar' ? 'شكراً لك' : 'Thank You',
       description: lang === 'ar' ? 'تم استلام طلبك بنجاح' : 'Your order has been received.',
