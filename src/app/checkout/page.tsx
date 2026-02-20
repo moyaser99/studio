@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -11,23 +12,33 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { 
-  CreditCard, 
   MapPin, 
   Phone, 
   User, 
   CheckCircle2, 
   ChevronLeft, 
   ChevronRight,
-  ShoppingBag
+  ShoppingBag,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore, useUser } from '@/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function CheckoutPage() {
-  const { cartItems, totalPrice, totalItems } = useCart();
+  const { cartItems, totalPrice, totalItems, clearCart } = useCart();
   const { t, lang } = useTranslation();
   const { toast } = useToast();
+  const db = useFirestore();
+  const { user } = useUser();
+  const router = useRouter();
+  
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
@@ -45,11 +56,49 @@ export default function CheckoutPage() {
       return;
     }
 
-    console.log('Order placing logic will go here in the next step', formData);
+    if (!db) return;
+
+    setLoading(true);
+
+    const orderData = {
+      customerInfo: {
+        fullName: formData.fullName,
+        phone: formData.phone,
+        city: formData.city,
+        address: formData.address
+      },
+      items: cartItems.map(item => ({
+        id: item.id,
+        name: item.name,
+        nameEn: item.nameEn || '',
+        price: item.price,
+        quantity: item.quantity
+      })),
+      totalPrice,
+      status: 'pending',
+      paymentMethod: 'Cash on Delivery',
+      createdAt: serverTimestamp(),
+      userId: user?.uid || 'guest'
+    };
+
+    // Fire and forget mutation to leverage optimistic UI / local cache
+    addDoc(collection(db, 'orders'), orderData)
+      .catch(async (err) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'orders',
+          operation: 'create',
+          requestResourceData: orderData
+        }));
+      });
+
+    // Proceed with UI cleanup and redirect immediately for a smooth experience
     toast({
-      title: "Processing...",
-      description: "We are preparing your order."
+      title: lang === 'ar' ? 'شكراً لك' : 'Thank You',
+      description: lang === 'ar' ? 'تم استلام طلبك بنجاح' : 'Your order has been received.',
     });
+    
+    clearCart();
+    router.push('/checkout/success');
   };
 
   if (totalItems === 0) {
@@ -187,9 +236,17 @@ export default function CheckoutPage() {
                 
                 <Button 
                   onClick={handlePlaceOrder}
+                  disabled={loading}
                   className="w-full h-16 rounded-full text-xl font-bold bg-[#D4AF37] hover:bg-[#B8962D] text-white shadow-xl gap-2 mt-4"
                 >
-                  {t.placeOrder}
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      {lang === 'ar' ? 'جاري الطلب...' : 'Processing...'}
+                    </div>
+                  ) : (
+                    t.placeOrder
+                  )}
                 </Button>
               </CardContent>
             </Card>

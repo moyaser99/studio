@@ -129,6 +129,42 @@
           "type": "boolean"
         }
       }
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A customer order",
+      "type": "object",
+      "properties": {
+        "customerInfo": {
+          "type": "object",
+          "properties": {
+            "fullName": { "type": "string" },
+            "phone": { "type": "string" },
+            "city": { "type": "string" },
+            "address": { "type": "string" }
+          }
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "price": { "type": "number" },
+              "quantity": { "type": "number" }
+            }
+          }
+        },
+        "totalPrice": { "type": "number" },
+        "status": { 
+          "type": "string", 
+          "enum": ["pending", "processing", "shipped", "delivered", "cancelled"] 
+        },
+        "paymentMethod": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "userId": { "type": "string" }
+      }
     }
   },
   "auth": {
@@ -154,6 +190,10 @@
     "/siteSettings/heroSection": {
       "schema": "HeroImage",
       "description": "PUBLIC_READ: Visible to all. ADMIN_WRITE: Restricted to mohammad.dd.my@gmail.com or phone +962780334074."
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "ADMIN_READ: Restricted to admin. OWNER_WRITE: Any user can create an order."
     }
   }
 }
