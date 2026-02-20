@@ -29,6 +29,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import emailjs from '@emailjs/browser';
 
 export default function CheckoutPage() {
   const { cartItems, totalPrice, totalItems, clearCart } = useCart();
@@ -81,8 +82,33 @@ export default function CheckoutPage() {
       userId: user?.uid || 'guest'
     };
 
-    // Fire and forget mutation to leverage optimistic UI / local cache
+    // Add order to Firestore
     addDoc(collection(db, 'orders'), orderData)
+      .then((docRef) => {
+        // Prepare EmailJS params
+        const orderDetailsString = cartItems
+          .map(item => `${lang === 'ar' ? item.name : (item.nameEn || item.name)} (x${item.quantity})`)
+          .join(', ');
+
+        const templateParams = {
+          order_id: docRef.id,
+          customer_name: formData.fullName,
+          customer_phone: formData.phone,
+          total_price: totalPrice.toFixed(2),
+          order_details: orderDetailsString,
+        };
+
+        // Send Email Notification to Admin (Mohammad Jebrel)
+        emailjs.send(
+          process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!,
+          process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID!,
+          templateParams,
+          process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY!
+        ).catch(err => {
+          // Log failure but don't block user experience
+          console.error('EmailJS notification failed:', err);
+        });
+      })
       .catch(async (err) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: 'orders',
