@@ -10,7 +10,7 @@ import ProductCard from '@/components/product/ProductCard';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight, Loader2, Package, Sparkles } from 'lucide-react';
 import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
-import { collection, query, limit, doc, orderBy } from 'firebase/firestore';
+import { collection, query, limit, doc, orderBy, where } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import { useTranslation } from '@/hooks/use-translation';
 
