@@ -51,8 +51,6 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import Link from 'next/link';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -120,28 +118,24 @@ export default function AdminPage() {
   const isAdmin = user?.email === ADMIN_EMAIL || user?.phoneNumber === ADMIN_PHONE;
 
   if (authLoading) return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="flex items-center justify-center p-20">
       <Loader2 className="h-10 w-10 animate-spin text-primary" />
     </div>
   );
 
   if (!isAdmin && !authLoading) {
     return (
-      <div className="min-h-screen flex flex-col" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-        <Header />
-        <main className="flex-1 flex items-center justify-center bg-muted/20">
-          <Card className="max-w-md text-center p-8 rounded-3xl shadow-xl">
-            <div className="bg-destructive/10 text-destructive p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="h-8 w-8" />
-            </div>
-            <CardTitle className="text-2xl text-destructive mb-4">{t.sessionWarning}</CardTitle>
-            <div className="flex flex-col gap-3">
-              <Button onClick={() => window.open(window.location.href, '_blank')} className="rounded-full h-12">Open in New Window</Button>
-              <Button onClick={() => window.location.href = '/login'} variant="outline" className="rounded-full h-12">{t.loginTitle}</Button>
-            </div>
-          </Card>
-        </main>
-        <Footer />
+      <div className="flex items-center justify-center bg-muted/20 p-12" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+        <Card className="max-w-md text-center p-8 rounded-3xl shadow-xl">
+          <div className="bg-destructive/10 text-destructive p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="h-8 w-8" />
+          </div>
+          <CardTitle className="text-2xl text-destructive mb-4">{t.sessionWarning}</CardTitle>
+          <div className="flex flex-col gap-3">
+            <Button onClick={() => window.open(window.location.href, '_blank')} className="rounded-full h-12">Open in New Window</Button>
+            <Button onClick={() => window.location.href = '/login'} variant="outline" className="rounded-full h-12">{t.loginTitle}</Button>
+          </div>
+        </Card>
       </div>
     );
   }
@@ -283,317 +277,308 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted/10 transition-all duration-300" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      <Header />
-      <main className="flex-1 container mx-auto px-4 py-12 pt-24 md:pt-32">
-        <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6">
-          <div className="text-start">
-            <h1 className="text-4xl font-black font-headline text-primary flex items-center gap-3">
-              <LayoutDashboard className="h-10 w-10" /> {t.adminDashboard}
-            </h1>
-          </div>
-          
-          <div className="flex gap-4">
-            <Link href="/admin/categories">
-              <Button variant="outline" className="rounded-full h-14 px-8 text-lg font-bold border-[#D4AF37] text-[#D4AF37] gap-2">
-                <Tags className="h-6 w-6" /> {t.manageCategories}
+    <div className="container mx-auto px-4 py-12" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6">
+        <div className="text-start">
+          <h1 className="text-4xl font-black font-headline text-primary flex items-center gap-3">
+            <LayoutDashboard className="h-10 w-10" /> {t.adminDashboard}
+          </h1>
+        </div>
+        
+        <div className="flex gap-4">
+          <Link href="/admin/categories">
+            <Button variant="outline" className="rounded-full h-14 px-8 text-lg font-bold border-[#D4AF37] text-[#D4AF37] gap-2">
+              <Tags className="h-6 w-6" /> {t.manageCategories}
+            </Button>
+          </Link>
+          <Dialog open={isAdding || !!isEditing} onOpenChange={(val) => !val && resetForm()}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setIsAdding(true)} className="rounded-full h-14 px-8 text-lg font-bold shadow-lg gap-2 bg-[#D4AF37] hover:bg-[#B8962D]">
+                <Plus className="h-6 w-6" /> {t.addNewProduct}
               </Button>
-            </Link>
-            <Dialog open={isAdding || !!isEditing} onOpenChange={(val) => !val && resetForm()}>
-              <DialogTrigger asChild>
-                <Button onClick={() => setIsAdding(true)} className="rounded-full h-14 px-8 text-lg font-bold shadow-lg gap-2 bg-[#D4AF37] hover:bg-[#B8962D]">
-                  <Plus className="h-6 w-6" /> {t.addNewProduct}
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl rounded-[2.5rem] overflow-y-auto max-h-[90vh] z-[1100]" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-                <DialogHeader>
-                  <DialogTitle className="text-3xl font-black font-headline text-start text-primary flex items-center gap-2">
-                    {isEditing ? t.editProduct : t.addNewProduct}
-                    {!isEditing && <Sparkles className="h-6 w-6 text-[#D4AF37]" />}
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-8 py-6">
-                  {/* Row 1: Basic Info */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2 text-start">
-                      <Label className="text-lg font-bold">{t.productNameLabel}</Label>
-                      <input 
-                        value={formData.name} 
-                        onChange={e => setFormData({...formData, name: e.target.value})}
-                        placeholder="مثال: كريم العناية الفاخر" 
-                        className="flex h-14 w-full rounded-2xl border-2 border-primary/10 bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
-                      />
-                    </div>
-                    <div className="space-y-2 text-start">
-                      <Label className="text-lg font-bold">{t.productNameEnLabel}</Label>
-                      <input 
-                        value={formData.nameEn} 
-                        onChange={e => setFormData({...formData, nameEn: e.target.value})}
-                        placeholder="Ex: Luxury Care Cream" 
-                        className="flex h-14 w-full rounded-2xl border-2 border-primary/10 bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Row 2: Price & Category */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2 text-start">
-                      <Label className="text-lg font-bold">{t.productPrice}</Label>
-                      <input 
-                        type="number"
-                        value={formData.price} 
-                        onChange={e => setFormData({...formData, price: e.target.value})}
-                        placeholder="0.00" 
-                        className="flex h-14 w-full rounded-2xl border-2 border-primary/10 bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
-                      />
-                    </div>
-                    <div className="space-y-2 text-start">
-                      <Label className="text-lg font-bold">{t.categoryLabel}</Label>
-                      <select 
-                        className="w-full h-14 rounded-2xl border-2 border-primary/10 bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
-                        value={formData.category}
-                        onChange={e => setFormData({...formData, category: e.target.value})}
-                      >
-                        <option value="" disabled>{t.chooseCategory}</option>
-                        {categories?.map((c: any) => <option key={c.id} value={c.slug}>{lang === 'ar' ? c.nameAr : (c.nameEn || getTranslatedCategory(c.nameAr))}</option>)}
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Row 3: Image URL */}
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl rounded-[2.5rem] overflow-y-auto max-h-[90vh] z-[1100]" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+              <DialogHeader>
+                <DialogTitle className="text-3xl font-black font-headline text-start text-primary flex items-center gap-2">
+                  {isEditing ? t.editProduct : t.addNewProduct}
+                  {!isEditing && <Sparkles className="h-6 w-6 text-[#D4AF37]" />}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-8 py-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2 text-start">
-                    <Label className="text-lg font-bold">{t.imageLabel}</Label>
+                    <Label className="text-lg font-bold">{t.productNameLabel}</Label>
                     <input 
-                      value={formData.imageUrl} 
-                      onChange={e => setFormData({...formData, imageUrl: e.target.value})}
-                      placeholder="https://images.unsplash.com/..." 
+                      value={formData.name} 
+                      onChange={e => setFormData({...formData, name: e.target.value})}
+                      placeholder="مثال: كريم العناية الفاخر" 
                       className="flex h-14 w-full rounded-2xl border-2 border-primary/10 bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
                     />
                   </div>
-
-                  {/* Section: Descriptions (Bilingual) */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-xl font-bold flex items-center gap-2">
-                        <span className="w-1.5 h-6 bg-[#D4AF37] rounded-full" />
-                        {lang === 'ar' ? 'الوصف' : 'Description'}
-                      </h3>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={handleAiDescription}
-                        disabled={aiLoading}
-                        className="rounded-full gap-2 h-10 px-4 border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/10"
-                      >
-                        {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                        {t.generateAiDescription}
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2 text-start">
-                        <Label className="font-bold opacity-70">{t.descriptionLabel}</Label>
-                        <textarea 
-                          value={formData.description} 
-                          onChange={e => setFormData({...formData, description: e.target.value})}
-                          placeholder="اكتب وصفاً جذاباً بالعربية..." 
-                          className="flex min-h-[140px] w-full rounded-2xl border-2 border-primary/10 bg-background px-4 py-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
-                        />
-                      </div>
-                      <div className="space-y-2 text-start">
-                        <Label className="font-bold opacity-70">{t.descriptionEnLabel}</Label>
-                        <textarea 
-                          value={formData.descriptionEn} 
-                          onChange={e => setFormData({...formData, descriptionEn: e.target.value})}
-                          placeholder="Write a compelling description in English..." 
-                          className="flex min-h-[140px] w-full rounded-2xl border-2 border-primary/10 bg-background px-4 py-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
-                        />
-                      </div>
-                    </div>
+                  <div className="space-y-2 text-start">
+                    <Label className="text-lg font-bold">{t.productNameEnLabel}</Label>
+                    <input 
+                      value={formData.nameEn} 
+                      onChange={e => setFormData({...formData, nameEn: e.target.value})}
+                      placeholder="Ex: Luxury Care Cream" 
+                      className="flex h-14 w-full rounded-2xl border-2 border-primary/10 bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                    />
                   </div>
+                </div>
 
-                  {/* Section: Additional Details (Bilingual) */}
-                  <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2 text-start">
+                    <Label className="text-lg font-bold">{t.productPrice}</Label>
+                    <input 
+                      type="number"
+                      value={formData.price} 
+                      onChange={e => setFormData({...formData, price: e.target.value})}
+                      placeholder="0.00" 
+                      className="flex h-14 w-full rounded-2xl border-2 border-primary/10 bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                    />
+                  </div>
+                  <div className="space-y-2 text-start">
+                    <Label className="text-lg font-bold">{t.categoryLabel}</Label>
+                    <select 
+                      className="w-full h-14 rounded-2xl border-2 border-primary/10 bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                      value={formData.category}
+                      onChange={e => setFormData({...formData, category: e.target.value})}
+                    >
+                      <option value="" disabled>{t.chooseCategory}</option>
+                      {categories?.map((c: any) => <option key={c.id} value={c.slug}>{lang === 'ar' ? c.nameAr : (c.nameEn || getTranslatedCategory(c.nameAr))}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-start">
+                  <Label className="text-lg font-bold">{t.imageLabel}</Label>
+                  <input 
+                    value={formData.imageUrl} 
+                    onChange={e => setFormData({...formData, imageUrl: e.target.value})}
+                    placeholder="https://images.unsplash.com/..." 
+                    className="flex h-14 w-full rounded-2xl border-2 border-primary/10 bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
                     <h3 className="text-xl font-bold flex items-center gap-2">
                       <span className="w-1.5 h-6 bg-[#D4AF37] rounded-full" />
-                      {lang === 'ar' ? 'تفاصيل إضافية' : 'Technical Specifications'}
+                      {lang === 'ar' ? 'الوصف' : 'Description'}
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2 text-start">
-                        <Label className="font-bold opacity-70">المواصفات (AR)</Label>
-                        <textarea 
-                          value={formData.details} 
-                          onChange={e => setFormData({...formData, details: e.target.value})}
-                          placeholder="مثال: الوزن، الأبعاد، المكونات..." 
-                          className="flex min-h-[120px] w-full rounded-2xl border-2 border-primary/10 bg-background px-4 py-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
-                        />
-                      </div>
-                      <div className="space-y-2 text-start">
-                        <Label className="font-bold opacity-70">Specifications (EN)</Label>
-                        <textarea 
-                          value={formData.detailsEn} 
-                          onChange={e => setFormData({...formData, detailsEn: e.target.value})}
-                          placeholder="Ex: Weight, Dimensions, Ingredients..." 
-                          className="flex min-h-[120px] w-full rounded-2xl border-2 border-primary/10 bg-background px-4 py-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <DialogFooter className="pt-4 border-t">
-                  <Button 
-                    onClick={saveProduct} 
-                    disabled={saving} 
-                    className="w-full rounded-full h-16 text-xl font-bold bg-[#D4AF37] hover:bg-[#B8962D] shadow-xl transition-all active:scale-95"
-                  >
-                    {saving ? <Loader2 className="h-6 w-6 animate-spin" /> : (isEditing ? t.save : t.save)}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-
-        <Tabs defaultValue="products" className="space-y-8">
-          <TabsList className="bg-white p-1 rounded-full shadow-sm border h-16 w-full max-w-md mx-auto grid grid-cols-2">
-            <TabsTrigger value="products" className="rounded-full gap-2 font-bold text-lg h-14 data-[state=active]:bg-primary data-[state=active]:text-white">
-              <Package className="h-5 w-5" /> {t.products}
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="rounded-full gap-2 font-bold text-lg h-14 data-[state=active]:bg-primary data-[state=active]:text-white">
-              <Settings className="h-5 w-5" /> {t.settings}
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="products">
-            <Card className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white">
-              <CardHeader className="bg-primary/5 p-8 border-b">
-                <CardTitle className="text-2xl font-bold font-headline text-start">{t.productList}</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                {productsLoading ? (
-                  <div className="py-20 flex justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary/40" /></div>
-                ) : products && products.length > 0 ? (
-                  <Table>
-                    <TableHeader className="bg-muted/30">
-                      <TableRow>
-                        <TableHead className="text-start py-6">{t.imageLabel}</TableHead>
-                        <TableHead className="text-start">{t.productName}</TableHead>
-                        <TableHead className="text-start">{t.categoryLabel}</TableHead>
-                        <TableHead className="text-start">{t.priceLabel}</TableHead>
-                        <TableHead className="text-center">{t.actions}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {products.map((product: any) => (
-                        <TableRow key={product.id} className={`hover:bg-primary/5 transition-colors ${product.isHidden ? 'opacity-60 grayscale-[0.5]' : ''}`}>
-                          <TableCell>
-                            <div className="h-16 w-16 rounded-2xl overflow-hidden bg-muted border">
-                              <img 
-                                src={product.imageUrl || PLACEHOLDER_IMAGE} 
-                                alt={product.name} 
-                                className="h-full w-full object-cover"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE;
-                                }}
-                              />
-                            </div>
-                          </TableCell>
-                          <TableCell className="font-bold text-start">
-                            <div className="flex flex-col">
-                              <span>{lang === 'ar' ? product.name : (product.nameEn || product.name)}</span>
-                              {product.isHidden && <Badge variant="secondary" className="w-fit text-[10px] mt-1">{t.hidden}</Badge>}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-start">
-                            {lang === 'ar' ? product.categoryName : (product.categoryNameEn || getTranslatedCategory(product.categoryName))}
-                          </TableCell>
-                          <TableCell className="font-bold text-primary text-start">${product.price?.toFixed(2)}</TableCell>
-                          <TableCell>
-                            <div className="flex justify-center gap-2">
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className={`rounded-full ${product.isHidden ? 'text-muted-foreground' : 'text-primary'} hover:bg-primary/10`}
-                                onClick={() => toggleVisibility(product.id, !!product.isHidden)}
-                                disabled={togglingId === product.id}
-                              >
-                                {togglingId === product.id ? <Loader2 className="h-5 w-5 animate-spin" /> : (product.isHidden ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />)}
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="rounded-full text-[#D4AF37] hover:bg-[#D4AF37]/10"
-                                onClick={() => {
-                                  setIsEditing(product.id);
-                                  setFormData({
-                                    name: product.name,
-                                    nameEn: product.nameEn || '',
-                                    price: product.price.toString(),
-                                    category: product.category,
-                                    imageUrl: product.imageUrl,
-                                    description: product.description || '',
-                                    descriptionEn: product.descriptionEn || '',
-                                    details: product.details || '',
-                                    detailsEn: product.detailsEn || '',
-                                    ...product // Capture existing metadata like isHidden
-                                  });
-                                }}
-                              >
-                                <Edit className="h-5 w-5" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                disabled={deletingId === product.id}
-                                className="rounded-full text-destructive hover:bg-destructive/10"
-                                onClick={() => deleteProduct(product.id)}
-                              >
-                                {deletingId === product.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="py-20 text-center text-muted-foreground">{t.noProductsFound}</div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="settings">
-            <Card className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white">
-              <CardHeader className="bg-primary/5 p-8 border-b">
-                <CardTitle className="text-2xl font-bold font-headline text-start">{t.siteSettings}</CardTitle>
-              </CardHeader>
-              <CardContent className="p-8 space-y-8">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 text-xl font-bold justify-start">
-                    <ImageIcon className="h-6 w-6 text-primary" /> {t.heroBannerImage}
-                  </div>
-                  <div className="grid gap-6 md:grid-cols-2 items-end">
-                    <div className="space-y-2 text-start">
-                      <Label>{t.productImage}</Label>
-                      <input 
-                        placeholder="https://..." 
-                        value={heroUrl}
-                        onChange={e => setHeroUrl(e.target.value)}
-                        className="flex h-12 w-full rounded-2xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      />
-                    </div>
-                    <Button onClick={updateHero} className="rounded-full h-12 gap-2 font-bold shadow-md bg-[#D4AF37] hover:bg-[#B8962D]">
-                      <Save className="h-5 w-5" /> {t.saveChanges}
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleAiDescription}
+                      disabled={aiLoading}
+                      className="rounded-full gap-2 h-10 px-4 border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                    >
+                      {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                      {t.generateAiDescription}
                     </Button>
                   </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2 text-start">
+                      <Label className="font-bold opacity-70">{t.descriptionLabel}</Label>
+                      <textarea 
+                        value={formData.description} 
+                        onChange={e => setFormData({...formData, description: e.target.value})}
+                        placeholder="اكتب وصفاً جذاباً بالعربية..." 
+                        className="flex min-h-[140px] w-full rounded-2xl border-2 border-primary/10 bg-background px-4 py-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                      />
+                    </div>
+                    <div className="space-y-2 text-start">
+                      <Label className="font-bold opacity-70">{t.descriptionEnLabel}</Label>
+                      <textarea 
+                        value={formData.descriptionEn} 
+                        onChange={e => setFormData({...formData, descriptionEn: e.target.value})}
+                        placeholder="Write a compelling description in English..." 
+                        className="flex min-h-[140px] w-full rounded-2xl border-2 border-primary/10 bg-background px-4 py-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </main>
-      <Footer />
+
+                <div className="space-y-4">
+                  <h3 className="text-xl font-bold flex items-center gap-2">
+                    <span className="w-1.5 h-6 bg-[#D4AF37] rounded-full" />
+                    {lang === 'ar' ? 'تفاصيل إضافية' : 'Technical Specifications'}
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2 text-start">
+                      <Label className="font-bold opacity-70">المواصفات (AR)</Label>
+                      <textarea 
+                        value={formData.details} 
+                        onChange={e => setFormData({...formData, details: e.target.value})}
+                        placeholder="مثال: الوزن، الأبعاد، المكونات..." 
+                        className="flex min-h-[120px] w-full rounded-2xl border-2 border-primary/10 bg-background px-4 py-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                      />
+                    </div>
+                    <div className="space-y-2 text-start">
+                      <Label className="font-bold opacity-70">Specifications (EN)</Label>
+                      <textarea 
+                        value={formData.detailsEn} 
+                        onChange={e => setFormData({...formData, detailsEn: e.target.value})}
+                        placeholder="Ex: Weight, Dimensions, Ingredients..." 
+                        className="flex min-h-[120px] w-full rounded-2xl border-2 border-primary/10 bg-background px-4 py-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter className="pt-4 border-t">
+                <Button 
+                  onClick={saveProduct} 
+                  disabled={saving} 
+                  className="w-full rounded-full h-16 text-xl font-bold bg-[#D4AF37] hover:bg-[#B8962D] shadow-xl transition-all active:scale-95"
+                >
+                  {saving ? <Loader2 className="h-6 w-6 animate-spin" /> : (isEditing ? t.save : t.save)}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      <Tabs defaultValue="products" className="space-y-8">
+        <TabsList className="bg-white p-1 rounded-full shadow-sm border h-16 w-full max-w-md mx-auto grid grid-cols-2">
+          <TabsTrigger value="products" className="rounded-full gap-2 font-bold text-lg h-14 data-[state=active]:bg-primary data-[state=active]:text-white">
+            <Package className="h-5 w-5" /> {t.products}
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="rounded-full gap-2 font-bold text-lg h-14 data-[state=active]:bg-primary data-[state=active]:text-white">
+            <Settings className="h-5 w-5" /> {t.settings}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="products">
+          <Card className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white">
+            <CardHeader className="bg-primary/5 p-8 border-b">
+              <CardTitle className="text-2xl font-bold font-headline text-start">{t.productList}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {productsLoading ? (
+                <div className="py-20 flex justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary/40" /></div>
+              ) : products && products.length > 0 ? (
+                <Table>
+                  <TableHeader className="bg-muted/30">
+                    <TableRow>
+                      <TableHead className="text-start py-6">{t.imageLabel}</TableHead>
+                      <TableHead className="text-start">{t.productName}</TableHead>
+                      <TableHead className="text-start">{t.categoryLabel}</TableHead>
+                      <TableHead className="text-start">{t.priceLabel}</TableHead>
+                      <TableHead className="text-center">{t.actions}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {products.map((product: any) => (
+                      <TableRow key={product.id} className={`hover:bg-primary/5 transition-colors ${product.isHidden ? 'opacity-60 grayscale-[0.5]' : ''}`}>
+                        <TableCell>
+                          <div className="h-16 w-16 rounded-2xl overflow-hidden bg-muted border">
+                            <img 
+                              src={product.imageUrl || PLACEHOLDER_IMAGE} 
+                              alt={product.name} 
+                              className="h-full w-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE;
+                              }}
+                            />
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-bold text-start">
+                          <div className="flex flex-col">
+                            <span>{lang === 'ar' ? product.name : (product.nameEn || product.name)}</span>
+                            {product.isHidden && <Badge variant="secondary" className="w-fit text-[10px] mt-1">{t.hidden}</Badge>}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-start">
+                          {lang === 'ar' ? product.categoryName : (product.categoryNameEn || getTranslatedCategory(product.categoryName))}
+                        </TableCell>
+                        <TableCell className="font-bold text-primary text-start">${product.price?.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <div className="flex justify-center gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className={`rounded-full ${product.isHidden ? 'text-muted-foreground' : 'text-primary'} hover:bg-primary/10`}
+                              onClick={() => toggleVisibility(product.id, !!product.isHidden)}
+                              disabled={togglingId === product.id}
+                            >
+                              {togglingId === product.id ? <Loader2 className="h-5 w-5 animate-spin" /> : (product.isHidden ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />)}
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="rounded-full text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                              onClick={() => {
+                                setIsEditing(product.id);
+                                setFormData({
+                                  name: product.name,
+                                  nameEn: product.nameEn || '',
+                                  price: product.price.toString(),
+                                  category: product.category,
+                                  imageUrl: product.imageUrl,
+                                  description: product.description || '',
+                                  descriptionEn: product.descriptionEn || '',
+                                  details: product.details || '',
+                                  detailsEn: product.detailsEn || '',
+                                  ...product // Capture existing metadata like isHidden
+                                });
+                              }}
+                            >
+                              <Edit className="h-5 w-5" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              disabled={deletingId === product.id}
+                              className="rounded-full text-destructive hover:bg-destructive/10"
+                              onClick={() => deleteProduct(product.id)}
+                            >
+                              {deletingId === product.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="py-20 text-center text-muted-foreground">{t.noProductsFound}</div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <Card className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white">
+            <CardHeader className="bg-primary/5 p-8 border-b">
+              <CardTitle className="text-2xl font-bold font-headline text-start">{t.siteSettings}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-8 space-y-8">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 text-xl font-bold justify-start">
+                  <ImageIcon className="h-6 w-6 text-primary" /> {t.heroBannerImage}
+                </div>
+                <div className="grid gap-6 md:grid-cols-2 items-end">
+                  <div className="space-y-2 text-start">
+                    <Label>{t.productImage}</Label>
+                    <input 
+                      placeholder="https://..." 
+                      value={heroUrl}
+                      onChange={e => setHeroUrl(e.target.value)}
+                      className="flex h-12 w-full rounded-2xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    />
+                  </div>
+                  <Button onClick={updateHero} className="rounded-full h-12 gap-2 font-bold shadow-md bg-[#D4AF37] hover:bg-[#B8962D]">
+                    <Save className="h-5 w-5" /> {t.saveChanges}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
