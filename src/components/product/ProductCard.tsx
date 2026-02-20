@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -105,7 +106,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         
         <Button 
           onClick={handleAddToCart}
-          className="w-full h-10 sm:h-12 rounded-full font-bold gap-2 text-sm sm:text-lg shadow-md border-2 border-pink-300 bg-primary text-white hover:bg-[#D4AF37] hover:border-[#D4AF37] hover:scale-[1.02] transition-all flex items-center justify-center px-2"
+          className="w-full h-10 sm:h-12 rounded-full font-bold gap-2 text-sm sm:text-lg shadow-md border-2 border-pink-300 bg-primary text-white hover:bg-[#D4AF37] hover:border-[#D4AF37] hover:scale-[1.02] transition-all animate-pulse-luxury flex items-center justify-center px-2"
         >
           <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
           <span className="whitespace-normal leading-tight">{t.addToCart}</span>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -12,6 +13,7 @@ import { query, collection, orderBy, where } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import { useTranslation } from '@/hooks/use-translation';
 import { useCart } from '@/context/CartContext';
+import { cn } from '@/lib/utils';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
@@ -31,6 +33,25 @@ export default function Header() {
   const [showResults, setShowResults] = useState(false);
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
   const searchRef = useRef<HTMLDivElement>(null);
+
+  // Scroll visibility logic
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        setIsVisible(false); // Scrolling down
+      } else {
+        setIsVisible(true); // Scrolling up
+      }
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -105,7 +126,13 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-[100] w-full border-b bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80">
+    <header 
+      className={cn(
+        "fixed top-0 left-0 right-0 z-[100] w-full border-b transition-transform duration-300",
+        "bg-white/80 backdrop-blur-md border-[#D4AF37]/10",
+        isVisible ? "translate-y-0" : "-translate-y-full"
+      )}
+    >
       <div className="container mx-auto px-4">
         <div className="flex h-16 md:h-20 items-center justify-between gap-2 md:gap-4">
           <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">

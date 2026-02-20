@@ -89,10 +89,15 @@ export default {
             height: '0',
           },
         },
+        'luxury-pulse': {
+          '0%, 100%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(255, 192, 203, 0.4)' },
+          '50%': { transform: 'scale(1.02)', boxShadow: '0 0 20px 5px rgba(255, 192, 203, 0.2)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'pulse-luxury': 'luxury-pulse 2s infinite ease-in-out',
       },
     },
   },

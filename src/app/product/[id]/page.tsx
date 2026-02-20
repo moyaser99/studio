@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -104,7 +105,7 @@ export default function ProductPage() {
   return (
     <div className="flex min-h-screen flex-col" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Header />
-      <main className="flex-1 container mx-auto px-4 py-12 md:px-6">
+      <main className="flex-1 container mx-auto px-4 py-12 md:px-6 mt-16 md:mt-20">
         <div className="grid gap-12 lg:grid-cols-2 items-start">
           {/* Image Section */}
           <div className="relative aspect-square overflow-hidden rounded-[3rem] bg-white shadow-2xl ring-1 ring-primary/5 transition-transform hover:scale-[1.01] duration-500">
@@ -162,7 +163,7 @@ export default function ProductPage() {
             <div className="pt-8 flex flex-col sm:flex-row gap-5">
               <Button 
                 onClick={handleAddToCart}
-                className="flex-1 h-16 rounded-full text-xl font-bold shadow-xl border-2 border-pink-300 bg-primary text-white hover:bg-[#D4AF37] hover:border-[#D4AF37] gap-3 transition-all hover:scale-[1.02] flex items-center justify-center px-4"
+                className="flex-1 h-16 rounded-full text-xl font-bold shadow-xl border-2 border-pink-300 bg-primary text-white hover:bg-[#D4AF37] hover:border-[#D4AF37] gap-3 transition-all hover:scale-[1.02] animate-pulse-luxury flex items-center justify-center px-4"
               >
                 <ShoppingCart className="h-6 w-6" />
                 <span className="whitespace-normal leading-tight">{t.addToCart}</span>
