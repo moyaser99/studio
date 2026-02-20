@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview An AI agent for generating compelling product descriptions.
+ * @fileOverview An AI agent for generating compelling product descriptions in both Arabic and English.
  *
  * - generateProductDescription - A function that handles the product description generation process.
  * - GenerateProductDescriptionInput - The input type for the generateProductDescription function.
@@ -22,9 +22,12 @@ export type GenerateProductDescriptionInput = z.infer<
 >;
 
 const GenerateProductDescriptionOutputSchema = z.object({
-  description: z
+  descriptionAr: z
     .string()
-    .describe('A compelling and optimized product description.'),
+    .describe('A compelling and optimized product description in Arabic.'),
+  descriptionEn: z
+    .string()
+    .describe('A compelling and optimized product description in English.'),
 });
 export type GenerateProductDescriptionOutput = z.infer<
   typeof GenerateProductDescriptionOutputSchema
@@ -44,7 +47,8 @@ const prompt = ai.definePrompt({
 Your task is to create a compelling and optimized product description based on the provided details.
 The description should be engaging, highlight key benefits, and encourage customers to purchase.
 Focus on a modern, clean, and elegant tone consistent with beauty store aesthetics.
-Please respond in Arabic.
+
+Please provide the output in BOTH Arabic and English.
 
 Product Name: {{{productName}}}
 Category: {{{category}}}

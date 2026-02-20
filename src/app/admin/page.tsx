@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -46,7 +45,8 @@ import {
   Tags,
   AlertTriangle,
   Eye,
-  EyeOff
+  EyeOff,
+  Sparkles
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow';
@@ -83,6 +83,9 @@ export default function AdminPage() {
     category: '',
     imageUrl: '',
     description: '',
+    descriptionEn: '',
+    details: '',
+    detailsEn: '',
   });
 
   const [heroUrl, setHeroUrl] = useState('');
@@ -156,7 +159,11 @@ export default function AdminPage() {
         category: categoryName,
         keyFeatures: ['Exclusive product', 'High quality', 'Imported from USA']
       });
-      setFormData(prev => ({ ...prev, description: res.description }));
+      setFormData(prev => ({ 
+        ...prev, 
+        description: res.descriptionAr,
+        descriptionEn: res.descriptionEn 
+      }));
       toast({ title: 'Generated', description: t.aiDescriptionSuccess });
     } catch (error) {
       toast({ variant: 'destructive', title: t.errorOccurred, description: t.aiDescriptionError });
@@ -178,7 +185,7 @@ export default function AdminPage() {
       categoryName,
       categoryNameEn,
       updatedAt: serverTimestamp(),
-      isHidden: false, // Ensure visibility is explicitly set
+      isHidden: formData.hasOwnProperty('isHidden') ? (formData as any).isHidden : false,
     };
 
     if (isEditing) {
@@ -243,7 +250,17 @@ export default function AdminPage() {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', nameEn: '', price: '', category: categories?.[0]?.slug || '', imageUrl: '', description: '' });
+    setFormData({ 
+      name: '', 
+      nameEn: '', 
+      price: '', 
+      category: categories?.[0]?.slug || '', 
+      imageUrl: '', 
+      description: '',
+      descriptionEn: '',
+      details: '',
+      detailsEn: '',
+    });
     setIsAdding(false);
     setIsEditing(null);
     setSaving(false);
@@ -287,48 +304,52 @@ export default function AdminPage() {
                   <Plus className="h-6 w-6" /> {t.addNewProduct}
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl rounded-3xl overflow-y-auto max-h-[90vh]" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+              <DialogContent className="max-w-4xl rounded-[2.5rem] overflow-y-auto max-h-[90vh]" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
                 <DialogHeader>
-                  <DialogTitle className="text-2xl font-bold font-headline text-start">
+                  <DialogTitle className="text-3xl font-black font-headline text-start text-primary flex items-center gap-2">
                     {isEditing ? t.editProduct : t.addNewProduct}
+                    {!isEditing && <Sparkles className="h-6 w-6 text-[#D4AF37]" />}
                   </DialogTitle>
                 </DialogHeader>
-                <div className="grid gap-6 py-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid gap-8 py-6">
+                  {/* Row 1: Basic Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2 text-start">
-                      <Label>{t.productNameLabel}</Label>
+                      <Label className="text-lg font-bold">{t.productNameLabel}</Label>
                       <input 
                         value={formData.name} 
                         onChange={e => setFormData({...formData, name: e.target.value})}
-                        placeholder="Ex: Luxury Cream" 
-                        className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        placeholder="مثال: كريم العناية الفاخر" 
+                        className="flex h-14 w-full rounded-2xl border-2 border-primary/10 bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
                       />
                     </div>
                     <div className="space-y-2 text-start">
-                      <Label>{t.productNameEnLabel}</Label>
+                      <Label className="text-lg font-bold">{t.productNameEnLabel}</Label>
                       <input 
                         value={formData.nameEn} 
                         onChange={e => setFormData({...formData, nameEn: e.target.value})}
-                        placeholder="Ex: Luxury Cream" 
-                        className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        placeholder="Ex: Luxury Care Cream" 
+                        className="flex h-14 w-full rounded-2xl border-2 border-primary/10 bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                  {/* Row 2: Price & Category */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2 text-start">
-                      <Label>{t.productPrice}</Label>
+                      <Label className="text-lg font-bold">{t.productPrice}</Label>
                       <input 
                         type="number"
                         value={formData.price} 
                         onChange={e => setFormData({...formData, price: e.target.value})}
                         placeholder="0.00" 
-                        className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="flex h-14 w-full rounded-2xl border-2 border-primary/10 bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
                       />
                     </div>
                     <div className="space-y-2 text-start">
-                      <Label>{t.categoryLabel}</Label>
+                      <Label className="text-lg font-bold">{t.categoryLabel}</Label>
                       <select 
-                        className="w-full h-12 rounded-xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="w-full h-14 rounded-2xl border-2 border-primary/10 bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
                         value={formData.category}
                         onChange={e => setFormData({...formData, category: e.target.value})}
                       >
@@ -337,39 +358,93 @@ export default function AdminPage() {
                       </select>
                     </div>
                   </div>
+
+                  {/* Row 3: Image URL */}
                   <div className="space-y-2 text-start">
-                    <Label>{t.imageLabel}</Label>
+                    <Label className="text-lg font-bold">{t.imageLabel}</Label>
                     <input 
                       value={formData.imageUrl} 
                       onChange={e => setFormData({...formData, imageUrl: e.target.value})}
-                      placeholder="https://..." 
-                      className="flex h-12 w-full rounded-xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      placeholder="https://images.unsplash.com/..." 
+                      className="flex h-14 w-full rounded-2xl border-2 border-primary/10 bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
                     />
                   </div>
-                  <div className="space-y-2 text-start">
+
+                  {/* Section: Descriptions (Bilingual) */}
+                  <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <Label>{t.descriptionLabel}</Label>
+                      <h3 className="text-xl font-bold flex items-center gap-2">
+                        <span className="w-1.5 h-6 bg-[#D4AF37] rounded-full" />
+                        {lang === 'ar' ? 'الوصف' : 'Description'}
+                      </h3>
                       <Button 
                         type="button" 
                         variant="outline" 
                         size="sm" 
                         onClick={handleAiDescription}
                         disabled={aiLoading}
-                        className="rounded-full gap-2 h-10 px-4"
+                        className="rounded-full gap-2 h-10 px-4 border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/10"
                       >
-                        {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : t.generateAiDescription}
+                        {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                        {t.generateAiDescription}
                       </Button>
                     </div>
-                    <textarea 
-                      value={formData.description} 
-                      onChange={e => setFormData({...formData, description: e.target.value})}
-                      placeholder="Write a compelling description..." 
-                      className="flex min-h-[140px] w-full rounded-2xl border border-input bg-background px-4 py-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2 text-start">
+                        <Label className="font-bold opacity-70">{t.descriptionLabel}</Label>
+                        <textarea 
+                          value={formData.description} 
+                          onChange={e => setFormData({...formData, description: e.target.value})}
+                          placeholder="اكتب وصفاً جذاباً بالعربية..." 
+                          className="flex min-h-[140px] w-full rounded-2xl border-2 border-primary/10 bg-background px-4 py-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                        />
+                      </div>
+                      <div className="space-y-2 text-start">
+                        <Label className="font-bold opacity-70">{t.descriptionEnLabel}</Label>
+                        <textarea 
+                          value={formData.descriptionEn} 
+                          onChange={e => setFormData({...formData, descriptionEn: e.target.value})}
+                          placeholder="Write a compelling description in English..." 
+                          className="flex min-h-[140px] w-full rounded-2xl border-2 border-primary/10 bg-background px-4 py-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section: Additional Details (Bilingual) */}
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-bold flex items-center gap-2">
+                      <span className="w-1.5 h-6 bg-[#D4AF37] rounded-full" />
+                      {lang === 'ar' ? 'تفاصيل إضافية' : 'Technical Specifications'}
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2 text-start">
+                        <Label className="font-bold opacity-70">المواصفات (AR)</Label>
+                        <textarea 
+                          value={formData.details} 
+                          onChange={e => setFormData({...formData, details: e.target.value})}
+                          placeholder="مثال: الوزن، الأبعاد، المكونات..." 
+                          className="flex min-h-[120px] w-full rounded-2xl border-2 border-primary/10 bg-background px-4 py-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                        />
+                      </div>
+                      <div className="space-y-2 text-start">
+                        <Label className="font-bold opacity-70">Specifications (EN)</Label>
+                        <textarea 
+                          value={formData.detailsEn} 
+                          onChange={e => setFormData({...formData, detailsEn: e.target.value})}
+                          placeholder="Ex: Weight, Dimensions, Ingredients..." 
+                          className="flex min-h-[120px] w-full rounded-2xl border-2 border-primary/10 bg-background px-4 py-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button onClick={saveProduct} disabled={saving} className="w-full rounded-full h-14 text-lg font-bold bg-[#D4AF37] hover:bg-[#B8962D] shadow-lg">
+                <DialogFooter className="pt-4 border-t">
+                  <Button 
+                    onClick={saveProduct} 
+                    disabled={saving} 
+                    className="w-full rounded-full h-16 text-xl font-bold bg-[#D4AF37] hover:bg-[#B8962D] shadow-xl transition-all active:scale-95"
+                  >
                     {saving ? <Loader2 className="h-6 w-6 animate-spin" /> : (isEditing ? t.save : t.save)}
                   </Button>
                 </DialogFooter>
@@ -455,7 +530,11 @@ export default function AdminPage() {
                                     price: product.price.toString(),
                                     category: product.category,
                                     imageUrl: product.imageUrl,
-                                    description: product.description,
+                                    description: product.description || '',
+                                    descriptionEn: product.descriptionEn || '',
+                                    details: product.details || '',
+                                    detailsEn: product.detailsEn || '',
+                                    ...product // Capture existing metadata like isHidden
                                   });
                                 }}
                               >
