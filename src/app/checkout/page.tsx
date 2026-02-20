@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -85,6 +84,17 @@ export default function CheckoutPage() {
     // Add order to Firestore
     addDoc(collection(db, 'orders'), orderData)
       .then((docRef) => {
+        // Debugging logs for environment variables
+        console.log('EmailJS Config Verification:', {
+          serviceId: process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID ? 'Present' : 'Missing',
+          templateId: process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID ? 'Present' : 'Missing',
+          publicKey: process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY ? 'Present' : 'Missing'
+        });
+
+        if (process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY) {
+          emailjs.init(process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY);
+        }
+
         // Prepare EmailJS params
         const orderDetailsString = cartItems
           .map(item => `${lang === 'ar' ? item.name : (item.nameEn || item.name)} (x${item.quantity})`)
@@ -104,9 +114,16 @@ export default function CheckoutPage() {
           process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID!,
           templateParams,
           process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY!
+        ).then(
+          (result) => {
+            console.log('EmailJS Success:', result.text);
+          },
+          (err) => {
+            // Log precise error details for easier debugging
+            console.error('EmailJS Error Detail:', err.text || err);
+          }
         ).catch(err => {
-          // Log failure but don't block user experience
-          console.error('EmailJS notification failed:', err);
+          console.error('EmailJS critical failure:', err);
         });
       })
       .catch(async (err) => {
