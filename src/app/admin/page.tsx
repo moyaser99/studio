@@ -57,7 +57,8 @@ import {
   ArrowUpRight,
   PackageSearch,
   Search,
-  X
+  X,
+  ClipboardList
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow';
@@ -390,12 +391,19 @@ export default function AdminPage() {
           </h1>
         </div>
         
-        <div className="flex gap-4">
+        <div className="flex flex-wrap justify-center md:justify-end gap-4">
+          <Link href="/admin/orders">
+            <Button className="rounded-full h-14 px-8 text-lg font-black bg-primary border-2 border-[#D4AF37] text-white shadow-lg gap-2 hover:opacity-90 transition-all">
+              <ClipboardList className="h-6 w-6" /> {t.manageOrders}
+            </Button>
+          </Link>
+
           <Link href="/admin/categories">
             <Button variant="outline" className="rounded-full h-14 px-8 text-lg font-bold border-[#D4AF37] text-[#D4AF37] gap-2">
               <Tags className="h-6 w-6" /> {t.manageCategories}
             </Button>
           </Link>
+
           <Dialog open={isAdding || !!isEditing} onOpenChange={(val) => !val && resetForm()}>
             <DialogTrigger asChild>
               <Button onClick={() => setIsAdding(true)} className="rounded-full h-14 px-8 text-lg font-bold shadow-lg gap-2 bg-[#D4AF37] hover:bg-[#B8962D]">
