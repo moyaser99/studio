@@ -89,7 +89,7 @@ export default function AdminOrdersPage() {
     return orders.filter((order: any) => {
       const orderIdMatch = order.id?.toLowerCase().includes(queryLower);
       const nameMatch = order.customerInfo?.fullName?.toLowerCase().includes(queryLower);
-      const phoneMatch = order.customerInfo?.phone?.includes(searchTerm); // Phone is usually exact or prefix
+      const phoneMatch = order.customerInfo?.phone?.includes(searchTerm);
       
       return orderIdMatch || nameMatch || phoneMatch;
     });
