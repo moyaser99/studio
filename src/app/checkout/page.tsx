@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { useCart } from '@/context/CartContext';
@@ -33,14 +33,15 @@ import {
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser, useDoc } from '@/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import emailjs from '@emailjs/browser';
+import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 
-const US_STATES = {
+const DEFAULT_US_STATES: Record<string, number> = {
   "Alabama": 13, "Alaska": 23, "Arizona": 13, "Arkansas": 13, "California": 13,
   "Colorado": 13, "Connecticut": 13, "Delaware": 13, "Florida": 13, "Georgia": 13,
   "Hawaii": 23, "Idaho": 13, "Illinois": 13, "Indiana": 13, "Iowa": 13,
@@ -50,7 +51,7 @@ const US_STATES = {
   "New Mexico": 13, "New York": 13, "North Carolina": 13, "North Dakota": 13, "Ohio": 13,
   "Oklahoma": 13, "Oregon": 13, "Pennsylvania": 13, "Rhode Island": 13, "South Carolina": 13,
   "South Dakota": 13, "Tennessee": 13, "Texas": 13, "Utah": 13, "Vermont": 13,
-  "Virginia": 13, "Washington": 13, "West Virginia": 13, "Wisconsin": 13, "Wyoming": 13
+  "Virginia": 13, "Washington": 13, "West Virginia": 13, "Wisconsin": 13, "Wyoming": 16
 };
 
 export default function CheckoutPage() {
@@ -69,7 +70,28 @@ export default function CheckoutPage() {
     address: ''
   });
 
-  const shippingFee = formData.state ? US_STATES[formData.state as keyof typeof US_STATES] : 0;
+  const [dynamicRates, setDynamicRates] = useState<Record<string, number>>(DEFAULT_US_STATES);
+
+  const shippingRef = useMemoFirebase(() => {
+    if (!db) return null;
+    return doc(db, 'siteSettings', 'shipping');
+  }, [db]);
+
+  const { data: shippingData } = useDoc(shippingRef);
+
+  useEffect(() => {
+    if (shippingData && Object.keys(shippingData).length > 0) {
+      const mergedRates = { ...DEFAULT_US_STATES };
+      Object.keys(DEFAULT_US_STATES).forEach(state => {
+        if (typeof shippingData[state] === 'number') {
+          mergedRates[state] = shippingData[state];
+        }
+      });
+      setDynamicRates(mergedRates);
+    }
+  }, [shippingData]);
+
+  const shippingFee = formData.state ? dynamicRates[formData.state] : 0;
   const grandTotal = totalPrice + shippingFee;
 
   const handlePlaceOrder = async () => {
@@ -115,7 +137,7 @@ export default function CheckoutPage() {
         customerInfo: {
           fullName: formData.fullName,
           phone: finalPhone,
-          city: formData.state, // Keeping 'city' key for compatibility but storing state
+          city: formData.state,
           address: formData.address
         },
         items: cartItems.map(item => ({
@@ -263,7 +285,7 @@ export default function CheckoutPage() {
                       <SelectValue placeholder={t.selectState} />
                     </SelectTrigger>
                     <SelectContent className="z-[10001] rounded-2xl">
-                      {Object.keys(US_STATES).sort().map(state => (
+                      {Object.keys(dynamicRates).sort().map(state => (
                         <SelectItem key={state} value={state} className="rounded-xl">
                           {state}
                         </SelectItem>

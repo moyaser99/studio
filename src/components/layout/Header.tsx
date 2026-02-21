@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ShoppingBag, Search, User, Menu, Settings, Loader2, LogOut, LogIn, Globe, ClipboardList, X } from 'lucide-react';
+import { ShoppingBag, Search, User, Menu, Settings, Loader2, LogOut, LogIn, Globe, ClipboardList, X, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useUser, useAuth, useFirestore, useCollection } from '@/firebase';
@@ -42,16 +42,12 @@ export default function Header() {
   useEffect(() => {
     setIsVisible(true);
     setLastScrollY(0);
-    // Debugging path for Mohammad Jebrel
-    console.log('Route Changed to:', pathname, '| Header visibility reset to: true');
   }, [pathname]);
 
   useEffect(() => {
     const handleScroll = () => {
-      // Robust scroll check for different browsers/containers
       const currentScrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
       
-      // Safety check: force visibility when at the very top of the page (near 0)
       if (currentScrollY < 15) {
         setIsVisible(true);
       } else if (currentScrollY > lastScrollY && currentScrollY > 60) {
@@ -143,7 +139,6 @@ export default function Header() {
       className={cn(
         "fixed top-0 left-0 right-0 w-full border-b transition-transform duration-300",
         "bg-white/80 backdrop-blur-md border-[#D4AF37]/10",
-        // Force extremely high z-index to ensure it stays on top of Admin tables/sidebars
         "z-[9999]",
         isVisible ? "translate-y-0" : "-translate-y-full"
       )}
@@ -197,6 +192,12 @@ export default function Header() {
                           className="w-full text-base md:text-lg font-black text-[#D4AF37] py-2 md:py-3 px-3 md:px-4 rounded-xl md:rounded-2xl bg-[#D4AF37]/5 flex items-center gap-2 justify-start hover:bg-[#D4AF37]/10"
                         >
                           <ClipboardList className="h-4 w-4 md:h-5 md:w-5" /> {t.manageOrders}
+                        </button>
+                        <button 
+                          onClick={() => navigateTo('/admin/shipping')}
+                          className="w-full text-base md:text-lg font-black text-[#D4AF37] py-2 md:py-3 px-3 md:px-4 rounded-xl md:rounded-2xl bg-primary/5 flex items-center gap-2 justify-start hover:bg-[#D4AF37]/10"
+                        >
+                          <Truck className="h-4 w-4 md:h-5 md:w-5" /> {t.manageShipping}
                         </button>
                       </div>
                     </div>

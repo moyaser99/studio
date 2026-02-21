@@ -58,7 +58,8 @@ import {
   PackageSearch,
   Search,
   X,
-  ClipboardList
+  ClipboardList,
+  Truck
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow';
@@ -395,6 +396,12 @@ export default function AdminPage() {
           <Link href="/admin/orders">
             <Button className="rounded-full h-14 px-8 text-lg font-black bg-primary border-2 border-[#D4AF37] text-white shadow-lg gap-2 hover:opacity-90 transition-all">
               <ClipboardList className="h-6 w-6" /> {t.manageOrders}
+            </Button>
+          </Link>
+
+          <Link href="/admin/shipping">
+            <Button variant="outline" className="rounded-full h-14 px-8 text-lg font-bold border-[#D4AF37] text-[#D4AF37] gap-2 shadow-sm bg-white hover:bg-muted/50 transition-all">
+              <Truck className="h-6 w-6" /> {t.manageShipping}
             </Button>
           </Link>
 

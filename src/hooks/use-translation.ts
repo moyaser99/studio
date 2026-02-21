@@ -195,6 +195,12 @@ const translations = {
     outOfStockErrorEn: 'Sorry, this product is currently out of stock',
     phoneNumber: 'رقم الهاتف (الولايات المتحدة)',
     phoneNumberUSA: 'رقم الهاتف (USA)',
+    manageShipping: 'إدارة تكاليف الشحن',
+    shippingRates: 'أسعار الشحن',
+    rate: 'السعر ($)',
+    searchState: 'ابحث عن ولاية...',
+    saveShippingRates: 'حفظ أسعار الشحن',
+    shippingRatesUpdated: 'تم تحديث أسعار الشحن بنجاح',
   },
   en: {
     home: 'Home',
@@ -261,7 +267,6 @@ const translations = {
     productPrice: 'Price ($)',
     productCategory: 'Category',
     productImage: 'Image URL',
-    productImageAr: 'Image URL (AR)',
     productDescription: 'Description (AR)',
     productDescriptionEn: 'Description (EN)',
     generateAiDescription: 'Generate AI Description',
@@ -375,6 +380,12 @@ const translations = {
     outOfStockErrorEn: 'Sorry, this product is currently out of stock',
     phoneNumber: 'Phone Number (USA)',
     phoneNumberUSA: 'Phone Number (USA)',
+    manageShipping: 'Shipping Rates Management',
+    shippingRates: 'Shipping Rates',
+    rate: 'Rate ($)',
+    searchState: 'Search for a state...',
+    saveShippingRates: 'Save Shipping Rates',
+    shippingRatesUpdated: 'Shipping rates updated successfully',
   }
 };
 
