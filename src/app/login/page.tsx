@@ -32,7 +32,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useUser();
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -73,6 +73,25 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Login Failed', description: 'Invalid email or password.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    if (!auth) return;
+    setLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (error: any) {
+      if (error.code !== 'auth/popup-closed-by-user') {
+        toast({ 
+          variant: 'destructive', 
+          title: t.errorOccurred, 
+          description: lang === 'ar' ? 'فشل تسجيل الدخول باستخدام جوجل' : 'Failed to sign in with Google.' 
+        });
+      }
     } finally {
       setLoading(false);
     }
