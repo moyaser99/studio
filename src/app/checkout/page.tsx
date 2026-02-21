@@ -27,7 +27,6 @@ import {
   ChevronRight,
   ShoppingBag,
   Loader2,
-  AlertCircle,
   Building2
 } from 'lucide-react';
 import Link from 'next/link';
@@ -72,7 +71,7 @@ export default function CheckoutPage() {
 
   const [dynamicRates, setDynamicRates] = useState<Record<string, number>>(DEFAULT_US_STATES);
 
-  // Correct path matching backend.json and Admin Dashboard
+  // Correct path is 'siteSettings/shipping'
   const shippingRef = useMemoFirebase(() => {
     if (!db) return null;
     return doc(db, 'siteSettings', 'shipping');

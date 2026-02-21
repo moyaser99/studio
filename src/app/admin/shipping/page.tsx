@@ -15,8 +15,7 @@ import {
   Truck, 
   Search, 
   X,
-  AlertTriangle,
-  Database
+  AlertTriangle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
@@ -50,9 +49,8 @@ export default function AdminShippingPage() {
   const [rates, setRates] = useState<Record<string, number>>(DEFAULT_RATES);
   const [searchTerm, setSearchTerm] = useState('');
   const [saving, setSaving] = useState(false);
-  const [initializing, setInitializing] = useState(false);
 
-  // Correct path according to backend.json: /siteSettings/shipping
+  // Correct collection path is 'siteSettings'
   const shippingRef = useMemoFirebase(() => {
     if (!db) return null;
     return doc(db, 'siteSettings', 'shipping');
@@ -89,7 +87,7 @@ export default function AdminShippingPage() {
 
   const handleSave = () => {
     if (!db || !shippingRef || !isAdmin) {
-      if (!isAdmin) {
+      if (!isAdmin && !authLoading) {
         toast({ variant: 'destructive', title: 'Unauthorized', description: t.insufficientPermissions });
       }
       return;
@@ -102,11 +100,12 @@ export default function AdminShippingPage() {
       updatedAt: serverTimestamp()
     };
 
+    // Using siteSettings collection as per instructions
     setDoc(shippingRef, payload, { merge: true })
       .then(() => {
         toast({ 
-          title: lang === 'ar' ? 'تم بنجاح' : 'Success', 
-          description: t.shippingRatesUpdated 
+          title: lang === 'ar' ? 'تم التحديث' : 'Success', 
+          description: lang === 'ar' ? 'تم تحديث أسعار الشحن بنجاح' : 'Shipping rates updated successfully'
         });
       })
       .catch(async (error) => {
@@ -117,32 +116,6 @@ export default function AdminShippingPage() {
         }));
       })
       .finally(() => setSaving(false));
-  };
-
-  const initializeShippingData = () => {
-    if (!db || !shippingRef || !isAdmin) return;
-    
-    setInitializing(true);
-    const payload = {
-      ...DEFAULT_RATES,
-      updatedAt: serverTimestamp()
-    };
-
-    setDoc(shippingRef, payload, { merge: true })
-      .then(() => {
-        toast({ 
-          title: lang === 'ar' ? 'تمت التهيئة' : 'Initialized', 
-          description: t.databaseInitialized 
-        });
-      })
-      .catch(async () => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: shippingRef.path,
-          operation: 'write',
-          requestResourceData: payload
-        }));
-      })
-      .finally(() => setInitializing(false));
   };
 
   if (authLoading) return (
@@ -178,16 +151,6 @@ export default function AdminShippingPage() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-          <Button 
-            variant="outline" 
-            onClick={initializeShippingData} 
-            disabled={initializing} 
-            className="rounded-full h-12 px-6 border-primary/20 text-primary gap-2 hover:bg-primary/5"
-          >
-            {initializing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Database className="h-5 w-5" />} 
-            {t.initializeDatabase}
-          </Button>
-          
           <div className="relative group flex-1 sm:w-64">
             <Search className="absolute start-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-[#D4AF37] transition-colors" />
             <input
@@ -195,7 +158,7 @@ export default function AdminShippingPage() {
               placeholder={t.searchState}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-12 ps-12 pe-12 rounded-full border-2 border-primary/10 bg-white focus:outline-none focus:border-[#D4AF37] transition-all"
+              className="w-full h-12 ps-12 pe-12 rounded-full border-2 border-primary/10 bg-white focus:outline-none focus:border-[#D4AF37] transition-all shadow-sm"
             />
             {searchTerm && (
               <button onClick={() => setSearchTerm('')} className="absolute end-4 top-1/2 -translate-y-1/2 h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-primary">
@@ -204,7 +167,7 @@ export default function AdminShippingPage() {
             )}
           </div>
           
-          <Button onClick={handleSave} disabled={saving} className="rounded-full h-12 px-8 bg-[#D4AF37] hover:bg-[#B8962D] shadow-lg gap-2 text-lg font-bold">
+          <Button onClick={handleSave} disabled={saving} className="rounded-full h-12 px-8 bg-[#D4AF37] hover:bg-[#B8962D] shadow-lg gap-2 text-lg font-bold transition-all hover:scale-105 active:scale-95">
             {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />} {t.saveChanges}
           </Button>
         </div>
@@ -220,9 +183,9 @@ export default function AdminShippingPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredStates.map(state => (
-                <div key={state} className="p-4 rounded-2xl border-2 border-primary/5 hover:border-[#D4AF37]/30 transition-all space-y-3 bg-muted/5">
-                  <Label className="font-bold text-lg block text-start">{state}</Label>
-                  <div className="flex items-center gap-2 bg-white rounded-xl border-2 border-primary/10 focus-within:border-[#D4AF37] transition-all overflow-hidden p-1">
+                <div key={state} className="p-4 rounded-2xl border-2 border-primary/5 hover:border-[#D4AF37]/30 transition-all space-y-3 bg-muted/5 group">
+                  <Label className="font-bold text-lg block text-start group-hover:text-primary transition-colors">{state}</Label>
+                  <div className="flex items-center gap-2 bg-white rounded-xl border-2 border-primary/10 focus-within:border-[#D4AF37] transition-all overflow-hidden p-1 shadow-sm">
                     <span className="ps-3 font-black text-[#D4AF37]">$</span>
                     <input 
                       type="number" 
