@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -50,6 +49,7 @@ export default function AdminShippingPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Correct path according to backend.json: /siteSettings/shipping
   const shippingRef = useMemoFirebase(() => {
     if (!db) return null;
     return doc(db, 'siteSettings', 'shipping');
@@ -59,9 +59,10 @@ export default function AdminShippingPage() {
 
   useEffect(() => {
     if (shippingData) {
-      console.log('Fetched shipping rates from Firestore:', shippingData);
+      console.log('Fetched shipping rates:', shippingData);
       const cleanRates: Record<string, number> = {};
       Object.keys(DEFAULT_RATES).forEach(state => {
+        // Ensure we only take numbers from the DB, fallback to default if missing
         if (typeof shippingData[state] === 'number') {
           cleanRates[state] = shippingData[state];
         } else {
@@ -83,8 +84,16 @@ export default function AdminShippingPage() {
     setRates(prev => ({ ...prev, [state]: numValue }));
   };
 
+  const isAdmin = user?.email === ADMIN_EMAIL || user?.phoneNumber === ADMIN_PHONE;
+
   const handleSave = () => {
-    if (!db || !shippingRef) return;
+    if (!db || !shippingRef || !isAdmin) {
+      if (!isAdmin) {
+        toast({ variant: 'destructive', title: 'Unauthorized', description: t.insufficientPermissions });
+      }
+      return;
+    }
+    
     setSaving(true);
     
     const payload = {
@@ -92,26 +101,27 @@ export default function AdminShippingPage() {
       updatedAt: serverTimestamp()
     };
 
-    console.log('Saving shipping rates to Firestore:', payload);
+    console.log('Attempting to save shipping rates to siteSettings/shipping...');
 
-    // Using setDoc with merge: true to handle both creation and update
+    // Use setDoc with merge: true to handle initial creation (seed) and updates
     setDoc(shippingRef, payload, { merge: true })
       .then(() => {
-        console.log('Shipping rates saved successfully');
-        toast({ title: 'Success', description: t.shippingRatesUpdated });
+        console.log('Shipping rates saved successfully!');
+        toast({ 
+          title: lang === 'ar' ? 'تم بنجاح' : 'Success', 
+          description: lang === 'ar' ? 'تم حفظ أسعار الشحن بنجاح' : 'Shipping rates saved successfully' 
+        });
       })
       .catch(async (error) => {
-        console.error('Error saving shipping rates:', error);
+        console.error('Firestore Error Saving Shipping:', error);
         errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: shippingRef.path,
           operation: 'write',
-          requestResourceData: rates
+          requestResourceData: payload
         }));
       })
       .finally(() => setSaving(false));
   };
-
-  const isAdmin = user?.email === ADMIN_EMAIL || user?.phoneNumber === ADMIN_PHONE;
 
   if (authLoading) return (
     <div className="flex items-center justify-center p-20">

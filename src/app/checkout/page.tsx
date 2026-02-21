@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -72,6 +71,7 @@ export default function CheckoutPage() {
 
   const [dynamicRates, setDynamicRates] = useState<Record<string, number>>(DEFAULT_US_STATES);
 
+  // Correct path matching backend.json and Admin Dashboard
   const shippingRef = useMemoFirebase(() => {
     if (!db) return null;
     return doc(db, 'siteSettings', 'shipping');
@@ -258,7 +258,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="space-y-2 text-start">
                     <Label className="text-base md:text-lg font-bold flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-[#D4AF37]" /> {t.phoneNumber}
+                      <Phone className="h-4 w-4 text-[#D4AF37]" /> {t.phoneNumberUSA}
                     </Label>
                     <div className="flex rounded-xl md:rounded-2xl border-2 border-primary/10 overflow-hidden focus-within:border-[#D4AF37] transition-all">
                       <span className="flex items-center px-4 bg-primary/5 text-[#D4AF37] font-bold border-e-2 border-primary/10">
