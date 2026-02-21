@@ -146,6 +146,15 @@
         }
       }
     },
+    "ShippingRates": {
+      "title": "Shipping Rates",
+      "description": "Shipping prices per US state",
+      "type": "object",
+      "properties": {
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": { "type": "number" }
+    },
     "Order": {
       "title": "Order",
       "description": "A customer order",
@@ -205,6 +214,10 @@
     },
     "/siteSettings/heroSection": {
       "schema": "HeroImage",
+      "description": "PUBLIC_READ: Visible to all. ADMIN_WRITE: Restricted to mohammad.dd.my@gmail.com or phone +962780334074."
+    },
+    "/siteSettings/shipping": {
+      "schema": "ShippingRates",
       "description": "PUBLIC_READ: Visible to all. ADMIN_WRITE: Restricted to mohammad.dd.my@gmail.com or phone +962780334074."
     },
     "/orders/{orderId}": {

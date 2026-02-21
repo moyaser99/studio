@@ -77,10 +77,11 @@ export default function CheckoutPage() {
     return doc(db, 'siteSettings', 'shipping');
   }, [db]);
 
-  const { data: shippingData } = useDoc(shippingRef);
+  const { data: shippingData, loading: loadingShipping } = useDoc(shippingRef);
 
   useEffect(() => {
-    if (shippingData && Object.keys(shippingData).length > 0) {
+    if (shippingData) {
+      console.log('Syncing checkout with latest shipping rates from Firestore');
       const mergedRates = { ...DEFAULT_US_STATES };
       Object.keys(DEFAULT_US_STATES).forEach(state => {
         if (typeof shippingData[state] === 'number') {
@@ -352,7 +353,7 @@ export default function CheckoutPage() {
                 
                 <Button 
                   onClick={handlePlaceOrder}
-                  disabled={loading}
+                  disabled={loading || loadingShipping}
                   className="w-full h-14 md:h-16 rounded-full text-lg md:text-xl font-bold bg-[#D4AF37] hover:bg-[#B8962D] text-white shadow-xl gap-2 mt-2 md:mt-4"
                 >
                   {loading ? (

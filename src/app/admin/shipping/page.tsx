@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useFirestore, useUser, useDoc } from '@/firebase';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -58,8 +58,8 @@ export default function AdminShippingPage() {
   const { data: shippingData, loading: ratesLoading } = useDoc(shippingRef);
 
   useEffect(() => {
-    if (shippingData && Object.keys(shippingData).length > 0) {
-      // Filter out meta fields like id, updatedAt
+    if (shippingData) {
+      console.log('Fetched shipping rates from Firestore:', shippingData);
       const cleanRates: Record<string, number> = {};
       Object.keys(DEFAULT_RATES).forEach(state => {
         if (typeof shippingData[state] === 'number') {
@@ -87,17 +87,24 @@ export default function AdminShippingPage() {
     if (!db || !shippingRef) return;
     setSaving(true);
     
-    updateDoc(shippingRef, {
+    const payload = {
       ...rates,
       updatedAt: serverTimestamp()
-    })
+    };
+
+    console.log('Saving shipping rates to Firestore:', payload);
+
+    // Using setDoc with merge: true to handle both creation and update
+    setDoc(shippingRef, payload, { merge: true })
       .then(() => {
+        console.log('Shipping rates saved successfully');
         toast({ title: 'Success', description: t.shippingRatesUpdated });
       })
-      .catch(async () => {
+      .catch(async (error) => {
+        console.error('Error saving shipping rates:', error);
         errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: shippingRef.path,
-          operation: 'update',
+          operation: 'write',
           requestResourceData: rates
         }));
       })
