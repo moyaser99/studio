@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -41,16 +42,16 @@ import emailjs from '@emailjs/browser';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 
 const DEFAULT_US_STATES: Record<string, number> = {
-  "Alabama": 13, "Alaska": 23, "Arizona": 13, "Arkansas": 13, "California": 13,
-  "Colorado": 13, "Connecticut": 13, "Delaware": 13, "Florida": 13, "Georgia": 13,
-  "Hawaii": 23, "Idaho": 13, "Illinois": 13, "Indiana": 13, "Iowa": 13,
-  "Kansas": 13, "Kentucky": 13, "Louisiana": 13, "Maine": 13, "Maryland": 13,
-  "Massachusetts": 13, "Michigan": 13, "Minnesota": 13, "Mississippi": 13, "Missouri": 13,
-  "Montana": 13, "Nebraska": 13, "Nevada": 13, "New Hampshire": 13, "New Jersey": 13,
-  "New Mexico": 13, "New York": 13, "North Carolina": 13, "North Dakota": 13, "Ohio": 13,
-  "Oklahoma": 13, "Oregon": 13, "Pennsylvania": 13, "Rhode Island": 13, "South Carolina": 13,
-  "South Dakota": 13, "Tennessee": 13, "Texas": 13, "Utah": 13, "Vermont": 13,
-  "Virginia": 13, "Washington": 13, "West Virginia": 13, "Wisconsin": 13, "Wyoming": 16
+  "Alabama": 13, "Alaska": 23, "Arizona": 17, "Arkansas": 14, "California": 20,
+  "Colorado": 16, "Connecticut": 13, "Delaware": 13, "Florida": 15, "Georgia": 14,
+  "Hawaii": 25, "Idaho": 18, "Illinois": 11, "Indiana": 11, "Iowa": 13,
+  "Kansas": 14, "Kentucky": 13, "Louisiana": 15, "Maine": 17, "Maryland": 13,
+  "Massachusetts": 13, "Michigan": 9, "Minnesota": 14, "Mississippi": 14, "Missouri": 13,
+  "Montana": 18, "Nebraska": 14, "Nevada": 18, "New Hampshire": 13, "New Jersey": 13,
+  "New Mexico": 16, "New York": 13, "North Carolina": 13, "North Dakota": 15, "Ohio": 11,
+  "Oklahoma": 14, "Oregon": 19, "Pennsylvania": 13, "Rhode Island": 13, "South Carolina": 13,
+  "South Dakota": 15, "Tennessee": 13, "Texas": 15, "Utah": 17, "Vermont": 13,
+  "Virginia": 13, "Washington": 19, "West Virginia": 13, "Wisconsin": 11, "Wyoming": 16
 };
 
 export default function CheckoutPage() {
@@ -81,7 +82,6 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (shippingData) {
-      console.log('Syncing checkout with latest shipping rates from Firestore');
       const mergedRates = { ...DEFAULT_US_STATES };
       Object.keys(DEFAULT_US_STATES).forEach(state => {
         if (typeof shippingData[state] === 'number') {

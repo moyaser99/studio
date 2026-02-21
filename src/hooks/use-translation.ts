@@ -44,7 +44,7 @@ const translations = {
     comeBackLater: 'لا توجد منتجات حالياً. يرجى العودة لاحقاً.',
     addFirstProduct: 'أضف أول منتج',
     categoryNotFound: 'القسم غير موجود',
-    sorryCategoryNotFound: 'عذراً، لم نتمكن من العثور على القسم المطلوب.',
+    sorryCategoryNotFound: 'عذراً، لم نتمكن من العظور على القسم المطلوب.',
     backToHome: 'العودة للرئيسية',
     browseOurCollection: 'تصفح مجموعتنا المختارة من أفضل المنتجات المستوردة حصرياً.',
     noProductsInCategory: 'لا توجد منتجات حالياً في هذا القسم.',
@@ -201,6 +201,8 @@ const translations = {
     searchState: 'ابحث عن ولاية...',
     saveShippingRates: 'حفظ أسعار الشحن',
     shippingRatesUpdated: 'تم تحديث أسعار الشحن بنجاح',
+    initializeDatabase: 'تهيئة قاعدة البيانات',
+    databaseInitialized: 'تمت تهيئة قاعدة البيانات بنجاح',
   },
   en: {
     home: 'Home',
@@ -386,6 +388,8 @@ const translations = {
     searchState: 'Search for a state...',
     saveShippingRates: 'Save Shipping Rates',
     shippingRatesUpdated: 'Shipping rates updated successfully',
+    initializeDatabase: 'Initialize Database',
+    databaseInitialized: 'Database initialized successfully',
   }
 };
 

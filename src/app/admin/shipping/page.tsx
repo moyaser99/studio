@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -14,7 +15,8 @@ import {
   Truck, 
   Search, 
   X,
-  AlertTriangle
+  AlertTriangle,
+  Database
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
@@ -27,16 +29,16 @@ const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
 
 const DEFAULT_RATES: Record<string, number> = {
-  "Alabama": 13, "Alaska": 23, "Arizona": 13, "Arkansas": 13, "California": 13,
-  "Colorado": 13, "Connecticut": 13, "Delaware": 13, "Florida": 13, "Georgia": 13,
-  "Hawaii": 23, "Idaho": 13, "Illinois": 13, "Indiana": 13, "Iowa": 13,
-  "Kansas": 13, "Kentucky": 13, "Louisiana": 13, "Maine": 13, "Maryland": 13,
-  "Massachusetts": 13, "Michigan": 13, "Minnesota": 13, "Mississippi": 13, "Missouri": 13,
-  "Montana": 13, "Nebraska": 13, "Nevada": 13, "New Hampshire": 13, "New Jersey": 13,
-  "New Mexico": 13, "New York": 13, "North Carolina": 13, "North Dakota": 13, "Ohio": 13,
-  "Oklahoma": 13, "Oregon": 13, "Pennsylvania": 13, "Rhode Island": 13, "South Carolina": 13,
-  "South Dakota": 13, "Tennessee": 13, "Texas": 13, "Utah": 13, "Vermont": 13,
-  "Virginia": 13, "Washington": 13, "West Virginia": 13, "Wisconsin": 13, "Wyoming": 16
+  "Alabama": 13, "Alaska": 23, "Arizona": 17, "Arkansas": 14, "California": 20,
+  "Colorado": 16, "Connecticut": 13, "Delaware": 13, "Florida": 15, "Georgia": 14,
+  "Hawaii": 25, "Idaho": 18, "Illinois": 11, "Indiana": 11, "Iowa": 13,
+  "Kansas": 14, "Kentucky": 13, "Louisiana": 15, "Maine": 17, "Maryland": 13,
+  "Massachusetts": 13, "Michigan": 9, "Minnesota": 14, "Mississippi": 14, "Missouri": 13,
+  "Montana": 18, "Nebraska": 14, "Nevada": 18, "New Hampshire": 13, "New Jersey": 13,
+  "New Mexico": 16, "New York": 13, "North Carolina": 13, "North Dakota": 15, "Ohio": 11,
+  "Oklahoma": 14, "Oregon": 19, "Pennsylvania": 13, "Rhode Island": 13, "South Carolina": 13,
+  "South Dakota": 15, "Tennessee": 13, "Texas": 15, "Utah": 17, "Vermont": 13,
+  "Virginia": 13, "Washington": 19, "West Virginia": 13, "Wisconsin": 11, "Wyoming": 16
 };
 
 export default function AdminShippingPage() {
@@ -48,6 +50,7 @@ export default function AdminShippingPage() {
   const [rates, setRates] = useState<Record<string, number>>(DEFAULT_RATES);
   const [searchTerm, setSearchTerm] = useState('');
   const [saving, setSaving] = useState(false);
+  const [initializing, setInitializing] = useState(false);
 
   // Correct path according to backend.json: /siteSettings/shipping
   const shippingRef = useMemoFirebase(() => {
@@ -59,10 +62,8 @@ export default function AdminShippingPage() {
 
   useEffect(() => {
     if (shippingData) {
-      console.log('Fetched shipping rates:', shippingData);
       const cleanRates: Record<string, number> = {};
       Object.keys(DEFAULT_RATES).forEach(state => {
-        // Ensure we only take numbers from the DB, fallback to default if missing
         if (typeof shippingData[state] === 'number') {
           cleanRates[state] = shippingData[state];
         } else {
@@ -101,19 +102,14 @@ export default function AdminShippingPage() {
       updatedAt: serverTimestamp()
     };
 
-    console.log('Attempting to save shipping rates to siteSettings/shipping...');
-
-    // Use setDoc with merge: true to handle initial creation (seed) and updates
     setDoc(shippingRef, payload, { merge: true })
       .then(() => {
-        console.log('Shipping rates saved successfully!');
         toast({ 
           title: lang === 'ar' ? 'تم بنجاح' : 'Success', 
-          description: lang === 'ar' ? 'تم حفظ أسعار الشحن بنجاح' : 'Shipping rates saved successfully' 
+          description: t.shippingRatesUpdated 
         });
       })
       .catch(async (error) => {
-        console.error('Firestore Error Saving Shipping:', error);
         errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: shippingRef.path,
           operation: 'write',
@@ -121,6 +117,32 @@ export default function AdminShippingPage() {
         }));
       })
       .finally(() => setSaving(false));
+  };
+
+  const initializeShippingData = () => {
+    if (!db || !shippingRef || !isAdmin) return;
+    
+    setInitializing(true);
+    const payload = {
+      ...DEFAULT_RATES,
+      updatedAt: serverTimestamp()
+    };
+
+    setDoc(shippingRef, payload, { merge: true })
+      .then(() => {
+        toast({ 
+          title: lang === 'ar' ? 'تمت التهيئة' : 'Initialized', 
+          description: t.databaseInitialized 
+        });
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: shippingRef.path,
+          operation: 'write',
+          requestResourceData: payload
+        }));
+      })
+      .finally(() => setInitializing(false));
   };
 
   if (authLoading) return (
@@ -156,6 +178,16 @@ export default function AdminShippingPage() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+          <Button 
+            variant="outline" 
+            onClick={initializeShippingData} 
+            disabled={initializing} 
+            className="rounded-full h-12 px-6 border-primary/20 text-primary gap-2 hover:bg-primary/5"
+          >
+            {initializing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Database className="h-5 w-5" />} 
+            {t.initializeDatabase}
+          </Button>
+          
           <div className="relative group flex-1 sm:w-64">
             <Search className="absolute start-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-[#D4AF37] transition-colors" />
             <input
@@ -171,6 +203,7 @@ export default function AdminShippingPage() {
               </button>
             )}
           </div>
+          
           <Button onClick={handleSave} disabled={saving} className="rounded-full h-12 px-8 bg-[#D4AF37] hover:bg-[#B8962D] shadow-lg gap-2 text-lg font-bold">
             {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />} {t.saveChanges}
           </Button>
