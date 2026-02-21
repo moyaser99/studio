@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -59,11 +60,12 @@ export default function RegisterPage() {
     }
 
     setLoading(true);
+    const finalPhone = `+1${formData.phoneNumber.replace(/\D/g, '')}`;
 
     try {
       const phoneQuery = query(
         collection(db, 'users'),
-        where('phoneNumber', '==', formData.phoneNumber)
+        where('phoneNumber', '==', finalPhone)
       );
       
       const querySnapshot = await getDocs(phoneQuery).catch(async (err) => {
@@ -92,7 +94,7 @@ export default function RegisterPage() {
       const userProfile = {
         fullName: formData.fullName,
         email: formData.email,
-        phoneNumber: formData.phoneNumber,
+        phoneNumber: finalPhone,
         uid: newUser.uid,
         updatedAt: serverTimestamp(),
       };
@@ -132,7 +134,6 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/20">
-      <Header />
       <main className="flex-1 flex items-center justify-center p-6 py-12">
         <Card className="w-full max-w-md border-none shadow-2xl rounded-[32px] overflow-hidden bg-white">
           <CardHeader className="bg-primary/5 py-10 text-center border-b border-primary/10">
@@ -172,16 +173,25 @@ export default function RegisterPage() {
 
               <div className="space-y-2 text-start">
                 <Label htmlFor="phone" className="flex items-center gap-2 justify-start">
-                  {t.phoneLogin} <Phone className="h-4 w-4 text-primary" />
+                  {t.phoneNumber} <Phone className="h-4 w-4 text-primary" />
                 </Label>
-                <Input 
-                  id="phone" 
-                  placeholder="+962XXXXXXXXX"
-                  className="rounded-2xl h-12 text-start" 
-                  value={formData.phoneNumber}
-                  onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                  required
-                />
+                {/* Fixed Prefix Input */}
+                <div className="flex rounded-2xl h-12 text-start bg-background border overflow-hidden focus-within:ring-2 focus-within:ring-primary/20">
+                  <span className="flex items-center px-4 bg-primary/5 text-[#D4AF37] font-bold border-e border-primary/10">
+                    +1
+                  </span>
+                  <Input 
+                    id="phone" 
+                    placeholder={t.phonePlaceholder}
+                    className="border-none focus-visible:ring-0 shadow-none h-full text-start bg-transparent" 
+                    value={formData.phoneNumber}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setFormData({ ...formData, phoneNumber: val });
+                    }}
+                    required
+                  />
+                </div>
               </div>
 
               <div className="space-y-2 text-start">
@@ -214,7 +224,6 @@ export default function RegisterPage() {
           </CardContent>
         </Card>
       </main>
-      <Footer />
     </div>
   );
 }

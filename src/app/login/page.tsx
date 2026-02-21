@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -54,18 +55,6 @@ export default function LoginPage() {
     return String(email).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
   };
 
-  const handleGoogleLogin = async () => {
-    if (!auth) return;
-    setLoading(true);
-    try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to login with Google.' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleEmailLogin = async () => {
     if (!auth) return;
     
@@ -105,10 +94,11 @@ export default function LoginPage() {
       return;
     }
     setLoading(true);
+    const finalPhone = `+1${phone.replace(/\D/g, '')}`;
     try {
       setupRecaptcha();
       const verifier = (window as any).recaptchaVerifier;
-      const result = await signInWithPhoneNumber(auth, phone, verifier);
+      const result = await signInWithPhoneNumber(auth, finalPhone, verifier);
       setConfirmationResult(result);
       toast({ title: 'Code Sent', description: 'Please check your phone.' });
     } catch (error: any) {
@@ -140,7 +130,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/20">
-      <Header />
       <main className="flex-1 flex items-center justify-center p-6 py-12">
         <Card className="w-full max-w-md border-none shadow-2xl rounded-[32px] overflow-hidden bg-white">
           <CardHeader className="bg-primary/5 py-10 text-center border-b border-primary/10">
@@ -191,14 +180,23 @@ export default function LoginPage() {
                 {!confirmationResult ? (
                   <div className="space-y-4">
                     <div className="space-y-2 text-start">
-                      <Label htmlFor="phone">{t.phoneLabel}</Label>
-                      <Input 
-                        id="phone" 
-                        placeholder="+962XXXXXXXXX" 
-                        className="rounded-2xl h-12 text-start" 
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                      />
+                      <Label htmlFor="phone">{t.phoneNumberUSA}</Label>
+                      {/* Fixed Prefix Input */}
+                      <div className="flex rounded-2xl h-12 text-start bg-background border overflow-hidden focus-within:ring-2 focus-within:ring-primary/20">
+                        <span className="flex items-center px-4 bg-primary/5 text-[#D4AF37] font-bold border-e border-primary/10">
+                          +1
+                        </span>
+                        <Input 
+                          id="phone" 
+                          placeholder={t.phonePlaceholder} 
+                          className="border-none focus-visible:ring-0 shadow-none h-full text-start bg-transparent" 
+                          value={phone}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                            setPhone(val);
+                          }}
+                        />
+                      </div>
                     </div>
                     <Button onClick={handlePhoneSignIn} disabled={loading} className="w-full rounded-full h-12 gap-2 text-lg font-bold">
                       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className="h-4 w-4" />} {t.sendCode}
@@ -246,7 +244,6 @@ export default function LoginPage() {
           </CardContent>
         </Card>
       </main>
-      <Footer />
     </div>
   );
 }

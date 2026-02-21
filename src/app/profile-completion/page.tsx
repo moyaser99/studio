@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -41,9 +42,15 @@ export default function ProfileCompletionPage() {
 
   useEffect(() => {
     if (!authLoading && user) {
+      // Remove +1 prefix for UI display if it exists in DB
+      let displayPhone = profile?.phoneNumber || user.phoneNumber || '';
+      if (displayPhone.startsWith('+1')) {
+        displayPhone = displayPhone.substring(2);
+      }
+      
       setFormData({
         fullName: profile?.fullName || user.displayName || '',
-        phoneNumber: profile?.phoneNumber || user.phoneNumber || '',
+        phoneNumber: displayPhone,
         address: profile?.address || '',
       });
     }
@@ -54,12 +61,13 @@ export default function ProfileCompletionPage() {
     if (!db || !user) return;
 
     setSaving(true);
+    const finalPhone = `+1${formData.phoneNumber.replace(/\D/g, '')}`;
 
     try {
       if (formData.phoneNumber) {
         const phoneQuery = query(
           collection(db, 'users'),
-          where('phoneNumber', '==', formData.phoneNumber)
+          where('phoneNumber', '==', finalPhone)
         );
         
         const querySnapshot = await getDocs(phoneQuery).catch(async (err) => {
@@ -85,7 +93,7 @@ export default function ProfileCompletionPage() {
       
       const profileData = {
         fullName: formData.fullName,
-        phoneNumber: formData.phoneNumber,
+        phoneNumber: finalPhone,
         address: formData.address,
         email: user.email,
         uid: user.uid,
@@ -125,7 +133,6 @@ export default function ProfileCompletionPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/20">
-      <Header />
       <main className="flex-1 flex items-center justify-center p-6 py-12">
         <Card className="w-full max-w-lg border-none shadow-2xl rounded-[32px] overflow-hidden bg-white">
           <CardHeader className="bg-primary/5 py-10 text-center border-b border-primary/10">
@@ -163,14 +170,23 @@ export default function ProfileCompletionPage() {
                 <Label htmlFor="phone" className="font-bold flex items-center gap-2 justify-start text-lg">
                    {t.phoneLogin} <Phone className="h-4 w-4 text-primary" />
                 </Label>
-                <Input 
-                  id="phone" 
-                  placeholder={t.phonePlaceholder} 
-                  required
-                  className="rounded-2xl h-14 text-start bg-muted/30 border-none" 
-                  value={formData.phoneNumber}
-                  onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                />
+                {/* Fixed Prefix Input */}
+                <div className="flex rounded-2xl h-14 text-start bg-muted/30 border-none overflow-hidden focus-within:ring-2 focus-within:ring-primary/20">
+                  <span className="flex items-center px-4 bg-primary/5 text-[#D4AF37] font-bold border-e border-primary/10">
+                    +1
+                  </span>
+                  <Input 
+                    id="phone" 
+                    placeholder={t.phonePlaceholder} 
+                    required
+                    className="border-none focus-visible:ring-0 shadow-none h-full text-start bg-transparent" 
+                    value={formData.phoneNumber}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setFormData({ ...formData, phoneNumber: val });
+                    }}
+                  />
+                </div>
               </div>
 
               <div className="space-y-2 text-start">
@@ -200,7 +216,6 @@ export default function ProfileCompletionPage() {
           </CardContent>
         </Card>
       </main>
-      <Footer />
     </div>
   );
 }

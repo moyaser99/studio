@@ -85,11 +85,12 @@ export default function CheckoutPage() {
         }
       }
 
-      // Step 2: Create Order
+      // Step 2: Create Order (Ensuring +1 is included)
+      const finalPhone = formData.phone.startsWith('+1') ? formData.phone : `+1${formData.phone}`;
       const orderData = {
         customerInfo: {
           fullName: formData.fullName,
-          phone: formData.phone,
+          phone: finalPhone,
           city: formData.city,
           address: formData.address
         },
@@ -132,7 +133,7 @@ export default function CheckoutPage() {
         const templateParams = {
           order_id: orderRef.id,
           customer_name: formData.fullName,
-          customer_phone: formData.phone,
+          customer_phone: finalPhone,
           total_price: totalPrice.toFixed(2),
           order_details: orderDetailsString,
         };
@@ -162,7 +163,6 @@ export default function CheckoutPage() {
   if (totalItems === 0) {
     return (
       <div className="min-h-screen flex flex-col overflow-x-hidden" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-        <Header />
         <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
           <div className="bg-primary/5 w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center mb-6">
             <ShoppingBag className="h-8 w-8 md:h-10 md:w-10 text-primary/40" />
@@ -172,14 +172,12 @@ export default function CheckoutPage() {
             <Button className="rounded-full px-8">{t.startShopping}</Button>
           </Link>
         </main>
-        <Footer />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/5 overflow-x-hidden" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      <Header />
       <main className="flex-1 container mx-auto px-4 py-8 md:py-12">
         <div className="mb-8 md:mb-10 text-start">
           <Link href="/cart" className="text-primary flex items-center gap-1 mb-2 hover:underline font-bold text-sm md:text-base">
@@ -217,12 +215,21 @@ export default function CheckoutPage() {
                     <Label className="text-base md:text-lg font-bold flex items-center gap-2">
                       <Phone className="h-4 w-4 text-[#D4AF37]" /> {t.phoneNumber}
                     </Label>
-                    <Input 
-                      placeholder={t.phonePlaceholder}
-                      value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                      className="h-12 md:h-14 rounded-xl md:rounded-2xl border-2 border-primary/10"
-                    />
+                    {/* Fixed Prefix Input */}
+                    <div className="flex rounded-xl md:rounded-2xl border-2 border-primary/10 overflow-hidden focus-within:border-[#D4AF37] transition-all">
+                      <span className="flex items-center px-4 bg-primary/5 text-[#D4AF37] font-bold border-e-2 border-primary/10">
+                        +1
+                      </span>
+                      <Input 
+                        placeholder={t.phonePlaceholder}
+                        value={formData.phone}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                          setFormData({...formData, phone: val});
+                        }}
+                        className="border-none focus-visible:ring-0 shadow-none h-12 md:h-14 text-start"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -311,7 +318,6 @@ export default function CheckoutPage() {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }
