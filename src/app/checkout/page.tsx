@@ -12,6 +12,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { 
   MapPin, 
   Phone, 
   User, 
@@ -20,7 +27,8 @@ import {
   ChevronRight,
   ShoppingBag,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Building2
 } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
@@ -31,6 +39,19 @@ import { useRouter } from 'next/navigation';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import emailjs from '@emailjs/browser';
+
+const US_STATES = {
+  "Alabama": 13, "Alaska": 23, "Arizona": 13, "Arkansas": 13, "California": 13,
+  "Colorado": 13, "Connecticut": 13, "Delaware": 13, "Florida": 13, "Georgia": 13,
+  "Hawaii": 23, "Idaho": 13, "Illinois": 13, "Indiana": 13, "Iowa": 13,
+  "Kansas": 13, "Kentucky": 13, "Louisiana": 13, "Maine": 13, "Maryland": 13,
+  "Massachusetts": 13, "Michigan": 13, "Minnesota": 13, "Mississippi": 13, "Missouri": 13,
+  "Montana": 13, "Nebraska": 13, "Nevada": 13, "New Hampshire": 13, "New Jersey": 13,
+  "New Mexico": 13, "New York": 13, "North Carolina": 13, "North Dakota": 13, "Ohio": 13,
+  "Oklahoma": 13, "Oregon": 13, "Pennsylvania": 13, "Rhode Island": 13, "South Carolina": 13,
+  "South Dakota": 13, "Tennessee": 13, "Texas": 13, "Utah": 13, "Vermont": 13,
+  "Virginia": 13, "Washington": 13, "West Virginia": 13, "Wisconsin": 13, "Wyoming": 13
+};
 
 export default function CheckoutPage() {
   const { cartItems, totalPrice, totalItems, clearCart } = useCart();
@@ -44,12 +65,15 @@ export default function CheckoutPage() {
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
-    city: '',
+    state: '',
     address: ''
   });
 
+  const shippingFee = formData.state ? US_STATES[formData.state as keyof typeof US_STATES] : 0;
+  const grandTotal = totalPrice + shippingFee;
+
   const handlePlaceOrder = async () => {
-    if (!formData.fullName || !formData.phone || !formData.city || !formData.address) {
+    if (!formData.fullName || !formData.phone || !formData.state || !formData.address) {
       toast({
         variant: "destructive",
         title: t.errorOccurred,
@@ -85,13 +109,13 @@ export default function CheckoutPage() {
         }
       }
 
-      // Step 2: Create Order (Ensuring +1 is included)
+      // Step 2: Create Order
       const finalPhone = formData.phone.startsWith('+1') ? formData.phone : `+1${formData.phone}`;
       const orderData = {
         customerInfo: {
           fullName: formData.fullName,
           phone: finalPhone,
-          city: formData.city,
+          city: formData.state, // Keeping 'city' key for compatibility but storing state
           address: formData.address
         },
         items: cartItems.map(item => ({
@@ -101,7 +125,7 @@ export default function CheckoutPage() {
           price: item.price,
           quantity: item.quantity
         })),
-        totalPrice,
+        totalPrice: grandTotal,
         status: 'pending',
         paymentMethod: 'Cash on Delivery',
         createdAt: serverTimestamp(),
@@ -110,7 +134,7 @@ export default function CheckoutPage() {
 
       const orderRef = await addDoc(collection(db, 'orders'), orderData);
 
-      // Step 3: Update Stock (Decrement)
+      // Step 3: Update Stock
       for (const item of cartItems) {
         const productRef = doc(db, 'products', item.id);
         updateDoc(productRef, {
@@ -118,14 +142,13 @@ export default function CheckoutPage() {
         });
       }
 
-      // Step 4: Notifications (EmailJS)
+      // Step 4: Email Notification
       const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
       const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
       const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
 
       if (serviceId && templateId && publicKey) {
         emailjs.init(publicKey);
-
         const orderDetailsString = cartItems
           .map(item => `${lang === 'ar' ? item.name : (item.nameEn || item.name)} (x${item.quantity})`)
           .join(', ');
@@ -134,7 +157,7 @@ export default function CheckoutPage() {
           order_id: orderRef.id,
           customer_name: formData.fullName,
           customer_phone: finalPhone,
-          total_price: totalPrice.toFixed(2),
+          total_price: grandTotal.toFixed(2),
           order_details: orderDetailsString,
         };
 
@@ -151,7 +174,6 @@ export default function CheckoutPage() {
       router.push('/checkout/success');
 
     } catch (err: any) {
-      console.error(err);
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: 'orders',
         operation: 'create',
@@ -215,7 +237,6 @@ export default function CheckoutPage() {
                     <Label className="text-base md:text-lg font-bold flex items-center gap-2">
                       <Phone className="h-4 w-4 text-[#D4AF37]" /> {t.phoneNumber}
                     </Label>
-                    {/* Fixed Prefix Input */}
                     <div className="flex rounded-xl md:rounded-2xl border-2 border-primary/10 overflow-hidden focus-within:border-[#D4AF37] transition-all">
                       <span className="flex items-center px-4 bg-primary/5 text-[#D4AF37] font-bold border-e-2 border-primary/10">
                         +1
@@ -235,14 +256,20 @@ export default function CheckoutPage() {
 
                 <div className="space-y-2 text-start">
                   <Label className="text-base md:text-lg font-bold flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-[#D4AF37]" /> {t.city}
+                    <Building2 className="h-4 w-4 text-[#D4AF37]" /> {t.stateLabel}
                   </Label>
-                  <Input 
-                    placeholder={t.city}
-                    value={formData.city}
-                    onChange={(e) => setFormData({...formData, city: e.target.value})}
-                    className="h-12 md:h-14 rounded-xl md:rounded-2xl border-2 border-primary/10"
-                  />
+                  <Select onValueChange={(val) => setFormData({...formData, state: val})}>
+                    <SelectTrigger className="h-12 md:h-14 rounded-xl md:rounded-2xl border-2 border-primary/10 focus:ring-[#D4AF37]">
+                      <SelectValue placeholder={t.selectState} />
+                    </SelectTrigger>
+                    <SelectContent className="z-[10001] rounded-2xl">
+                      {Object.keys(US_STATES).sort().map(state => (
+                        <SelectItem key={state} value={state} className="rounded-xl">
+                          {state}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2 text-start">
@@ -290,12 +317,14 @@ export default function CheckoutPage() {
                   </div>
                   <div className="flex justify-between text-base md:text-lg font-medium">
                     <span className="text-muted-foreground">{t.shippingFee}</span>
-                    <span className="text-[#D4AF37] font-bold">{t.free}</span>
+                    <span className={formData.state ? "text-[#D4AF37] font-bold" : "text-muted-foreground italic text-xs"}>
+                      {formData.state ? `$${shippingFee.toFixed(2)}` : t.shippingCalcPending}
+                    </span>
                   </div>
                   <Separator className="opacity-30" />
                   <div className="flex justify-between text-2xl md:text-3xl font-black">
                     <span>{t.total}</span>
-                    <span className="text-[#D4AF37]">${totalPrice.toFixed(2)}</span>
+                    <span className="text-[#D4AF37]">${grandTotal.toFixed(2)}</span>
                   </div>
                 </div>
                 
