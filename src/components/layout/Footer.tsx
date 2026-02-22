@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -30,7 +31,7 @@ export default function Footer() {
             <h3 className="text-sm font-black uppercase tracking-widest text-foreground">{t.legalInformation}</h3>
             <ul className="space-y-3">
               <li><Link href="/privacy-policy" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">{t.privacyPolicy}</Link></li>
-              <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">{t.termsOfUse}</Link></li>
+              <li><Link href="/terms-of-use" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">{t.termsOfUse}</Link></li>
               <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">{t.shipping}</Link></li>
             </ul>
           </div>

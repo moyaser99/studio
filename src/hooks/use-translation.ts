@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useLanguage } from '@/context/language-context';
@@ -231,6 +232,18 @@ const translations = {
     privacyThirdPartyContent: 'نحن نستخدم خدمات Google Firebase لإدارة المصادقة وقواعد البيانات والتخزين بشكل آمن. نؤكد أننا لا نبيع بياناتك الشخصية لأي جهات تسويقية خارجية.',
     privacyContactTitle: '8. معلومات التواصل',
     privacyContactContent: 'إذا كان لديك أي أسئلة حول سياسة الخصوصية هذه، يرجى التواصل معنا عبر البريد الإلكتروني المخصص للدعم: support@harirboutiqueusa.com',
+    termsIntroTitle: '1. قبول الشروط',
+    termsIntroContent: 'باستخدامك لمتجر HarirBoutiqueUSA، فإنك توافق على هذه الشروط. إذا كنت لا توافق، يرجى عدم استخدام الموقع.',
+    termsEligibilityTitle: '2. الأهلية',
+    termsEligibilityContent: 'يجب أن تكون بعمر 18 عاماً أو أكثر لاستخدام هذا الموقع.',
+    termsPricingTitle: '3. أخطاء التسعير والدقة',
+    termsPricingContent: 'نحتفظ بالحق في تصحيح الأخطاء وإلغاء الطلبات الناتجة عن أخطاء في التسعير أو أعطال تقنية.',
+    termsLiabilityTitle: '4. حدود المسؤولية',
+    termsLiabilityContent: 'إلى أقصى حد يسمح به قانون الولايات المتحدة، لا يتحمل متجر HarirBoutiqueUSA المسؤولية عن أي أضرار ناتجة عن استخدام الموقع أو منتجاتنا.',
+    termsIPTitle: '5. الملكية الفكرية',
+    termsIPContent: 'اسم العلامة التجارية HarirBoutiqueUSA وجميع التصاميم والمحتويات والشعارات هي ملكية محمية بموجب القانون.',
+    termsLawTitle: '6. القانون الواجب التطبيق',
+    termsLawContent: 'تخضع هذه الشروط لقوانين الولايات المتحدة الأمريكية.',
   },
   en: {
     home: 'Home',
@@ -430,22 +443,18 @@ const translations = {
     readMore: 'Read More',
     showLess: 'Show Less',
     legalInformation: 'Legal Information',
-    privacyIntroTitle: '1. Introduction',
-    privacyIntroContent: 'This Privacy Policy describes how HarirBoutiqueUSA collects, uses, and discloses your personal information when you visit or make a purchase from our site.',
-    privacyInfoTitle: '2. Information We Collect',
-    privacyInfoContent: 'We collect information necessary to process your orders, including Name, Shipping Address, Billing Address, Email, and Phone Number. We also collect technical data via Google Firebase for secure authentication.',
-    privacyPaymentTitle: '3. Payment & Security',
-    privacyPaymentContent: 'Payments are processed through secure third-party gateways. We do not store your credit card information on our servers. All data is handled in compliance with PCI-DSS standards.',
-    privacyCCPATitle: '4. California Privacy Rights (CCPA)',
-    privacyCCPAContent: 'Residents of California have the right to access the personal information we hold about them, and to ask that their personal information be corrected, updated, or deleted.',
-    privacyCOPPATitle: '5. Children\'s Privacy (COPPA)',
-    privacyCOPPAContent: 'HarirBoutiqueUSA does not knowingly collect any personal information from children under the age of 13.',
-    privacyCookiesTitle: '6. Cookies',
-    privacyCookiesContent: 'We use cookies to enhance your browsing experience, remember your preferences, and manage your shopping cart to ensure a seamless and luxury shopping experience.',
-    privacyThirdPartyTitle: '7. Third-party Data Sharing',
-    privacyThirdPartyContent: 'We use Google Firebase to securely manage authentication, databases, and storage. We do not sell your personal data to any third-party marketers.',
-    privacyContactTitle: '8. Contact Information',
-    privacyContactContent: 'If you have any questions about this Privacy Policy, please contact us at our dedicated support email: support@harirboutiqueusa.com',
+    termsIntroTitle: '1. Acceptance of Terms',
+    termsIntroContent: 'By using HarirBoutiqueUSA, you agree to these terms. If you do not agree, please do not use the site.',
+    termsEligibilityTitle: '2. Eligibility',
+    termsEligibilityContent: 'Must be 18+ to use this site.',
+    termsPricingTitle: '3. Pricing Errors & Accuracy',
+    termsPricingContent: 'We reserve the right to correct errors and cancel orders arising from pricing errors or technical glitches.',
+    termsLiabilityTitle: '4. Limitation of Liability',
+    termsLiabilityContent: 'To the maximum extent permitted by US law, HarirBoutiqueUSA is not liable for any damages resulting from site use or our products.',
+    termsIPTitle: '5. Intellectual Property',
+    termsIPContent: 'The brand name HarirBoutiqueUSA and all designs, content, and logos are protected property.',
+    termsLawTitle: '6. Governing Law',
+    termsLawContent: 'These terms are governed by the laws of the United States of America.',
   }
 };
 
