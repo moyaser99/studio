@@ -142,11 +142,10 @@ export default function Header() {
       )}
     >
       <div className="container mx-auto px-4">
-        {/* Restructured 3-Section Grid Layout */}
-        <div className="grid grid-cols-3 h-16 md:h-20 items-center gap-4">
+        <div className="flex h-16 md:h-20 items-center justify-between gap-4">
           
-          {/* 1. Left Section: Hamburger Menu Only */}
-          <div className="flex justify-start">
+          {/* Left Section: Menu + Logo */}
+          <div className="flex items-center gap-2 sm:gap-4">
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5 h-9 w-9 md:h-10 md:w-10">
@@ -226,21 +225,18 @@ export default function Header() {
                 </div>
               </SheetContent>
             </Sheet>
-          </div>
 
-          {/* 2. Center Section: Logo (Attached, PascalCase, English Only) */}
-          <div className="flex justify-center text-center">
             <Link href="/" className="flex items-center">
-              <span className="font-headline text-lg md:text-3xl font-black tracking-tighter text-primary whitespace-nowrap">
+              <span className="font-headline text-lg md:text-2xl font-black tracking-tighter text-primary whitespace-nowrap">
                 HarirBoutiqueUSA
               </span>
             </Link>
           </div>
 
-          {/* 3. Right Section: Search, Language, Cart, Profile */}
-          <div className="flex justify-end items-center gap-1 sm:gap-3">
+          {/* Right Section: Search, Language, Cart, Profile */}
+          <div className="flex items-center gap-1 sm:gap-3">
             
-            {/* Desktop Search Bar (Hidden on small screens, shown on desktop) */}
+            {/* Desktop Search Bar */}
             <div className="hidden lg:flex items-center relative mx-2" ref={searchRef}>
               <form onSubmit={handleSearchSubmit} className="relative group">
                 <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-[#D4AF37] transition-colors" />
@@ -308,7 +304,7 @@ export default function Header() {
               {t.langToggle}
             </Button>
 
-            {/* Mobile Search Toggle (Visible only on mobile/tablet) */}
+            {/* Mobile Search Toggle */}
             <Button 
               variant="ghost" 
               size="icon" 
@@ -318,7 +314,7 @@ export default function Header() {
               <Search className="h-4 w-4 sm:h-5 sm:w-5 text-[#D4AF37]" />
             </Button>
             
-            {/* Cart Icon with Gold Color */}
+            {/* Cart Icon */}
             <Link href="/cart">
               <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-primary/5 h-8 w-8 sm:h-9 sm:w-9">
                 <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 text-[#D4AF37]" />
@@ -333,7 +329,7 @@ export default function Header() {
               </Button>
             </Link>
 
-            {/* User Profile Icon with Gold Color */}
+            {/* User Profile Icon */}
             {loading ? (
               <div className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
