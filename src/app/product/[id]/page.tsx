@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { useTranslation } from '@/hooks/use-translation';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/hooks/use-toast';
+import ProductSchema from '@/components/seo/ProductSchema';
 
 export default function ProductPage() {
   const { id } = useParams();
@@ -110,6 +111,9 @@ export default function ProductPage() {
 
   return (
     <div className="container mx-auto px-4 py-12 md:px-6">
+      {/* Product Schema for SEO Search Visibility */}
+      <ProductSchema product={product as any} />
+      
       <div className="grid gap-12 lg:grid-cols-2 items-start">
         <div className="relative aspect-square overflow-hidden rounded-[3rem] bg-white shadow-2xl ring-1 ring-primary/5 transition-transform hover:scale-[1.01] duration-500">
           {optimized ? (

@@ -8,8 +8,52 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 
 export const metadata: Metadata = {
-  title: 'Harir Boutique USA - منتجات تجميل وأساسيات فاخرة',
-  description: 'تسوق أفضل مختارات المكياج والعناية بالبشرة ونمط الحياة في Harir Boutique USA.',
+  title: {
+    template: '%s | HarirBoutiqueUSA - Luxury Destination',
+    default: 'HarirBoutiqueUSA | Luxury Watches & Essentials in USA',
+  },
+  description: 'Your premier US-based boutique for curated luxury watches and lifestyle essentials. Shipped locally across all states.',
+  metadataBase: new URL('https://harirboutiqueusa.com'),
+  alternates: {
+    canonical: '/',
+    languages: {
+      'en-US': '/',
+      'ar-US': '/',
+    },
+  },
+  openGraph: {
+    title: 'Discover Elegance at HarirBoutiqueUSA',
+    description: 'Your premier US-based boutique for curated luxury watches and lifestyle essentials.',
+    url: 'https://harirboutiqueusa.com',
+    siteName: 'HarirBoutiqueUSA',
+    images: [
+      {
+        url: 'https://images.unsplash.com/photo-1627260126103-f6299a5b39e7?q=80&w=1200&h=630&auto=format&fit=crop',
+        width: 1200,
+        height: 630,
+        alt: 'HarirBoutiqueUSA Luxury Collection',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Discover Elegance at HarirBoutiqueUSA',
+    description: 'Your premier US-based boutique for curated luxury watches and lifestyle essentials.',
+    images: ['https://images.unsplash.com/photo-1627260126103-f6299a5b39e7?q=80&w=1200&h=630&auto=format&fit=crop'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 };
 
 export default function RootLayout({
