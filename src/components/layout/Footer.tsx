@@ -32,7 +32,7 @@ export default function Footer() {
             <ul className="space-y-3">
               <li><Link href="/privacy-policy" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">{t.privacyPolicy}</Link></li>
               <li><Link href="/terms-of-use" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">{t.termsOfUse}</Link></li>
-              <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">{t.shipping}</Link></li>
+              <li><Link href="/shipping-returns" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">{t.shipping}</Link></li>
             </ul>
           </div>
 
