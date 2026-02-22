@@ -15,11 +15,12 @@ export default function AboutPage() {
       {/* Hero Section */}
       <section className="relative h-[400px] md:h-[600px] overflow-hidden">
         <Image 
-          src="https://images.unsplash.com/photo-1583522684482-28136b7d6c8e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxsdXh1cnklMjBwZXJmdW1lfGVufDB8fHx8MTc3MTAzNDUwMnww&ixlib=rb-4.1.0&q=80&w=1080"
-          alt="Luxury Perfume"
+          src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=1080&auto=format&fit=crop"
+          alt="Luxury Makeup Collection"
           fill
           className="object-cover"
           priority
+          data-ai-hint="luxury makeup"
         />
         <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
         <div className="absolute inset-0 flex items-center justify-center text-center p-4">
@@ -101,10 +102,11 @@ export default function AboutPage() {
           <div className="lg:col-span-4 space-y-8">
             <div className="relative aspect-[3/4] rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white">
               <Image 
-                src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxsdXh1cnklMjB3YXRjaHxlbnwwfHx8fDE3NzEwMzQ1MDJ8MA&ixlib=rb-4.1.0&q=80&w=1080"
-                alt="Luxury Watch Detail"
+                src="https://images.unsplash.com/photo-1542496658-e33a6d0d50f6?q=80&w=1080&auto=format&fit=crop"
+                alt="Luxury Women's Watch"
                 fill
                 className="object-cover"
+                data-ai-hint="luxury watch"
               />
             </div>
             
