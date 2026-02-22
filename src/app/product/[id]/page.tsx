@@ -1,9 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { MessageCircle, Loader2, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useFirestore, useDoc } from '@/firebase';
@@ -20,6 +21,7 @@ export default function ProductPage() {
   const { lang, t, getTranslatedCategory } = useTranslation();
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const [isExpanded, setIsExpanded] = useState(false);
   
   const productRef = useMemoFirebase(() => {
     if (!db || !id) return null;
@@ -102,8 +104,9 @@ export default function ProductPage() {
     ? product.price * (1 - product.discountPercentage / 100) 
     : product.price;
 
-  const message = `مرحباً حرير بوتيك USA، أود طلب منتج: ${displayName}`;
-  const whatsappUrl = `https://wa.me/YOUR_NUMBER?text=${encodeURIComponent(message)}`;
+  const threshold = 200;
+  const shouldTruncate = displayDescription?.length > threshold;
+  const truncatedText = isExpanded ? displayDescription : (displayDescription?.slice(0, threshold) + '...');
 
   return (
     <div className="container mx-auto px-4 py-12 md:px-6">
@@ -166,26 +169,28 @@ export default function ProductPage() {
               <span className="w-2 h-8 bg-[#D4AF37] rounded-full inline-block"></span>
               {t.aboutProduct}
             </h3>
-            <p className="text-xl text-muted-foreground leading-relaxed whitespace-pre-wrap font-medium">
-              {displayDescription}
-            </p>
+            <div className="space-y-2">
+              <p className="text-xl text-muted-foreground leading-relaxed whitespace-pre-wrap font-medium">
+                {shouldTruncate ? truncatedText : displayDescription}
+              </p>
+              {shouldTruncate && (
+                <button 
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="text-primary font-bold hover:underline decoration-2 underline-offset-4 transition-all"
+                >
+                  {isExpanded ? t.showLess : t.readMore}
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="pt-8 flex flex-col sm:flex-row gap-5">
+          <div className="pt-8 flex flex-col gap-5">
             <Button 
               onClick={handleAddToCart}
-              className="flex-1 h-16 rounded-full text-xl font-bold shadow-xl border-2 border-pink-300 bg-primary text-white hover:bg-[#D4AF37] hover:border-[#D4AF37] gap-3 transition-all hover:scale-[1.02] animate-pulse-luxury flex items-center justify-center px-4"
+              className="w-full h-16 rounded-full text-xl font-bold shadow-xl border-2 border-pink-300 bg-primary text-white hover:bg-[#D4AF37] hover:border-[#D4AF37] gap-3 transition-all hover:scale-[1.02] animate-pulse-luxury flex items-center justify-center px-4"
             >
               <ShoppingCart className="h-6 w-6" />
               <span className="whitespace-normal leading-tight">{t.addToCart}</span>
-            </Button>
-
-            <Button 
-              onClick={() => window.open(whatsappUrl, '_blank')}
-              className="flex-1 h-16 bg-[#25D366] hover:bg-[#128C7E] text-white gap-3 rounded-full text-xl font-bold shadow-xl transition-all hover:scale-[1.02] flex items-center justify-center px-4"
-            >
-              <MessageCircle className="h-6 w-6 fill-current" />
-              <span className="whitespace-normal leading-tight">{t.orderOnWhatsapp}</span>
             </Button>
           </div>
           

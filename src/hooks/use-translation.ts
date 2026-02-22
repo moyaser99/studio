@@ -211,6 +211,8 @@ const translations = {
     calculatedAtCheckout: 'تُحسب عند الدفع',
     discountLabel: 'نسبة الخصم %',
     off: 'خصم',
+    readMore: 'قراءة المزيد',
+    showLess: 'عرض أقل',
   },
   en: {
     home: 'Home',
@@ -407,6 +409,8 @@ const translations = {
     calculatedAtCheckout: 'Calculated at checkout',
     discountLabel: 'Discount %',
     off: 'OFF',
+    readMore: 'Read More',
+    showLess: 'Show Less',
   }
 };
 
