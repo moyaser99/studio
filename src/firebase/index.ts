@@ -9,13 +9,14 @@ import { getFirebaseInstances } from './config';
 export function initializeFirebase() {
   const instances = getFirebaseInstances();
   if (!instances) {
-    return { app: null, firestore: null, auth: null };
+    return { app: null, firestore: null, auth: null, storage: null };
   }
   
   return { 
     app: instances.app, 
     firestore: instances.firestore, 
-    auth: instances.auth 
+    auth: instances.auth,
+    storage: instances.storage
   };
 }
 

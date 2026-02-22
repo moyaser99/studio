@@ -3,6 +3,7 @@
 import { initializeApp, getApps, FirebaseApp, getApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getAuth, Auth, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { getStorage, FirebaseStorage } from "firebase/storage";
 
 /**
  * Firebase configuration object secured by environment variables.
@@ -22,6 +23,7 @@ interface FirebaseInstances {
   app: FirebaseApp;
   firestore: Firestore;
   auth: Auth;
+  storage: FirebaseStorage;
 }
 
 const globalForFirebase = globalThis as unknown as {
@@ -45,13 +47,14 @@ export function getFirebaseInstances(): FirebaseInstances | null {
     const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
     const firestore = getFirestore(app);
     const auth = getAuth(app);
+    const storage = getStorage(app);
 
     // Ensure local persistence for better iframe/dev environment support
     setPersistence(auth, browserLocalPersistence).catch((err) => {
       console.warn("Failed to set auth persistence:", err);
     });
 
-    const instances = { app, firestore, auth };
+    const instances = { app, firestore, auth, storage };
     globalForFirebase.__firebase_instances = instances;
     
     return instances;
@@ -64,3 +67,4 @@ export function getFirebaseInstances(): FirebaseInstances | null {
 export const getFirebaseApp = () => getFirebaseInstances()?.app || null;
 export const getFirestoreInstance = () => getFirebaseInstances()?.firestore || null;
 export const getAuthInstance = () => getFirebaseInstances()?.auth || null;
+export const getStorageInstance = () => getFirebaseInstances()?.storage || null;
