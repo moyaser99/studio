@@ -37,7 +37,6 @@ export default function Header() {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
-  // FAIL-SAFE: Reset header visibility whenever the route changes
   useEffect(() => {
     setIsVisible(true);
     setLastScrollY(0);
@@ -50,9 +49,9 @@ export default function Header() {
       if (currentScrollY < 15) {
         setIsVisible(true);
       } else if (currentScrollY > lastScrollY && currentScrollY > 60) {
-        setIsVisible(false); // Scrolling down
+        setIsVisible(false);
       } else {
-        setIsVisible(true); // Scrolling up
+        setIsVisible(true);
       }
       setLastScrollY(currentScrollY);
     };
@@ -143,8 +142,11 @@ export default function Header() {
       )}
     >
       <div className="container mx-auto px-4">
-        <div className="flex h-16 md:h-20 items-center justify-between gap-2 md:gap-4">
-          <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
+        {/* Restructured 3-Section Grid Layout */}
+        <div className="grid grid-cols-3 h-16 md:h-20 items-center gap-4">
+          
+          {/* 1. Left Section: Hamburger Menu Only */}
+          <div className="flex justify-start">
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5 h-9 w-9 md:h-10 md:w-10">
@@ -154,7 +156,7 @@ export default function Header() {
               <SheetContent side={lang === 'ar' ? 'right' : 'left'} className="w-[85%] sm:w-[350px] bg-white border-primary/10 flex flex-col z-[10000]">
                 <SheetHeader className="pb-6 border-b">
                   <SheetTitle className="text-primary text-start font-headline text-xl md:text-2xl font-black">
-                    {lang === 'ar' ? 'حرير بوتيك USA' : 'HarirBoutiqueUSA'}
+                    HarirBoutiqueUSA
                   </SheetTitle>
                 </SheetHeader>
                 
@@ -224,19 +226,24 @@ export default function Header() {
                 </div>
               </SheetContent>
             </Sheet>
+          </div>
 
+          {/* 2. Center Section: Logo (Attached, PascalCase, English Only) */}
+          <div className="flex justify-center text-center">
             <Link href="/" className="flex items-center">
-              <span className="font-headline text-lg md:text-2xl font-black tracking-tighter text-primary truncate max-w-[150px] sm:max-w-none">
-                {lang === 'ar' ? 'حرير بوتيك USA' : 'HarirBoutiqueUSA'}
+              <span className="font-headline text-lg md:text-3xl font-black tracking-tighter text-primary whitespace-nowrap">
+                HarirBoutiqueUSA
               </span>
             </Link>
           </div>
 
-          {/* Desktop Search */}
-          <div className="hidden lg:flex flex-1 max-w-xl relative mx-4" ref={searchRef}>
-            <form onSubmit={handleSearchSubmit} className="w-full group">
-              <div className="relative">
-                <Search className="absolute start-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-[#D4AF37] transition-colors" />
+          {/* 3. Right Section: Search, Language, Cart, Profile */}
+          <div className="flex justify-end items-center gap-1 sm:gap-3">
+            
+            {/* Desktop Search Bar (Hidden on small screens, shown on desktop) */}
+            <div className="hidden lg:flex items-center relative mx-2" ref={searchRef}>
+              <form onSubmit={handleSearchSubmit} className="relative group">
+                <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-[#D4AF37] transition-colors" />
                 <input
                   type="text"
                   placeholder={t.search}
@@ -246,7 +253,7 @@ export default function Header() {
                     setShowResults(true);
                   }}
                   onFocus={() => setShowResults(true)}
-                  className="w-full h-11 ps-12 pe-12 rounded-full border-2 border-[#F8C8DC] bg-white text-base md:text-lg focus:outline-none focus:border-[#D4AF37] transition-all shadow-sm"
+                  className="w-32 xl:w-48 h-9 ps-9 pe-8 rounded-full border-2 border-[#F8C8DC] bg-white text-sm focus:outline-none focus:border-[#D4AF37] transition-all shadow-sm"
                 />
                 {searchQuery && (
                   <button 
@@ -255,96 +262,95 @@ export default function Header() {
                       setSearchQuery('');
                       setShowResults(false);
                     }}
-                    className="absolute end-4 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground hover:text-primary transition-colors"
+                    className="absolute end-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-primary transition-colors"
                   >
-                    <X className="h-5 w-5" />
+                    <X className="h-3 w-3" />
                   </button>
                 )}
-              </div>
-            </form>
+              </form>
 
-            {showResults && searchQuery.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-3 bg-white rounded-[2rem] shadow-2xl border border-primary/5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="p-4 border-b bg-primary/5">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2">
-                    {filteredProducts.length > 0 ? t.latestProducts : t.noProductsFound}
-                  </p>
+              {showResults && searchQuery.length > 0 && (
+                <div className="absolute top-full right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl border border-primary/5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 z-[10000]">
+                  <div className="p-3 border-b bg-primary/5">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2">
+                      {filteredProducts.length > 0 ? t.latestProducts : t.noProductsFound}
+                    </p>
+                  </div>
+                  <div className="max-h-[350px] overflow-y-auto">
+                    {filteredProducts.map((product) => (
+                      <button
+                        key={product.id}
+                        onClick={() => navigateTo(`/product/${product.id}`)}
+                        className="w-full flex items-center gap-3 p-3 hover:bg-primary/5 transition-all group text-start"
+                      >
+                        <div className="h-10 w-10 rounded-lg overflow-hidden bg-muted flex-shrink-0 border">
+                          <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-bold text-foreground text-xs line-clamp-1">{lang === 'ar' ? product.name : (product.nameEn || product.name)}</h4>
+                          <p className="text-[10px] text-muted-foreground">${product.price?.toFixed(2)}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="max-h-[450px] overflow-y-auto">
-                  {filteredProducts.map((product) => (
-                    <button
-                      key={product.id}
-                      onClick={() => navigateTo(`/product/${product.id}`)}
-                      className="w-full flex items-center gap-4 p-4 hover:bg-primary/5 transition-all group text-start"
-                    >
-                      <div className="h-14 w-14 rounded-xl overflow-hidden bg-muted flex-shrink-0 border">
-                        <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-bold text-foreground text-sm line-clamp-1 group-hover:text-primary transition-colors">{lang === 'ar' ? product.name : (product.nameEn || product.name)}</h4>
-                        <p className="text-xs text-muted-foreground">{lang === 'ar' ? product.categoryName : (product.categoryNameEn || getTranslatedCategory(product.categoryName))}</p>
-                      </div>
-                      <div className="text-base font-black text-[#D4AF37]">${product.price?.toFixed(2)}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1 sm:gap-4 flex-shrink-0">
-            <div className="flex items-center gap-1 sm:gap-2">
-              <Button 
-                onClick={toggleLang}
-                size="sm"
-                className="rounded-full px-2 sm:px-4 h-9 sm:h-10 border-2 border-[#D4AF37] bg-[#F8C8DC]/20 text-primary hover:bg-[#F8C8DC]/40 transition-all font-bold gap-1 text-[10px] sm:text-xs min-w-[45px] sm:min-w-[60px]"
-                variant="ghost"
-              >
-                <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#D4AF37]" />
-                {t.langToggle}
-              </Button>
-
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="lg:hidden rounded-full hover:bg-primary/5 h-9 w-9"
-                onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
-              >
-                <Search className="h-5 w-5" />
-              </Button>
-              
-              <Link href="/cart">
-                <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-primary/5 h-9 w-9 group">
-                  <ShoppingBag className="h-5 w-5" />
-                  {totalItems > 0 && (
-                    <span 
-                      key={totalItems}
-                      className="absolute -top-0.5 -right-0.5 h-4 w-4 md:h-5 md:w-5 bg-[#D4AF37] text-white text-[8px] md:text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-sm animate-in zoom-in duration-300"
-                    >
-                      {totalItems}
-                    </span>
-                  )}
-                </Button>
-              </Link>
-
-              {loading ? (
-                <div className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                </div>
-              ) : (
-                <Link href={user ? "/profile-completion" : "/login"}>
-                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5 h-9 w-9">
-                    <User className="h-5 w-5" />
-                  </Button>
-                </Link>
               )}
             </div>
+
+            {/* Language Toggle Button */}
+            <Button 
+              onClick={toggleLang}
+              size="sm"
+              className="rounded-full px-2 sm:px-3 h-8 sm:h-9 border-2 border-[#D4AF37] bg-[#F8C8DC]/20 text-primary hover:bg-[#F8C8DC]/40 transition-all font-bold gap-1 text-[10px] sm:text-xs"
+              variant="ghost"
+            >
+              <Globe className="h-3.5 w-3.5 text-[#D4AF37]" />
+              {t.langToggle}
+            </Button>
+
+            {/* Mobile Search Toggle (Visible only on mobile/tablet) */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="lg:hidden rounded-full hover:bg-primary/5 h-8 w-8 sm:h-9 sm:w-9"
+              onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+            >
+              <Search className="h-4 w-4 sm:h-5 sm:w-5 text-[#D4AF37]" />
+            </Button>
+            
+            {/* Cart Icon with Gold Color */}
+            <Link href="/cart">
+              <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-primary/5 h-8 w-8 sm:h-9 sm:w-9">
+                <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 text-[#D4AF37]" />
+                {totalItems > 0 && (
+                  <span 
+                    key={totalItems}
+                    className="absolute -top-0.5 -right-0.5 h-4 w-4 bg-[#D4AF37] text-white text-[8px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-sm"
+                  >
+                    {totalItems}
+                  </span>
+                )}
+              </Button>
+            </Link>
+
+            {/* User Profile Icon with Gold Color */}
+            {loading ? (
+              <div className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <Link href={user ? "/profile-completion" : "/login"}>
+                <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5 h-8 w-8 sm:h-9 sm:w-9">
+                  <User className="h-4 w-4 sm:h-5 sm:w-5 text-[#D4AF37]" />
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
 
         {/* Mobile Search Input Expansion */}
         {mobileSearchOpen && (
-          <div className="lg:hidden pb-4 px-1 animate-in slide-in-from-top duration-300" ref={searchRef}>
+          <div className="lg:hidden pb-4 px-1 animate-in slide-in-from-top duration-300">
             <div className="relative">
               <input
                 type="text"
@@ -354,7 +360,7 @@ export default function Header() {
                   setSearchQuery(e.target.value);
                   setShowResults(true);
                 }}
-                className="w-full h-10 ps-4 pe-10 rounded-full border-2 border-[#F8C8DC] bg-white text-sm focus:outline-none focus:border-[#D4AF37] shadow-sm"
+                className="w-full h-9 ps-4 pe-10 rounded-full border-2 border-[#F8C8DC] bg-white text-sm focus:outline-none focus:border-[#D4AF37] shadow-sm"
                 autoFocus
               />
               <button 
