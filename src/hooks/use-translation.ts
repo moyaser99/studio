@@ -224,6 +224,7 @@ const translations = {
     processingContent: 'تختلف أوقات معالجة الطلبات بناءً على حجم الطلبات وتوفر المنتجات. وبينما نسعى للكفاءة، فإن تواريخ المعالجة والشحن هي تواريخ تقديرية وغير مضمونة.',
     carriersContent: 'نشحن محلياً داخل أمريكا عبر شركات موثوقة (UPS, FedEx, USPS).',
     returnWindowContent: 'لديك 14 يوماً من تاريخ الاستلام لطلب الترجيع.',
+    returnWindowContentStrict: 'لديك 14 يوماً فقط من تاريخ الاستلام لطلب الترجيع.',
     returnConditionContent: 'يجب أن تكون المنتجات في حالتها الأصلية غير مستخدمة، مع كامل التغليف الفاخر والبطاقات. أي علامة على الاستخدام تلغي حق الترجيع.',
     returnCostsContent: 'يتحمل العميل كافة تكاليف شحن الترجيع، ورسوم الشحن الأصلية غير قابلة للاسترداد.',
     restockingFeeLabel: 'رسوم إعادة التخزين',
@@ -236,6 +237,12 @@ const translations = {
     whyUs: 'لماذا نحن؟',
     whyUsText: 'نحن نختار كل قطعة في مجموعتنا بعناية فائقة، لضمان تلبيتها لأعلى معايير الجودة والرقي التي تمثلها علامتنا التجارية.',
     termsAcceptance: 'لقد قرأت وأوافق على شروط الاستخدام، سياسة الخصوصية، وسياسة الشحن والترجيع.',
+    verifyPhone: 'تحقق من الهاتف',
+    enterOtp: 'أدخل رمز التحقق',
+    confirmCode: 'تأكيد الرمز',
+    codeVerified: 'تم التحقق من الرقم',
+    verificationError: 'فشل التحقق، يرجى المحاولة لاحقاً',
+    invalidOtp: 'رمز التحقق غير صحيح',
   },
   en: {
     home: 'Home',
@@ -443,6 +450,7 @@ const translations = {
     processingContent: 'Order processing times vary based on volume and availability. While we strive for efficiency, processing and shipping dates are estimates and not guaranteed.',
     carriersContent: 'We ship locally across the USA via reliable carriers (UPS, FedEx, USPS).',
     returnWindowContent: 'You have 14 days from delivery to request a return.',
+    returnWindowContentStrict: 'You have only 14 days from delivery to request a return.',
     returnConditionContent: 'Items must be in absolute original condition; any sign of wear voids the return. All tags and luxury packaging must be intact.',
     returnCostsContent: 'Customer is responsible for all return shipping costs. Original shipping fees are non-refundable.',
     restockingFeeLabel: 'Restocking Fee',
@@ -455,6 +463,12 @@ const translations = {
     whyUs: 'Why Us?',
     whyUsText: 'We carefully curate every piece in our collection, ensuring it meets the highest standards of quality and sophistication that our brand stands for.',
     termsAcceptance: 'I have read and agree to the Terms of Use, Privacy Policy, and Shipping & Returns Policy.',
+    verifyPhone: 'Verify Phone',
+    enterOtp: 'Enter OTP',
+    confirmCode: 'Confirm Code',
+    codeVerified: 'Code Verified',
+    verificationError: 'Verification failed, please try again later',
+    invalidOtp: 'Invalid verification code',
   }
 };
 

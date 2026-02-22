@@ -1,9 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
+import React, { useState, useEffect, useRef } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useTranslation } from '@/hooks/use-translation';
 import { Button } from '@/components/ui/button';
@@ -29,18 +27,21 @@ import {
   ShoppingBag,
   Loader2,
   Building2,
-  ExternalLink
+  ExternalLink,
+  ShieldCheck,
+  Smartphone
 } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, useDoc } from '@/firebase';
+import { useFirestore, useUser, useDoc, useAuth } from '@/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import emailjs from '@emailjs/browser';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 
 const DEFAULT_US_STATES: Record<string, number> = {
   "Alabama": 13, "Alaska": 23, "Arizona": 17, "Arkansas": 14, "California": 20,
@@ -60,6 +61,7 @@ export default function CheckoutPage() {
   const { t, lang } = useTranslation();
   const { toast } = useToast();
   const db = useFirestore();
+  const auth = useAuth();
   const { user } = useUser();
   const router = useRouter();
   
@@ -71,6 +73,17 @@ export default function CheckoutPage() {
     state: '',
     address: ''
   });
+
+  // Phone Verification States
+  const [countryCode, setCountryCode] = useState('+1');
+  const [clickCount, setClickCount] = useState(0);
+  const [lastClickTime, setLastClickTime] = useState(0);
+  const [otpSent, setOtpSent] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const recaptchaRef = useRef<HTMLDivElement>(null);
 
   const [dynamicRates, setDynamicRates] = useState<Record<string, number>>(DEFAULT_US_STATES);
 
@@ -93,6 +106,71 @@ export default function CheckoutPage() {
     }
   }, [shippingData]);
 
+  // Hidden Jordan Trigger Logic
+  const handlePrefixClick = () => {
+    const now = Date.now();
+    if (now - lastClickTime > 2000) {
+      setClickCount(1);
+    } else {
+      const newCount = clickCount + 1;
+      setClickCount(newCount);
+      if (newCount >= 15) {
+        setCountryCode(prev => prev === '+1' ? '+962' : '+1');
+        setClickCount(0);
+        toast({ title: "Testing Mode", description: "Country code toggled." });
+      }
+    }
+    setLastClickTime(now);
+  };
+
+  const setupRecaptcha = () => {
+    if (!auth) return;
+    if (!(window as any).recaptchaVerifier) {
+      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+      });
+    }
+  };
+
+  const handleSendCode = async () => {
+    if (!auth) return;
+    if (!formData.phone || formData.phone.length < 7) {
+      toast({ variant: 'destructive', title: t.errorOccurred, description: 'Invalid phone number.' });
+      return;
+    }
+
+    setVerifying(true);
+    const finalPhone = `${countryCode}${formData.phone}`;
+    
+    try {
+      setupRecaptcha();
+      const verifier = (window as any).recaptchaVerifier;
+      const result = await signInWithPhoneNumber(auth, finalPhone, verifier);
+      setConfirmationResult(result);
+      setOtpSent(true);
+      toast({ title: lang === 'ar' ? 'تم إرسال الرمز' : 'OTP Sent', description: lang === 'ar' ? 'يرجى التحقق من هاتفك' : 'Check your phone for the code.' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: t.errorOccurred, description: t.verificationError });
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!confirmationResult || !otp) return;
+    setVerifying(true);
+    try {
+      await confirmationResult.confirm(otp);
+      setIsVerified(true);
+      setOtpSent(false);
+      toast({ title: lang === 'ar' ? 'نجاح' : 'Success', description: t.codeVerified });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: t.errorOccurred, description: t.invalidOtp });
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   const shippingFee = formData.state ? dynamicRates[formData.state] : 0;
   const grandTotal = totalPrice + shippingFee;
 
@@ -111,6 +189,15 @@ export default function CheckoutPage() {
         variant: "destructive",
         title: t.errorOccurred,
         description: lang === 'ar' ? 'يرجى الموافقة على الشروط والسياسات' : 'Please agree to terms and policies'
+      });
+      return;
+    }
+
+    if (!isVerified) {
+      toast({
+        variant: "destructive",
+        title: t.errorOccurred,
+        description: lang === 'ar' ? 'يرجى التحقق من رقم الهاتف أولاً' : 'Please verify your phone number first'
       });
       return;
     }
@@ -142,7 +229,7 @@ export default function CheckoutPage() {
         }
       }
 
-      const finalPhone = formData.phone.startsWith('+1') ? formData.phone : `+1${formData.phone}`;
+      const finalPhone = `${countryCode}${formData.phone}`;
       const orderData = {
         customerInfo: {
           fullName: formData.fullName,
@@ -284,21 +371,64 @@ export default function CheckoutPage() {
                   </div>
                   <div className="space-y-2 text-start">
                     <Label className="text-base md:text-lg font-bold flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-[#D4AF37]" /> {t.phoneNumberUSA}
+                      <Smartphone className="h-4 w-4 text-[#D4AF37]" /> {t.phoneNumberUSA}
                     </Label>
-                    <div className="flex rounded-xl md:rounded-2xl border-2 border-primary/10 overflow-hidden focus-within:border-[#D4AF37] transition-all">
-                      <span className="flex items-center px-4 bg-primary/5 text-[#D4AF37] font-bold border-e-2 border-primary/10">
-                        +1
-                      </span>
-                      <Input 
-                        placeholder={t.phonePlaceholder}
-                        value={formData.phone}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '').slice(0, 10);
-                          setFormData({...formData, phone: val});
-                        }}
-                        className="border-none focus-visible:ring-0 shadow-none h-12 md:h-14 text-start"
-                      />
+                    <div className="flex flex-col gap-3">
+                      <div className="flex rounded-xl md:rounded-2xl border-2 border-primary/10 overflow-hidden focus-within:border-[#D4AF37] transition-all bg-white">
+                        <span 
+                          onClick={handlePrefixClick}
+                          className="flex items-center px-4 bg-primary/5 text-[#D4AF37] font-bold border-e-2 border-primary/10 cursor-pointer hover:bg-primary/10 transition-colors select-none"
+                        >
+                          {countryCode}
+                        </span>
+                        <Input 
+                          placeholder={t.phonePlaceholder}
+                          value={formData.phone}
+                          disabled={isVerified}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                            setFormData({...formData, phone: val});
+                          }}
+                          className="border-none focus-visible:ring-0 shadow-none h-12 md:h-14 text-start bg-transparent flex-1"
+                        />
+                        {isVerified && (
+                          <div className="flex items-center px-4">
+                            <CheckCircle2 className="h-5 w-5 text-[#D4AF37]" />
+                          </div>
+                        )}
+                      </div>
+
+                      {!isVerified && !otpSent && (
+                        <Button 
+                          onClick={handleSendCode} 
+                          disabled={verifying || !formData.phone}
+                          className="w-full rounded-full h-10 bg-primary/10 text-primary border-none hover:bg-primary/20 font-bold"
+                        >
+                          {verifying ? <Loader2 className="h-4 w-4 animate-spin" /> : t.verifyPhone}
+                        </Button>
+                      )}
+
+                      {otpSent && !isVerified && (
+                        <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                          <div className="relative">
+                            <Input 
+                              placeholder={t.otpLabel}
+                              value={otp}
+                              onChange={(e) => setOtp(e.target.value)}
+                              className="h-12 rounded-xl border-2 border-[#D4AF37]/30 text-center font-bold tracking-[0.5em]"
+                            />
+                          </div>
+                          <Button 
+                            onClick={handleVerifyOtp} 
+                            disabled={verifying || !otp}
+                            className="w-full rounded-full h-10 bg-[#D4AF37] text-white hover:bg-[#B8962D] font-bold shadow-md"
+                          >
+                            {verifying ? <Loader2 className="h-4 w-4 animate-spin" /> : t.confirmCode}
+                          </Button>
+                        </div>
+                      )}
+                      
+                      <div id="recaptcha-container"></div>
                     </div>
                   </div>
                 </div>
@@ -405,7 +535,7 @@ export default function CheckoutPage() {
                 
                 <Button 
                   onClick={handlePlaceOrder}
-                  disabled={loading || loadingShipping || !agreed}
+                  disabled={loading || loadingShipping || !agreed || !isVerified}
                   className="w-full h-14 md:h-16 rounded-full text-lg md:text-xl font-bold bg-[#D4AF37] hover:bg-[#B8962D] text-white shadow-xl gap-2 mt-2 md:mt-4 disabled:opacity-50"
                 >
                   {loading ? (
@@ -417,6 +547,12 @@ export default function CheckoutPage() {
                     t.placeOrder
                   )}
                 </Button>
+
+                {!isVerified && (
+                  <p className="text-[10px] text-center text-destructive font-bold animate-pulse mt-2">
+                    {lang === 'ar' ? '* يرجى التحقق من الهاتف للمتابعة' : '* Phone verification required'}
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
