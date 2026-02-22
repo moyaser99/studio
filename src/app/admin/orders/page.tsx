@@ -60,6 +60,7 @@ import { format } from 'date-fns';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import { Separator } from '@/components/ui/separator';
+import { QRCodeSVG } from 'qrcode.react';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
@@ -197,12 +198,29 @@ export default function AdminOrdersPage() {
       {/* Printable Invoice Section - Only visible during print */}
       {printingOrder && (
         <div id="printable-invoice" className="hidden print:block p-8 bg-white text-black" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-          <div className="text-center mb-10 space-y-2">
-            <h1 className="text-4xl font-black text-primary tracking-tighter">HarirBoutiqueUSA</h1>
-            <p className="text-sm font-bold opacity-70">USA Beauty & Luxury Essentials</p>
-            <div className="text-xs space-y-1">
-              <p>{t.customerService}: +1 (USA Support)</p>
-              <p>Email: contact@harirboutiqueusa.com</p>
+          <div className="flex justify-between items-start mb-10">
+            <div className="text-start space-y-2">
+              <h1 className="text-4xl font-black text-primary tracking-tighter">HarirBoutiqueUSA</h1>
+              <p className="text-sm font-bold opacity-70">USA Beauty & Luxury Essentials</p>
+              <div className="text-xs space-y-1">
+                <p>{t.customerService}: +1 (USA Support)</p>
+                <p>Email: contact@harirboutiqueusa.com</p>
+              </div>
+            </div>
+            
+            {/* Tracking QR Code */}
+            <div className="text-center space-y-1">
+              <div className="p-1.5 border-2 border-[#D4AF37] rounded-xl bg-white inline-block shadow-sm">
+                <QRCodeSVG 
+                  value={`https://harirboutiqueusa.com/track/${printingOrder.id}`} 
+                  size={90}
+                  level="H"
+                  includeMargin={false}
+                />
+              </div>
+              <p className="text-[9px] font-black text-[#D4AF37] uppercase tracking-tighter max-w-[100px] leading-tight">
+                {lang === 'ar' ? 'امسح لتتبع طلبك' : 'Scan to track order'}
+              </p>
             </div>
           </div>
 
