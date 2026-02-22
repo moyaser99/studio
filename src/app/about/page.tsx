@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -102,11 +103,11 @@ export default function AboutPage() {
           <div className="lg:col-span-4 space-y-8">
             <div className="relative aspect-[3/4] rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white">
               <Image 
-                src="https://images.unsplash.com/photo-1542496658-e33a6d0d50f6?q=80&w=1080&auto=format&fit=crop"
-                alt="Luxury Women's Watch"
+                src="https://images.unsplash.com/photo-1621274220348-2043609906d0?q=80&w=1080&auto=format&fit=crop"
+                alt="Traditional Palestinian Thobe"
                 fill
                 className="object-cover"
-                data-ai-hint="luxury watch"
+                data-ai-hint="palestinian embroidery"
               />
             </div>
             
