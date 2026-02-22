@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useUser } from '@/firebase';
 import { useTranslation } from '@/hooks/use-translation';
+import { Instagram, Facebook } from 'lucide-react';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
@@ -18,7 +19,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 gap-12 md:grid-cols-3 text-start">
           <div className="space-y-4">
             <Link href="/" className="text-2xl font-black text-primary tracking-tighter">
-              {lang === 'ar' ? 'حرير بوتيك USA' : 'HarirBoutiqueUSA'}
+              {lang === 'ar' ? 'HarirBoutiqueUSA' : 'HarirBoutiqueUSA'}
             </Link>
             <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
               {t.footerDesc}
@@ -44,11 +45,26 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-16 border-t border-primary/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} {lang === 'ar' ? 'حرير بوتيك USA' : 'HarirBoutiqueUSA'}. {t.allRightsReserved}</p>
+          <p>© {new Date().getFullYear()} HarirBoutiqueUSA. {t.allRightsReserved}</p>
           <div className="flex gap-6">
-             <Link href="#" className="hover:text-primary">{t.instagram}</Link>
-             <Link href="#" className="hover:text-primary">{t.facebook}</Link>
-             <Link href="#" className="hover:text-primary">{t.whatsapp}</Link>
+             <Link 
+               href="https://www.instagram.com/bmnas_rh?igsh=NjV1MzAyNDVyemk4&utm_source=qr" 
+               target="_blank" 
+               rel="noopener noreferrer"
+               className="text-[#D4AF37] hover:text-primary transition-all duration-300 transform hover:scale-125"
+               aria-label="Instagram"
+             >
+               <Instagram className="h-6 w-6" />
+             </Link>
+             <Link 
+               href="#" 
+               target="_blank" 
+               rel="noopener noreferrer"
+               className="text-[#D4AF37] hover:text-primary transition-all duration-300 transform hover:scale-125"
+               aria-label="Facebook"
+             >
+               <Facebook className="h-6 w-6" />
+             </Link>
           </div>
         </div>
       </div>
