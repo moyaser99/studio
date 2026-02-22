@@ -1,3 +1,4 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
@@ -8,17 +9,17 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://harirboutiqueusa.com'),
   title: {
     template: '%s | HarirBoutiqueUSA - Luxury Destination',
     default: 'HarirBoutiqueUSA | Luxury Watches & Essentials in USA',
   },
   description: 'Your premier US-based boutique for curated luxury watches and lifestyle essentials. Shipped locally across all states.',
-  metadataBase: new URL('https://harirboutiqueusa.com'),
   alternates: {
     canonical: '/',
     languages: {
-      'en-US': '/',
-      'ar-US': '/',
+      'en-US': '/en',
+      'ar-US': '/ar',
     },
   },
   openGraph: {

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -10,6 +11,7 @@ import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
 import { collection, query, limit, doc, orderBy, where } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import { useTranslation } from '@/hooks/use-translation';
+import OrganizationSchema from '@/components/seo/OrganizationSchema';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
@@ -166,6 +168,9 @@ export default function Home() {
 
   return (
     <div className="flex flex-col overflow-x-hidden w-full">
+      {/* Organization Structured Data for SEO */}
+      <OrganizationSchema />
+      
       <section 
         className="relative w-full h-[500px] md:h-[800px] flex items-center transition-all duration-700 bg-[#F8E8E8]"
         style={{
