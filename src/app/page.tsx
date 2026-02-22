@@ -184,8 +184,17 @@ export default function Home() {
                 <Sparkles className="h-4 w-4 md:h-5 md:w-5" /> {t.exclusiveFromUSA}
               </div>
               <h1 className="text-4xl font-bold tracking-tight sm:text-7xl lg:text-8xl text-foreground font-headline leading-[1.1] animate-in fade-in slide-in-from-start-10 duration-1000">
-                {t.elevateDaily.split(' ').slice(0, 2).join(' ')} <br/>
-                <span className="text-primary">{t.elevateDaily.split(' ').slice(2).join(' ')}</span>
+                {lang === 'ar' ? (
+                  <>
+                    وجهتكم الأولى <br/>
+                    <span className="text-primary">للفخامة في أمريكا</span>
+                  </>
+                ) : (
+                  <>
+                    USA’s Premier <br/>
+                    <span className="text-primary">Luxury Destination</span>
+                  </>
+                )}
               </h1>
               <p className="max-w-[600px] text-muted-foreground text-lg md:text-3xl leading-relaxed font-medium animate-in fade-in slide-in-from-start-10 duration-1000 delay-200">
                 {t.luxurySelection}

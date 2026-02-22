@@ -19,7 +19,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 gap-12 md:grid-cols-3 text-start">
           <div className="space-y-4">
             <Link href="/" className="text-2xl font-black text-primary tracking-tighter">
-              {lang === 'ar' ? 'HarirBoutiqueUSA' : 'HarirBoutiqueUSA'}
+              HarirBoutiqueUSA
             </Link>
             <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
               {t.footerDesc}
@@ -45,7 +45,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-16 border-t border-primary/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} HarirBoutiqueUSA. {t.allRightsReserved}</p>
+          <p>© 2026 HarirBoutiqueUSA. {t.allRightsReserved}</p>
           <div className="flex gap-6">
              <Link 
                href="https://www.instagram.com/bmnas_rh?igsh=NjV1MzAyNDVyemk4&utm_source=qr" 
