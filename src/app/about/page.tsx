@@ -103,11 +103,11 @@ export default function AboutPage() {
           <div className="lg:col-span-4 space-y-8">
             <div className="relative aspect-[3/4] rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white bg-white">
               <Image 
-                src="https://images.unsplash.com/photo-1526045431048-f857369aba09?q=80&w=1080&auto=format&fit=crop"
+                src="https://m.media-amazon.com/images/I/91w4nU4UnmL._AC_SL1000__.jpg"
                 alt="Luxury Women's Watch"
                 fill
                 className="object-cover"
-                data-ai-hint="luxury feminine watch"
+                data-ai-hint="luxury watch"
               />
             </div>
             
