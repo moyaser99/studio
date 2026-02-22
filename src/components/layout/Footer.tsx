@@ -25,25 +25,28 @@ export default function Footer() {
               {t.footerDesc}
             </p>
           </div>
+          
           <div className="space-y-4">
-            <h3 className="text-sm font-black uppercase tracking-widest text-foreground">{t.information}</h3>
+            <h3 className="text-sm font-black uppercase tracking-widest text-foreground">{t.legalInformation}</h3>
             <ul className="space-y-3">
-              <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">{t.aboutStore}</Link></li>
-              <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">{t.privacyPolicy}</Link></li>
+              <li><Link href="/privacy-policy" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">{t.privacyPolicy}</Link></li>
               <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">{t.termsOfUse}</Link></li>
+              <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">{t.shipping}</Link></li>
             </ul>
           </div>
+
           <div className="space-y-4">
             <h3 className="text-sm font-black uppercase tracking-widest text-foreground">{t.support}</h3>
             <ul className="space-y-3">
+              <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">{t.aboutStore}</Link></li>
               <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">{t.contactUs}</Link></li>
-              <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">{t.shipping}</Link></li>
               {isAdmin && (
                 <li><Link href="/admin" className="text-sm font-black text-primary hover:text-primary/80 transition-colors">{t.admin}</Link></li>
               )}
             </ul>
           </div>
         </div>
+
         <div className="mt-16 border-t border-primary/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
           <p>© 2026 HarirBoutiqueUSA. {t.allRightsReserved}</p>
           <div className="flex gap-6">
