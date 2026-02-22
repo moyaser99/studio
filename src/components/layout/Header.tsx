@@ -159,7 +159,7 @@ export default function Header() {
     <header 
       className={cn(
         "fixed top-0 left-0 right-0 w-full border-b transition-transform duration-300 bg-white/80 backdrop-blur-md border-[#D4AF37]/10 z-[9999]",
-        !isVisible && mounted ? "-translate-y-full" : "translate-y-0"
+        mounted && !isVisible ? "-translate-y-full" : "translate-y-0"
       )}
     >
       <div className="container mx-auto px-4">
