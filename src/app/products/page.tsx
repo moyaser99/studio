@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -57,6 +56,7 @@ export default function AllProductsPage() {
                     name: product.name,
                     nameEn: product.nameEn,
                     price: product.price,
+                    discountPercentage: product.discountPercentage,
                     categoryName: product.categoryName,
                     categoryNameEn: product.categoryNameEn,
                     image: product.imageUrl,

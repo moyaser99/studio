@@ -66,7 +66,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     e.stopPropagation();
     addToCart({
       ...product,
-      price: finalPrice // Ensure correct price is sent to cart
+      price: finalPrice // Ensure correct discounted price is sent to cart
     });
     toast({
       title: lang === 'ar' ? 'تمت الإضافة' : 'Added to Cart',
@@ -103,10 +103,10 @@ export default function ProductCard({ product }: ProductCardProps) {
           {displayCategory}
         </Badge>
 
-        {/* Discount Badge */}
+        {/* Discount Badge - Pink Circle Style */}
         {hasDiscount && (
-          <Badge className="absolute end-4 top-4 bg-primary text-white rounded-lg px-2.5 py-1.5 shadow-lg font-black animate-in fade-in zoom-in duration-500">
-            -{product.discountPercentage}% {t.off}
+          <Badge className="absolute end-4 top-4 bg-primary text-white h-12 w-12 sm:h-14 sm:w-14 rounded-full flex items-center justify-center text-xs sm:text-sm font-black shadow-xl animate-in fade-in zoom-in duration-500 ring-2 ring-white/20">
+            -{product.discountPercentage}%
           </Badge>
         )}
       </Link>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -109,6 +108,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
                     name: product.name,
                     nameEn: product.nameEn,
                     price: product.price,
+                    discountPercentage: product.discountPercentage,
                     categoryName: product.categoryName,
                     categoryNameEn: product.categoryNameEn,
                     image: product.imageUrl,

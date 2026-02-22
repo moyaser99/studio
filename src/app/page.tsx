@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -273,6 +272,7 @@ export default function Home() {
                     name: product.name,
                     nameEn: product.nameEn,
                     price: product.price,
+                    discountPercentage: product.discountPercentage,
                     categoryName: product.categoryName,
                     categoryNameEn: product.categoryNameEn,
                     image: product.imageUrl,
