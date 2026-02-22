@@ -119,7 +119,7 @@ export default function CartPage() {
                   </div>
                   <div className="flex justify-between text-base md:text-lg font-medium">
                     <span className="text-muted-foreground">{t.shippingFee}</span>
-                    <span className="text-[#D4AF37] font-bold">{t.free}</span>
+                    <span className="text-[#D4AF37] font-bold text-sm">{t.calculatedAtCheckout}</span>
                   </div>
                   <Separator className="opacity-50" />
                   <div className="flex justify-between text-xl md:text-2xl font-black">

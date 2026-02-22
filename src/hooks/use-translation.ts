@@ -208,6 +208,7 @@ const translations = {
     billTo: 'فاتورة إلى',
     thankYouPurchase: 'شكراً لتسوقكم معنا! نحن نقدر ثقتكم في HarirBoutiqueUSA.',
     customerService: 'خدمة العملاء',
+    calculatedAtCheckout: 'تُحسب عند الدفع',
   },
   en: {
     home: 'Home',
@@ -401,6 +402,7 @@ const translations = {
     billTo: 'Bill To',
     thankYouPurchase: 'Thank you for shopping with us! We appreciate your trust in HarirBoutiqueUSA.',
     customerService: 'Customer Service',
+    calculatedAtCheckout: 'Calculated at checkout',
   }
 };
 

@@ -417,11 +417,20 @@ export default function AdminOrdersPage() {
 
                                 {/* Summary */}
                                 <div className="bg-primary/5 p-6 rounded-3xl space-y-2">
+                                  <div className="flex justify-between text-base">
+                                    <span className="text-muted-foreground">{t.subtotal}</span>
+                                    <span className="font-bold">${(order.totalPrice - (order.shippingFee || 0)).toFixed(2)}</span>
+                                  </div>
+                                  <div className="flex justify-between text-base">
+                                    <span className="text-muted-foreground">{t.shippingFee}</span>
+                                    <span className="font-bold">${(order.shippingFee || 0).toFixed(2)}</span>
+                                  </div>
+                                  <Separator className="my-2" />
                                   <div className="flex justify-between text-xl font-black">
                                     <span>{t.total}</span>
                                     <span className="text-[#D4AF37]">${order.totalPrice?.toFixed(2)}</span>
                                   </div>
-                                  <p className="text-sm text-muted-foreground text-start">
+                                  <p className="text-sm text-muted-foreground text-start mt-2">
                                     {lang === 'ar' ? 'طريقة الدفع: الدفع عند الاستلام' : 'Payment Method: Cash on Delivery'}
                                   </p>
                                 </div>

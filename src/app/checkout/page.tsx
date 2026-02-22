@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -148,6 +147,7 @@ export default function CheckoutPage() {
           quantity: item.quantity
         })),
         totalPrice: grandTotal,
+        shippingFee: shippingFee, // EXPLICIT PERSISTENCE: Save the specific shipping fee charged
         status: 'pending',
         paymentMethod: 'Cash on Delivery',
         createdAt: serverTimestamp(),
