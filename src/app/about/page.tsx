@@ -101,7 +101,7 @@ export default function AboutPage() {
 
           {/* Sidebar Image/Info */}
           <div className="lg:col-span-4 space-y-8">
-            <div className="relative aspect-[3/4] rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white">
+            <div className="relative aspect-[3/4] rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white bg-white">
               <Image 
                 src="https://images.unsplash.com/photo-1621274220348-2043609906d0?q=80&w=1080&auto=format&fit=crop"
                 alt="Traditional Palestinian Thobe"
