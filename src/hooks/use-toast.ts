@@ -1,6 +1,5 @@
 "use client"
 
-// Inspired by react-hot-toast library
 import * as React from "react"
 
 import type {
@@ -9,7 +8,7 @@ import type {
 } from "@/components/ui/toast"
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_REMOVE_DELAY = 10000
 
 type ToasterToast = ToastProps & {
   id: string
@@ -93,8 +92,6 @@ export const reducer = (state: State, action: Action): State => {
     case "DISMISS_TOAST": {
       const { toastId } = action
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
       if (toastId) {
         addToRemoveQueue(toastId)
       } else {
@@ -140,9 +137,7 @@ function dispatch(action: Action) {
   })
 }
 
-type Toast = Omit<ToasterToast, "id">
-
-function toast({ ...props }: Toast) {
+function toast({ ...props }: Omit<ToasterToast, "id">) {
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -182,12 +177,12 @@ function useToast() {
         listeners.splice(index, 1)
       }
     }
-  }, [state])
+  }, []) // Removed state dependency to prevent re-subscription loops
 
   return {
     ...state,
     toast,
-    dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
+    dismiss: React.useCallback((toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }), []),
   }
 }
 

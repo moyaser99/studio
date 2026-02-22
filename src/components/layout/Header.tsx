@@ -42,26 +42,25 @@ export default function Header() {
     setMounted(true);
   }, []);
 
-  // Real-time counter for pending orders
-  useEffect(() => {
-    if (!db || !mounted || !user) return;
-    
+  // Stabilize the orders query for real-time count
+  const pendingOrdersQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
     const isAdmin = user.email === ADMIN_EMAIL || user.phoneNumber === ADMIN_PHONE;
-    if (!isAdmin) return;
+    if (!isAdmin) return null;
+    return query(collection(db, 'orders'), where('status', '==', 'pending'));
+  }, [db, user]);
 
-    const ordersQuery = query(
-      collection(db, 'orders'),
-      where('status', '==', 'pending')
-    );
-
-    const unsubscribe = onSnapshot(ordersQuery, (snapshot) => {
+  useEffect(() => {
+    if (!pendingOrdersQuery || !mounted) return;
+    
+    const unsubscribe = onSnapshot(pendingOrdersQuery, (snapshot) => {
       setNewOrdersCount(snapshot.size);
     }, (error) => {
-      console.error("Error listening to orders:", error);
+      console.warn("Order count listener error:", error);
     });
 
     return () => unsubscribe();
-  }, [db, mounted, user]);
+  }, [pendingOrdersQuery, mounted]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -85,7 +84,9 @@ export default function Header() {
 
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
-    return query(collection(db, 'products'), where('isHidden', '!=', true));
+    // Note: where('isHidden', '!=', true) requires a specific index. 
+    // Simplified query for performance and reliability in prototyping.
+    return query(collection(db, 'products'));
   }, [db]);
   const { data: allProducts } = useCollection(productsQuery);
 
@@ -105,12 +106,12 @@ export default function Header() {
       }
 
       const queryLower = searchQuery.toLowerCase();
-      const filtered = allProducts.filter((p: any) => 
-        p.name?.toLowerCase().includes(queryLower) || 
-        (p.nameEn && p.nameEn.toLowerCase().includes(queryLower)) ||
-        p.categoryName?.toLowerCase().includes(queryLower) ||
-        (p.categoryNameEn && p.categoryNameEn.toLowerCase().includes(queryLower))
-      ).slice(0, 6);
+      const filtered = allProducts.filter((p: any) => {
+        if (p.isHidden) return false;
+        return p.name?.toLowerCase().includes(queryLower) || 
+               (p.nameEn && p.nameEn.toLowerCase().includes(queryLower)) ||
+               p.categoryName?.toLowerCase().includes(queryLower);
+      }).slice(0, 6);
 
       setFilteredProducts(filtered);
     }, 300);
@@ -147,14 +148,6 @@ export default function Header() {
     router.push(path);
   };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      setShowResults(false);
-      setMobileSearchOpen(false);
-    }
-  };
-
   return (
     <header 
       className={cn(
@@ -165,7 +158,6 @@ export default function Header() {
       <div className="container mx-auto px-4">
         <div className="flex h-16 md:h-20 items-center justify-between gap-4">
           
-          {/* Left Section: Menu + Logo */}
           <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
@@ -261,9 +253,8 @@ export default function Header() {
             </Link>
           </div>
 
-          {/* Middle Section: Expansive Search Bar */}
           <div className="hidden lg:flex flex-1 items-center justify-center max-w-xl mx-auto px-4" ref={searchRef}>
-            <form onSubmit={handleSearchSubmit} className="relative group w-full">
+            <form onSubmit={(e) => e.preventDefault()} className="relative group w-full">
               <Search className="absolute start-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-[#D4AF37] transition-colors" />
               <input
                 type="text"
@@ -319,10 +310,7 @@ export default function Header() {
             </form>
           </div>
 
-          {/* Right Section: Language, Cart, Profile */}
           <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
-            
-            {/* Language Toggle Button */}
             <Button 
               onClick={toggleLang}
               size="sm"
@@ -333,7 +321,6 @@ export default function Header() {
               {mounted ? t.langToggle : '...'}
             </Button>
 
-            {/* Mobile Search Toggle */}
             <Button 
               variant="ghost" 
               size="icon" 
@@ -343,7 +330,6 @@ export default function Header() {
               <Search className="h-4 w-4 sm:h-5 sm:w-5 text-[#D4AF37]" />
             </Button>
             
-            {/* Cart Icon */}
             <Link href="/cart">
               <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-primary/5 h-8 w-8 sm:h-9 sm:w-9">
                 <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 text-[#D4AF37]" />
@@ -358,7 +344,6 @@ export default function Header() {
               </Button>
             </Link>
 
-            {/* User Profile Icon */}
             {mounted && loading ? (
               <div className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -373,7 +358,6 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Search Input Expansion */}
         {mounted && mobileSearchOpen && (
           <div className="lg:hidden pb-4 px-1 animate-in slide-in-from-top duration-300">
             <div className="relative">

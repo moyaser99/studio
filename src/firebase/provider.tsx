@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useCallback } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore } from 'firebase/firestore';
 import { Auth } from 'firebase/auth';
@@ -45,8 +45,32 @@ export const FirebaseProvider: React.FC<{
     storage
   }), [app, firestore, auth, storage]);
 
+  // Use useCallback to stabilize the error handler
+  const handleError = useCallback((error: any) => {
+    if (error instanceof FirestorePermissionError) {
+      const { path, operation } = error.context;
+      const isPublicPath = path.includes('products') || path.includes('siteSettings');
+      
+      if (isPublicPath) return;
+
+      if (path === 'users' && operation === 'list') {
+        toast({
+          variant: "destructive",
+          title: "تنبيه",
+          description: "عذراً، لا يمكن التحقق من البيانات حالياً، يرجى المحاولة لاحقاً.",
+        });
+        return;
+      }
+
+      toast({
+        variant: "destructive",
+        title: "خطأ في الصلاحيات",
+        description: "لا تملك الصلاحية للقيام بهذا الإجراء.",
+      });
+    }
+  }, [toast]);
+
   useEffect(() => {
-    // كتم أخطاء الـ HMR المزعجة في بيئة التطوير
     const onWindowError = (event: ErrorEvent) => {
       const errorMsg = event.error?.message || event.message || "";
       if (errorMsg.includes('INTERNAL ASSERTION FAILED') || errorMsg.includes('ca9')) {
@@ -66,32 +90,6 @@ export const FirebaseProvider: React.FC<{
     window.addEventListener('error', onWindowError, true);
     window.addEventListener('unhandledrejection', onUnhandledRejection, true);
 
-    const handleError = (error: any) => {
-      if (error instanceof FirestorePermissionError) {
-        const { path, operation } = error.context;
-        const isPublicPath = path.includes('products') || path.includes('siteSettings');
-        
-        // لا تظهر أي رسائل خطأ للمسارات العامة، ولا تسجلها في الكونسول لتجنب شاشة Next.js الحمراء
-        if (isPublicPath) return;
-
-        // معالجة مخصصة للتحقق من بيانات المستخدمين
-        if (path === 'users' && operation === 'list') {
-          toast({
-            variant: "destructive",
-            title: "تنبيه",
-            description: "عذراً، لا يمكن التحقق من البيانات حالياً، يرجى المحاولة لاحقاً.",
-          });
-          return;
-        }
-
-        toast({
-          variant: "destructive",
-          title: "خطأ في الصلاحيات",
-          description: "لا تملك الصلاحية للقيام بهذا الإجراء.",
-        });
-      }
-    };
-
     errorEmitter.on('permission-error', handleError);
     
     return () => {
@@ -99,7 +97,7 @@ export const FirebaseProvider: React.FC<{
       window.removeEventListener('unhandledrejection', onUnhandledRejection, true);
       errorEmitter.off('permission-error', handleError);
     };
-  }, [toast]);
+  }, [handleError]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
