@@ -1,4 +1,3 @@
-
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
@@ -9,8 +8,8 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 
 export const metadata: Metadata = {
-  title: 'YourGroceriesUSA - منتجات تجميل وأساسيات فاخرة',
-  description: 'تسوق أفضل مختارات المكياج والعناية بالبشرة ونمط الحياة في YourGroceriesUSA.',
+  title: 'Harir Boutique USA - منتجات تجميل وأساسيات فاخرة',
+  description: 'تسوق أفضل مختارات المكياج والعناية بالبشرة ونمط الحياة في Harir Boutique USA.',
 };
 
 export default function RootLayout({

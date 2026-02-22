@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -89,7 +88,7 @@ export default function ProductPage() {
   const displayDescription = lang === 'ar' ? product.description : (product.descriptionEn || product.description);
   const displayCategory = lang === 'ar' ? product.categoryName : (product.categoryNameEn || getTranslatedCategory(product.categoryName));
 
-  const message = `مرحباً YourGroceriesUSA، أود طلب منتج: ${displayName}`;
+  const message = `مرحباً حرير بوتيك USA، أود طلب منتج: ${displayName}`;
   const whatsappUrl = `https://wa.me/YOUR_NUMBER?text=${encodeURIComponent(message)}`;
 
   return (

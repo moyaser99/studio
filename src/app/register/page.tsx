@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -25,7 +24,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useUser();
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -102,7 +101,10 @@ export default function RegisterPage() {
       const userDocRef = doc(db, 'users', newUser.uid);
       setDoc(userDocRef, userProfile, { merge: true })
         .then(() => {
-          toast({ title: 'Success', description: 'Welcome to YourGroceriesUSA.' });
+          toast({ 
+            title: lang === 'ar' ? 'نجاح' : 'Success', 
+            description: lang === 'ar' ? 'أهلاً بك في حرير بوتيك USA.' : 'Welcome to Harir Boutique USA.' 
+          });
           router.replace('/');
         })
         .catch(async () => {

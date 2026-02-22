@@ -9,7 +9,7 @@ const ADMIN_PHONE = '+962780334074';
 
 export default function Footer() {
   const { user, loading } = useUser();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const isAdmin = !loading && !!user && (user.email === ADMIN_EMAIL || user.phoneNumber === ADMIN_PHONE);
 
   return (
@@ -18,7 +18,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 gap-12 md:grid-cols-3 text-start">
           <div className="space-y-4">
             <Link href="/" className="text-2xl font-black text-primary tracking-tighter">
-              YourGroceriesUSA
+              {lang === 'ar' ? 'حرير بوتيك USA' : 'HarirBoutiqueUSA'}
             </Link>
             <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
               {t.footerDesc}
@@ -44,7 +44,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-16 border-t border-primary/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} YourGroceriesUSA. {t.allRightsReserved}</p>
+          <p>© {new Date().getFullYear()} {lang === 'ar' ? 'حرير بوتيك USA' : 'HarirBoutiqueUSA'}. {t.allRightsReserved}</p>
           <div className="flex gap-6">
              <Link href="#" className="hover:text-primary">{t.instagram}</Link>
              <Link href="#" className="hover:text-primary">{t.facebook}</Link>

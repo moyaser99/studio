@@ -43,7 +43,7 @@ const prompt = ai.definePrompt({
   name: 'generateProductDescriptionPrompt',
   input: {schema: GenerateProductDescriptionInputSchema},
   output: {schema: GenerateProductDescriptionOutputSchema},
-  prompt: `You are an expert copywriter for an e-commerce beauty store called 'YourGroceriesUSA'.
+  prompt: `You are an expert copywriter for an e-commerce beauty store called 'HarirBoutiqueUSA'.
 Your task is to create a compelling and optimized product description based on the provided details.
 The description should be engaging, highlight key benefits, and encourage customers to purchase.
 Focus on a modern, clean, and elegant tone consistent with beauty store aesthetics.

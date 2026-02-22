@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -155,7 +154,7 @@ export default function Header() {
               <SheetContent side={lang === 'ar' ? 'right' : 'left'} className="w-[85%] sm:w-[350px] bg-white border-primary/10 flex flex-col z-[10000]">
                 <SheetHeader className="pb-6 border-b">
                   <SheetTitle className="text-primary text-start font-headline text-xl md:text-2xl font-black">
-                    YourGroceriesUSA
+                    {lang === 'ar' ? 'حرير بوتيك USA' : 'HarirBoutiqueUSA'}
                   </SheetTitle>
                 </SheetHeader>
                 
@@ -227,8 +226,8 @@ export default function Header() {
             </Sheet>
 
             <Link href="/" className="flex items-center">
-              <span className="font-headline text-lg md:text-2xl font-black tracking-tighter text-primary truncate max-w-[100px] sm:max-w-none">
-                YourGroceriesUSA
+              <span className="font-headline text-lg md:text-2xl font-black tracking-tighter text-primary truncate max-w-[150px] sm:max-w-none">
+                {lang === 'ar' ? 'حرير بوتيك USA' : 'HarirBoutiqueUSA'}
               </span>
             </Link>
           </div>

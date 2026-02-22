@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useLanguage } from '@/context/language-context';
@@ -34,7 +33,7 @@ const translations = {
     exploreMore: 'اكتشف المزيد',
     exclusiveFromUSA: 'مجموعة حصرية من أمريكا',
     elevateDaily: 'ارتقِ بأساسياتك اليومية',
-    luxurySelection: 'Discover our luxury selection of beauty and lifestyle products from the USA.',
+    luxurySelection: 'اكتشفي مجموعتنا الفاخرة من منتجات التجميل وأسلوب الحياة من الولايات المتحدة الأمريكية مباشرة.',
     shopCollection: 'تسوق المجموعة',
     manageStore: 'إدارة المتجر',
     carefullySelected: 'مجموعاتنا المختارة بعناية لتناسب ذوقك الرفيع',
@@ -52,7 +51,7 @@ const translations = {
     allProductsDesc: 'استكشف مجموعتنا الكاملة من المنتجات المختارة بعناية لتناسب أرقى الأذواق.',
     aboutProduct: 'عن المنتج',
     orderOnWhatsapp: 'اطلب عبر واتساب',
-    secureContact: 'تواصل مباشر وآمن مع دعم YourGroceriesUSA.',
+    secureContact: 'تواصل مباشر وآمن مع دعم حرير بوتيك USA.',
     new: 'جديد',
     addToCart: 'أضف للسلة',
     price: 'السعر',
@@ -101,7 +100,7 @@ const translations = {
     facebook: 'فيسبوك',
     whatsapp: 'واتساب',
     loginTitle: 'تسجيل الدخول',
-    loginSubtitle: 'أهلاً بك مجدداً في YourGroceriesUSA',
+    loginSubtitle: 'أهلاً بك مجدداً في حرير بوتيك USA',
     email: 'البريد الإلكتروني',
     password: 'كلمة المرور',
     loginBtn: 'دخول',
@@ -239,7 +238,7 @@ const translations = {
     allProductsDesc: 'Explore our full collection of carefully selected products.',
     aboutProduct: 'About Product',
     orderOnWhatsapp: 'Order on WhatsApp',
-    secureContact: 'Direct and secure contact with YourGroceriesUSA support.',
+    secureContact: 'Direct and secure contact with Harir Boutique USA support.',
     new: 'New',
     addToCart: 'Add to Cart',
     price: 'Price',
@@ -288,7 +287,7 @@ const translations = {
     facebook: 'Facebook',
     whatsapp: 'WhatsApp',
     loginTitle: 'Login',
-    loginSubtitle: 'Welcome back to YourGroceriesUSA',
+    loginSubtitle: 'Welcome back to Harir Boutique USA',
     email: 'Email',
     password: 'Password',
     loginBtn: 'Login',
