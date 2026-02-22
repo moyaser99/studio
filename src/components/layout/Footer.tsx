@@ -39,7 +39,7 @@ export default function Footer() {
           <div className="space-y-4">
             <h3 className="text-sm font-black uppercase tracking-widest text-foreground">{t.support}</h3>
             <ul className="space-y-3">
-              <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">{t.aboutStore}</Link></li>
+              <li><Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">{t.aboutStore}</Link></li>
               <li><Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">{t.contactUs}</Link></li>
               {isAdmin && (
                 <li><Link href="/admin" className="text-sm font-black text-primary hover:text-primary/80 transition-colors">{t.admin}</Link></li>

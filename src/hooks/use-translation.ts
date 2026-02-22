@@ -242,6 +242,12 @@ const translations = {
     returnConditionContent: 'يجب أن تكون المنتجات في حالتها الأصلية غير مستخدمة، مع كامل التغليف الفاخر والبطاقات.',
     returnCostsContent: 'يتحمل العميل تكاليف شحن الترجيع إلا في حال وجود عيب مصنعي.',
     lastUpdatedShipping: 'آخر تحديث: 22 فبراير 2026',
+    ourStory: 'قصتنا',
+    narrativeText: 'في HarirBoutiqueUSA، نؤمن أن الفخامة ليست مجرد منتج، بل هي تجربة متكاملة. انطلق بوتيك حرير من قلب الولايات المتحدة لتقديم أرقى المجموعات المختارة من الساعات الفاخرة والمستلزمات العصرية لمن يقدرون الأناقة الحقيقية.',
+    ourMission: 'مهمتنا',
+    missionText: 'تزويد عملائنا بمنتجات أصلية وفاخرة، يتم توصيلها بسرعة وموثوقية عبر الشحن المحلي داخل أمريكا.',
+    whyUs: 'لماذا نحن؟',
+    whyUsText: 'نحن نختار كل قطعة في مجموعتنا بعناية فائقة، لضمان تلبيتها لأعلى معايير الجودة والرقي التي تمثلها علامتنا التجارية.',
   },
   en: {
     home: 'Home',
@@ -451,6 +457,12 @@ const translations = {
     returnConditionContent: 'Items must be in original, unworn condition with all tags and luxury packaging intact.',
     returnCostsContent: 'Return shipping costs are the responsibility of the customer unless the item is defective.',
     lastUpdatedShipping: 'Last updated: February 22, 2026',
+    ourStory: 'Our Story',
+    narrativeText: 'At HarirBoutiqueUSA, we believe that luxury is not just a product, but an experience. Born in the heart of the USA, our boutique was founded to bring the finest selection of high-end watches and lifestyle essentials to those who appreciate true elegance.',
+    ourMission: 'Our Mission',
+    missionText: 'To provide our customers with authentic, premium products delivered with the speed and reliability of local US shipping.',
+    whyUs: 'Why Us?',
+    whyUsText: 'We carefully curate every piece in our collection, ensuring it meets the highest standards of quality and sophistication that our brand stands for.',
   }
 };
 
