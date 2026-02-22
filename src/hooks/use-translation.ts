@@ -202,6 +202,12 @@ const translations = {
     shippingRatesUpdated: 'تم تحديث أسعار الشحن بنجاح',
     initializeDatabase: 'تهيئة قاعدة البيانات',
     databaseInitialized: 'تمت تهيئة قاعدة البيانات بنجاح',
+    printInvoice: 'طباعة فاتورة',
+    invoice: 'فاتورة',
+    invoiceDate: 'تاريخ الفاتورة',
+    billTo: 'فاتورة إلى',
+    thankYouPurchase: 'شكراً لتسوقكم معنا! نحن نقدر ثقتكم في HarirBoutiqueUSA.',
+    customerService: 'خدمة العملاء',
   },
   en: {
     home: 'Home',
@@ -389,6 +395,12 @@ const translations = {
     shippingRatesUpdated: 'Shipping rates updated successfully',
     initializeDatabase: 'Initialize Database',
     databaseInitialized: 'Database initialized successfully',
+    printInvoice: 'Print Invoice',
+    invoice: 'Invoice',
+    invoiceDate: 'Invoice Date',
+    billTo: 'Bill To',
+    thankYouPurchase: 'Thank you for shopping with us! We appreciate your trust in HarirBoutiqueUSA.',
+    customerService: 'Customer Service',
   }
 };
 

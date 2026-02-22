@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useFirestore, useCollection, useUser } from '@/firebase';
 import { 
   collection, 
@@ -48,7 +48,8 @@ import {
   AlertTriangle,
   Search,
   X,
-  PackageSearch
+  PackageSearch,
+  Printer
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
@@ -58,6 +59,7 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
+import { Separator } from '@/components/ui/separator';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
@@ -70,6 +72,7 @@ export default function AdminOrdersPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [printingOrder, setPrintingOrder] = useState<any>(null);
 
   const ordersQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -80,7 +83,6 @@ export default function AdminOrdersPage() {
 
   const isAdmin = user?.email === ADMIN_EMAIL || user?.phoneNumber === ADMIN_PHONE;
 
-  // Multi-criteria filter logic (ID, Name, Phone)
   const filteredOrders = useMemo(() => {
     if (!orders) return [];
     if (!searchTerm.trim()) return orders;
@@ -143,6 +145,15 @@ export default function AdminOrdersPage() {
       .finally(() => setDeletingId(null));
   };
 
+  const handlePrint = (order: any) => {
+    setPrintingOrder(order);
+    // Wait for the DOM to update with the printable content
+    setTimeout(() => {
+      window.print();
+      setPrintingOrder(null);
+    }, 100);
+  };
+
   if (authLoading) return (
     <div className="min-h-screen flex items-center justify-center">
       <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -182,7 +193,81 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/10 transition-all duration-300" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      <main className="flex-1 container mx-auto px-4 py-12">
+      
+      {/* Printable Invoice Section - Only visible during print */}
+      {printingOrder && (
+        <div id="printable-invoice" className="hidden print:block p-8 bg-white text-black" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+          <div className="text-center mb-10 space-y-2">
+            <h1 className="text-4xl font-black text-primary tracking-tighter">HarirBoutiqueUSA</h1>
+            <p className="text-sm font-bold opacity-70">USA Beauty & Luxury Essentials</p>
+            <div className="text-xs space-y-1">
+              <p>{t.customerService}: +1 (USA Support)</p>
+              <p>Email: contact@harirboutiqueusa.com</p>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-start mb-10">
+            <div className="space-y-1 text-start">
+              <h2 className="text-xl font-black border-b-2 border-[#D4AF37] pb-1 inline-block">{t.invoice}</h2>
+              <p className="text-sm font-bold pt-2">{t.orderId}: <span className="font-mono">#{printingOrder.id.toUpperCase()}</span></p>
+              <p className="text-sm">{t.invoiceDate}: {printingOrder.createdAt ? format(printingOrder.createdAt.toDate(), 'dd/MM/yyyy HH:mm') : 'N/A'}</p>
+            </div>
+            <div className="text-start space-y-1 bg-muted/10 p-4 rounded-xl border-s-4 border-[#D4AF37]">
+              <h3 className="text-sm font-black uppercase text-[#D4AF37]">{t.billTo}</h3>
+              <p className="font-bold text-base">{printingOrder.customerInfo?.fullName}</p>
+              <p className="text-sm" dir="ltr">{printingOrder.customerInfo?.phone}</p>
+              <p className="text-sm">{printingOrder.customerInfo?.city}, {printingOrder.customerInfo?.address}</p>
+            </div>
+          </div>
+
+          <table className="w-full mb-10 border-collapse">
+            <thead>
+              <tr className="bg-[#D4AF37]/10 text-start">
+                <th className="py-3 px-4 border-b-2 border-[#D4AF37] text-start">{t.products}</th>
+                <th className="py-3 px-4 border-b-2 border-[#D4AF37] text-center">{t.priceLabel}</th>
+                <th className="py-3 px-4 border-b-2 border-[#D4AF37] text-center">{t.items}</th>
+                <th className="py-3 px-4 border-b-2 border-[#D4AF37] text-end">{t.subtotal}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {printingOrder.items?.map((item: any, idx: number) => (
+                <tr key={idx} className="border-b">
+                  <td className="py-4 px-4 font-bold">{lang === 'ar' ? item.name : (item.nameEn || item.name)}</td>
+                  <td className="py-4 px-4 text-center font-mono">${item.price?.toFixed(2)}</td>
+                  <td className="py-4 px-4 text-center">{item.quantity}</td>
+                  <td className="py-4 px-4 text-end font-black">${(item.price * item.quantity).toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="flex justify-end">
+            <div className="w-64 space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{t.subtotal}</span>
+                <span className="font-bold">${(printingOrder.totalPrice - (printingOrder.shippingFee || 0)).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{t.shippingFee} ({printingOrder.customerInfo?.city})</span>
+                <span className="font-bold text-primary">${(printingOrder.shippingFee || 0).toFixed(2)}</span>
+              </div>
+              <Separator />
+              <div className="flex justify-between text-xl font-black bg-[#D4AF37]/5 p-3 rounded-lg border-2 border-[#D4AF37]/20">
+                <span>{t.total}</span>
+                <span className="text-primary">${printingOrder.totalPrice?.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-20 pt-10 border-t border-dashed text-center space-y-2">
+            <p className="font-black text-lg text-primary">{t.thankYouPurchase}</p>
+            <p className="text-xs text-muted-foreground italic">Powered by HarirBoutiqueUSA System</p>
+          </div>
+        </div>
+      )}
+
+      {/* Main UI */}
+      <main className="flex-1 container mx-auto px-4 py-12 print:hidden">
         <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6">
           <div className="text-start">
             <Link href="/admin" className="text-primary flex items-center gap-1 mb-2 hover:underline">
@@ -256,6 +341,16 @@ export default function AdminOrdersPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex justify-center gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="rounded-full border-2 border-[#D4AF37]/20 text-primary hover:bg-[#D4AF37]/10"
+                            onClick={() => handlePrint(order)}
+                            title={t.printInvoice}
+                          >
+                            <Printer className="h-5 w-5 text-primary" />
+                          </Button>
+
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button variant="ghost" size="icon" className="rounded-full text-primary hover:bg-primary/10">
@@ -365,6 +460,28 @@ export default function AdminOrdersPage() {
           </CardContent>
         </Card>
       </main>
+
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #printable-invoice, #printable-invoice * {
+            visibility: visible;
+          }
+          #printable-invoice {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            background: white !important;
+            padding: 40px !important;
+          }
+          .print\:hidden {
+            display: none !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
