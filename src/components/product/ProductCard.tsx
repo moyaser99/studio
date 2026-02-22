@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -17,6 +16,7 @@ interface ProductCardProps {
     name: string;
     nameEn?: string;
     price: number;
+    discountPercentage?: number;
     categoryName: string;
     categoryNameEn?: string;
     image: string;
@@ -56,10 +56,18 @@ export default function ProductCard({ product }: ProductCardProps) {
   const displayName = lang === 'ar' ? product.name : (product.nameEn || product.name);
   const displayCategory = lang === 'ar' ? product.categoryName : (product.categoryNameEn || getTranslatedCategory(product.categoryName));
 
+  const hasDiscount = product.discountPercentage && product.discountPercentage > 0;
+  const finalPrice = hasDiscount 
+    ? product.price * (1 - (product.discountPercentage || 0) / 100) 
+    : product.price;
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    addToCart(product);
+    addToCart({
+      ...product,
+      price: finalPrice // Ensure correct price is sent to cart
+    });
     toast({
       title: lang === 'ar' ? 'تمت الإضافة' : 'Added to Cart',
       description: `${displayName} ${lang === 'ar' ? 'أصبح في سلتك الآن' : 'is now in your cart'}.`,
@@ -89,9 +97,18 @@ export default function ProductCard({ product }: ProductCardProps) {
           />
         )}
         <div className="absolute inset-0 bg-black/5 group-hover:bg-black/0 transition-colors duration-300" />
+        
+        {/* Category Badge */}
         <Badge className="absolute start-4 top-4 bg-white/90 backdrop-blur-md text-primary hover:bg-white rounded-full px-4 py-1.5 shadow-sm font-bold border-none transition-all duration-300">
           {displayCategory}
         </Badge>
+
+        {/* Discount Badge */}
+        {hasDiscount && (
+          <Badge className="absolute end-4 top-4 bg-primary text-white rounded-lg px-2.5 py-1.5 shadow-lg font-black animate-in fade-in zoom-in duration-500">
+            -{product.discountPercentage}% {t.off}
+          </Badge>
+        )}
       </Link>
       
       <CardContent className="p-4 sm:p-6 text-start flex flex-col flex-1">
@@ -99,9 +116,16 @@ export default function ProductCard({ product }: ProductCardProps) {
           <h3 className="line-clamp-2 font-bold text-foreground text-lg sm:text-xl leading-snug mb-2">
             {displayName}
           </h3>
-          <p className="text-xl sm:text-2xl font-black text-primary mb-4 sm:mb-6">
-            ${product.price?.toFixed(2)}
-          </p>
+          <div className="flex items-center gap-3 mb-4 sm:mb-6">
+            <p className="text-xl sm:text-2xl font-black text-primary">
+              ${finalPrice.toFixed(2)}
+            </p>
+            {hasDiscount && (
+              <p className="text-sm sm:text-base text-muted-foreground line-through font-medium">
+                ${product.price.toFixed(2)}
+              </p>
+            )}
+          </div>
         </Link>
         
         <Button 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -59,7 +58,8 @@ import {
   Search,
   X,
   ClipboardList,
-  Truck
+  Truck,
+  Percent
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow';
@@ -92,6 +92,7 @@ export default function AdminPage() {
     name: '',
     nameEn: '',
     price: '',
+    discountPercentage: '0',
     category: '',
     imageUrl: '',
     description: '',
@@ -136,7 +137,6 @@ export default function AdminPage() {
     }
   }, [heroData]);
 
-  // Real-time product search filter
   const filteredProducts = useMemo(() => {
     if (!products) return [];
     if (!searchTerm.trim()) return products;
@@ -149,7 +149,6 @@ export default function AdminPage() {
     );
   }, [products, searchTerm]);
 
-  // Analytics Calculation
   const stats = useMemo(() => {
     if (!orders) return null;
 
@@ -188,7 +187,6 @@ export default function AdminPage() {
         orders30d++;
       }
 
-      // Track top products
       order.items?.forEach((item: any) => {
         const id = item.id;
         if (!productSales[id]) {
@@ -282,6 +280,7 @@ export default function AdminPage() {
     const payload: any = {
       ...formData,
       price: parseFloat(formData.price) || 0,
+      discountPercentage: parseFloat(formData.discountPercentage) || 0,
       stock: parseInt(formData.stock) || 0,
       categoryName,
       categoryNameEn,
@@ -355,6 +354,7 @@ export default function AdminPage() {
       name: '', 
       nameEn: '', 
       price: '', 
+      discountPercentage: '0',
       category: categories?.[0]?.slug || '', 
       imageUrl: '', 
       description: '',
@@ -446,16 +446,32 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   <div className="space-y-2 text-start">
                     <Label className="text-lg font-bold">{t.productPrice}</Label>
-                    <input 
-                      type="number"
-                      value={formData.price} 
-                      onChange={e => setFormData({...formData, price: e.target.value})}
-                      placeholder="0.00" 
-                      className="flex h-14 w-full rounded-2xl border-2 border-primary/10 bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
-                    />
+                    <div className="relative">
+                      <DollarSign className="absolute start-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      <input 
+                        type="number"
+                        value={formData.price} 
+                        onChange={e => setFormData({...formData, price: e.target.value})}
+                        placeholder="0.00" 
+                        className="flex h-14 w-full rounded-2xl border-2 border-primary/10 bg-background ps-11 pe-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2 text-start">
+                    <Label className="text-lg font-bold">{t.discountLabel}</Label>
+                    <div className="relative">
+                      <Percent className="absolute start-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      <input 
+                        type="number"
+                        value={formData.discountPercentage} 
+                        onChange={e => setFormData({...formData, discountPercentage: e.target.value})}
+                        placeholder="0" 
+                        className="flex h-14 w-full rounded-2xl border-2 border-primary/10 bg-background ps-11 pe-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2 text-start">
                     <Label className="text-lg font-bold">{t.stock}</Label>
@@ -585,7 +601,6 @@ export default function AdminPage() {
         </TabsList>
 
         <TabsContent value="analytics" className="space-y-8">
-          {/* Revenue Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card className="rounded-[2rem] border-none shadow-lg bg-white overflow-hidden hover:shadow-xl transition-all">
               <CardHeader className="bg-primary/5 p-6 pb-2">
@@ -645,7 +660,6 @@ export default function AdminPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Top Selling Products */}
             <Card className="rounded-[2.5rem] border-none shadow-xl bg-white overflow-hidden">
               <CardHeader className="bg-primary/5 p-8 border-b">
                 <CardTitle className="text-2xl font-bold font-headline text-start flex items-center gap-2">
@@ -673,7 +687,6 @@ export default function AdminPage() {
               </CardContent>
             </Card>
 
-            {/* Smart Insights & Alerts */}
             <div className="space-y-6">
               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white overflow-hidden h-full">
                 <CardHeader className="bg-[#D4AF37]/5 p-8 border-b">
@@ -715,6 +728,7 @@ export default function AdminPage() {
                                     name: p.name,
                                     nameEn: p.nameEn || '',
                                     price: p.price.toString(),
+                                    discountPercentage: p.discountPercentage?.toString() || '0',
                                     category: p.category,
                                     imageUrl: p.imageUrl,
                                     description: p.description || '',
@@ -749,7 +763,6 @@ export default function AdminPage() {
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <CardTitle className="text-2xl font-bold font-headline text-start">{t.productList}</CardTitle>
                 
-                {/* Product Search Bar */}
                 <div className="relative w-full md:w-80 group">
                   <Search className="absolute start-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-[#D4AF37] transition-colors" />
                   <input
@@ -804,6 +817,9 @@ export default function AdminPage() {
                             <span>{lang === 'ar' ? product.name : (product.nameEn || product.name)}</span>
                             <div className="flex gap-2 mt-1">
                               {product.isHidden && <Badge variant="secondary" className="w-fit text-[10px]">{t.hidden}</Badge>}
+                              {product.discountPercentage > 0 && (
+                                <Badge className="w-fit text-[10px] bg-primary text-white">-{product.discountPercentage}%</Badge>
+                              )}
                               <Badge 
                                 variant={parseInt(product.stock) === 0 ? "destructive" : parseInt(product.stock) < 5 ? "secondary" : "outline"} 
                                 className="w-fit text-[10px]"
@@ -816,7 +832,18 @@ export default function AdminPage() {
                         <TableCell className="text-start">
                           {lang === 'ar' ? product.categoryName : (product.categoryNameEn || getTranslatedCategory(product.categoryName))}
                         </TableCell>
-                        <TableCell className="font-bold text-primary text-start">${product.price?.toFixed(2)}</TableCell>
+                        <TableCell className="text-start">
+                          <div className="flex flex-col">
+                            {product.discountPercentage > 0 ? (
+                              <>
+                                <span className="font-bold text-primary">${(product.price * (1 - product.discountPercentage / 100)).toFixed(2)}</span>
+                                <span className="text-xs text-muted-foreground line-through">${product.price.toFixed(2)}</span>
+                              </>
+                            ) : (
+                              <span className="font-bold text-primary">${product.price?.toFixed(2)}</span>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <div className="flex justify-center gap-2">
                             <Button 
@@ -838,6 +865,7 @@ export default function AdminPage() {
                                   name: product.name,
                                   nameEn: product.nameEn || '',
                                   price: product.price.toString(),
+                                  discountPercentage: product.discountPercentage?.toString() || '0',
                                   category: product.category,
                                   imageUrl: product.imageUrl,
                                   description: product.description || '',

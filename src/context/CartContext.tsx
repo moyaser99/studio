@@ -51,18 +51,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addToCart = (product: any) => {
     setCartItems((prevItems) => {
       const existingItem = prevItems.find((item) => item.id === product.id);
+      
+      // Calculate final price based on discount at the moment of adding to cart
+      const hasDiscount = product.discountPercentage && product.discountPercentage > 0;
+      const finalPrice = hasDiscount 
+        ? product.price * (1 - (product.discountPercentage || 0) / 100) 
+        : (product.price || 0);
+
       if (existingItem) {
         return prevItems.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          item.id === product.id 
+            ? { ...item, quantity: item.quantity + 1, price: finalPrice } 
+            : item
         );
       }
+      
       return [
         ...prevItems,
         {
           id: product.id,
           name: product.name,
           nameEn: product.nameEn,
-          price: product.price,
+          price: finalPrice,
           image: product.imageUrl || product.image,
           quantity: 1,
         },

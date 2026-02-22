@@ -51,7 +51,16 @@ export default function ProductPage() {
 
   const handleAddToCart = () => {
     if (!product) return;
-    addToCart(product);
+    const hasDiscount = product.discountPercentage && product.discountPercentage > 0;
+    const finalPrice = hasDiscount 
+      ? product.price * (1 - product.discountPercentage / 100) 
+      : product.price;
+
+    addToCart({
+      ...product,
+      price: finalPrice
+    });
+    
     toast({
       title: lang === 'ar' ? 'تمت الإضافة' : 'Added to Cart',
       description: `${lang === 'ar' ? product.name : (product.nameEn || product.name)} ${lang === 'ar' ? 'أصبح في سلتك الآن' : 'is now in your cart'}.`,
@@ -88,6 +97,11 @@ export default function ProductPage() {
   const displayDescription = lang === 'ar' ? product.description : (product.descriptionEn || product.description);
   const displayCategory = lang === 'ar' ? product.categoryName : (product.categoryNameEn || getTranslatedCategory(product.categoryName));
 
+  const hasDiscount = product.discountPercentage && product.discountPercentage > 0;
+  const finalPrice = hasDiscount 
+    ? product.price * (1 - product.discountPercentage / 100) 
+    : product.price;
+
   const message = `مرحباً حرير بوتيك USA، أود طلب منتج: ${displayName}`;
   const whatsappUrl = `https://wa.me/YOUR_NUMBER?text=${encodeURIComponent(message)}`;
 
@@ -113,6 +127,11 @@ export default function ProductPage() {
               }}
             />
           )}
+          {hasDiscount && (
+            <Badge className="absolute top-8 end-8 bg-primary text-white h-16 w-16 rounded-full flex items-center justify-center text-lg font-black shadow-2xl animate-pulse">
+              -{product.discountPercentage}%
+            </Badge>
+          )}
         </div>
 
         <div className="flex flex-col space-y-8 text-start">
@@ -123,10 +142,17 @@ export default function ProductPage() {
             <h1 className="text-4xl md:text-5xl font-black text-foreground font-headline leading-tight">
               {displayName}
             </h1>
-            <div className="flex items-center gap-4">
-              <p className="text-4xl font-black text-primary">
-                ${product.price?.toFixed(2)}
-              </p>
+            <div className="flex items-center gap-6">
+              <div className="flex flex-col">
+                <p className="text-5xl font-black text-primary">
+                  ${finalPrice.toFixed(2)}
+                </p>
+                {hasDiscount && (
+                  <p className="text-xl text-muted-foreground line-through font-bold mt-1">
+                    ${product.price.toFixed(2)}
+                  </p>
+                )}
+              </div>
               {product.isHidden && (
                 <Badge variant="destructive" className="rounded-full px-4">{t.hidden}</Badge>
               )}

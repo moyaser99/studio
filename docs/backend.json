@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "Product": {
@@ -16,7 +15,12 @@
         },
         "price": {
           "type": "number",
-          "description": "The price of the product"
+          "description": "The original price of the product"
+        },
+        "discountPercentage": {
+          "type": "number",
+          "description": "The discount percentage (0-100)",
+          "default": 0
         },
         "category": {
           "type": "string",

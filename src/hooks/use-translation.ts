@@ -180,7 +180,7 @@ const translations = {
     yourOrder: 'طلبك',
     completeFields: 'يرجى إكمال كافة الحقول',
     manageOrders: 'إدارة الطلبات',
-    orderList: 'قائمة الطلبات',
+    orderList: 'رقم الطلب',
     orderId: 'رقم الطلب',
     orderDate: 'التاريخ',
     viewDetails: 'عرض التفاصيل',
@@ -209,6 +209,8 @@ const translations = {
     thankYouPurchase: 'شكراً لتسوقكم معنا! نحن نقدر ثقتكم في HarirBoutiqueUSA.',
     customerService: 'خدمة العملاء',
     calculatedAtCheckout: 'تُحسب عند الدفع',
+    discountLabel: 'نسبة الخصم %',
+    off: 'خصم',
   },
   en: {
     home: 'Home',
@@ -403,6 +405,8 @@ const translations = {
     thankYouPurchase: 'Thank you for shopping with us! We appreciate your trust in HarirBoutiqueUSA.',
     customerService: 'Customer Service',
     calculatedAtCheckout: 'Calculated at checkout',
+    discountLabel: 'Discount %',
+    off: 'OFF',
   }
 };
 
