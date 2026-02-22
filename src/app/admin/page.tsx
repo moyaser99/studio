@@ -69,6 +69,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useTranslation } from '@/hooks/use-translation';
 import { Badge } from '@/components/ui/badge';
+import ImageUpload from '@/components/admin/ImageUpload';
 
 const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
@@ -496,13 +497,12 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2 text-start">
-                  <Label className="text-lg font-bold">{t.imageLabel}</Label>
-                  <input 
-                    value={formData.imageUrl} 
-                    onChange={e => setFormData({...formData, imageUrl: e.target.value})}
-                    placeholder="https://images.unsplash.com/..." 
-                    className="flex h-14 w-full rounded-2xl border-2 border-primary/10 bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                <div className="space-y-2">
+                  <ImageUpload 
+                    folder="products"
+                    initialUrl={formData.imageUrl}
+                    onUploadComplete={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
+                    label={t.imageLabel}
                   />
                 </div>
 
@@ -910,20 +910,14 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent className="p-8 space-y-8">
               <div className="space-y-4">
-                <div className="flex items-center gap-3 text-xl font-bold justify-start">
-                  <ImageIcon className="h-6 w-6 text-primary" /> {t.heroBannerImage}
-                </div>
-                <div className="grid gap-6 md:grid-cols-2 items-end">
-                  <div className="space-y-2 text-start">
-                    <Label>{t.productImage}</Label>
-                    <input 
-                      placeholder="https://..." 
-                      value={heroUrl}
-                      onChange={e => setHeroUrl(e.target.value)}
-                      className="flex h-12 w-full rounded-2xl border border-input bg-background px-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    />
-                  </div>
-                  <Button onClick={updateHero} className="rounded-full h-12 gap-2 font-bold shadow-md bg-[#D4AF37] hover:bg-[#B8962D]">
+                <ImageUpload 
+                  folder="siteSettings/hero"
+                  initialUrl={heroUrl}
+                  onUploadComplete={(url) => setHeroUrl(url)}
+                  label={t.heroBannerImage}
+                />
+                <div className="flex justify-end pt-4">
+                  <Button onClick={updateHero} className="rounded-full h-14 px-10 gap-2 font-bold shadow-xl bg-[#D4AF37] hover:bg-[#B8962D] transition-all hover:scale-105">
                     <Save className="h-5 w-5" /> {t.saveChanges}
                   </Button>
                 </div>
