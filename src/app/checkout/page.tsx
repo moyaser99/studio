@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -10,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Select, 
   SelectContent, 
@@ -26,7 +28,8 @@ import {
   ChevronRight,
   ShoppingBag,
   Loader2,
-  Building2
+  Building2,
+  ExternalLink
 } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
@@ -61,6 +64,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   
   const [loading, setLoading] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
@@ -70,7 +74,6 @@ export default function CheckoutPage() {
 
   const [dynamicRates, setDynamicRates] = useState<Record<string, number>>(DEFAULT_US_STATES);
 
-  // Correct path is 'siteSettings/shipping'
   const shippingRef = useMemoFirebase(() => {
     if (!db) return null;
     return doc(db, 'siteSettings', 'shipping');
@@ -103,12 +106,20 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (!agreed) {
+      toast({
+        variant: "destructive",
+        title: t.errorOccurred,
+        description: lang === 'ar' ? 'يرجى الموافقة على الشروط والسياسات' : 'Please agree to terms and policies'
+      });
+      return;
+    }
+
     if (!db) return;
 
     setLoading(true);
 
     try {
-      // Step 1: Validate Stock for each item
       for (const item of cartItems) {
         const productRef = doc(db, 'products', item.id);
         const productSnap = await getDoc(productRef);
@@ -130,7 +141,6 @@ export default function CheckoutPage() {
         }
       }
 
-      // Step 2: Create Order
       const finalPhone = formData.phone.startsWith('+1') ? formData.phone : `+1${formData.phone}`;
       const orderData = {
         customerInfo: {
@@ -147,7 +157,7 @@ export default function CheckoutPage() {
           quantity: item.quantity
         })),
         totalPrice: grandTotal,
-        shippingFee: shippingFee, // EXPLICIT PERSISTENCE: Save the specific shipping fee charged
+        shippingFee: shippingFee,
         status: 'pending',
         paymentMethod: 'Cash on Delivery',
         createdAt: serverTimestamp(),
@@ -156,7 +166,6 @@ export default function CheckoutPage() {
 
       const orderRef = await addDoc(collection(db, 'orders'), orderData);
 
-      // Step 3: Update Stock
       for (const item of cartItems) {
         const productRef = doc(db, 'products', item.id);
         updateDoc(productRef, {
@@ -164,7 +173,6 @@ export default function CheckoutPage() {
         });
       }
 
-      // Step 4: Email Notification
       const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
       const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
       const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
@@ -234,7 +242,6 @@ export default function CheckoutPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-10 items-start">
-          {/* Shipping Form */}
           <div className="lg:col-span-2 space-y-6 md:space-y-8">
             <Card className="rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white">
               <CardHeader className="bg-[#F8C8DC]/20 p-6 md:p-8 border-b border-primary/10">
@@ -309,7 +316,6 @@ export default function CheckoutPage() {
             </Card>
           </div>
 
-          {/* Order Summary */}
           <div className="lg:col-span-1">
             <Card className="rounded-[2rem] md:rounded-[3rem] border-none shadow-2xl bg-white overflow-hidden sticky top-24 md:top-32">
               <div className="bg-primary/5 p-6 md:p-8 border-b">
@@ -349,11 +355,38 @@ export default function CheckoutPage() {
                     <span className="text-[#D4AF37]">${grandTotal.toFixed(2)}</span>
                   </div>
                 </div>
+
+                {/* Terms Acceptance Checkbox */}
+                <div className="pt-4 flex items-start gap-3 text-start">
+                  <Checkbox 
+                    id="terms" 
+                    checked={agreed} 
+                    onCheckedChange={(val) => setAgreed(val as boolean)}
+                    className="mt-1 border-primary data-[state=checked]:bg-primary"
+                  />
+                  <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer font-medium select-none">
+                    {lang === 'ar' ? (
+                      <>
+                        لقد قرأت وأوافق على {' '}
+                        <Link href="/terms-of-use" target="_blank" className="text-[#D4AF37] font-bold hover:underline inline-flex items-center gap-0.5">شروط الاستخدام <ExternalLink className="h-3 w-3" /></Link>، {' '}
+                        <Link href="/privacy-policy" target="_blank" className="text-[#D4AF37] font-bold hover:underline inline-flex items-center gap-0.5">سياسة الخصوصية <ExternalLink className="h-3 w-3" /></Link>، {' '}
+                        و<Link href="/shipping-returns" target="_blank" className="text-[#D4AF37] font-bold hover:underline inline-flex items-center gap-0.5">سياسة الشحن والترجيع <ExternalLink className="h-3 w-3" /></Link>.
+                      </>
+                    ) : (
+                      <>
+                        I have read and agree to the {' '}
+                        <Link href="/terms-of-use" target="_blank" className="text-[#D4AF37] font-bold hover:underline inline-flex items-center gap-0.5">Terms of Use <ExternalLink className="h-3 w-3" /></Link>, {' '}
+                        <Link href="/privacy-policy" target="_blank" className="text-[#D4AF37] font-bold hover:underline inline-flex items-center gap-0.5">Privacy Policy <ExternalLink className="h-3 w-3" /></Link>, {' '}
+                        and <Link href="/shipping-returns" target="_blank" className="text-[#D4AF37] font-bold hover:underline inline-flex items-center gap-0.5">Shipping & Returns Policy <ExternalLink className="h-3 w-3" /></Link>.
+                      </>
+                    )}
+                  </Label>
+                </div>
                 
                 <Button 
                   onClick={handlePlaceOrder}
-                  disabled={loading || loadingShipping}
-                  className="w-full h-14 md:h-16 rounded-full text-lg md:text-xl font-bold bg-[#D4AF37] hover:bg-[#B8962D] text-white shadow-xl gap-2 mt-2 md:mt-4"
+                  disabled={loading || loadingShipping || !agreed}
+                  className="w-full h-14 md:h-16 rounded-full text-lg md:text-xl font-bold bg-[#D4AF37] hover:bg-[#B8962D] text-white shadow-xl gap-2 mt-2 md:mt-4 disabled:opacity-50"
                 >
                   {loading ? (
                     <div className="flex items-center gap-2">

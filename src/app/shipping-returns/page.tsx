@@ -12,7 +12,8 @@ import {
   ShieldCheck, 
   PackageCheck, 
   DollarSign,
-  AlertCircle
+  AlertCircle,
+  Percent
 } from 'lucide-react';
 
 export default function ShippingReturnsPage() {
@@ -36,6 +37,7 @@ export default function ShippingReturnsPage() {
       items: [
         { label: lang === 'ar' ? 'المدة' : 'Window', content: t.returnWindowContent, icon: Clock },
         { label: lang === 'ar' ? 'الحالة' : 'Condition', content: t.returnConditionContent, icon: PackageCheck },
+        { label: lang === 'ar' ? 'رسوم الإعادة' : 'Restocking Fee', content: t.restockingFeeContent, icon: Percent },
         { label: lang === 'ar' ? 'التكاليف' : 'Costs', content: t.returnCostsContent, icon: AlertCircle }
       ]
     }
