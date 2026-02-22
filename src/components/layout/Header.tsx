@@ -8,7 +8,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/co
 import { useUser, useAuth, useFirestore, useCollection } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
-import { query, collection, orderBy, where } from 'firebase/firestore';
+import { query, collection, orderBy, where, onSnapshot } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import { useTranslation } from '@/hooks/use-translation';
 import { useCart } from '@/context/CartContext';
@@ -18,6 +18,7 @@ const ADMIN_EMAIL = 'mohammad.dd.my@gmail.com';
 const ADMIN_PHONE = '+962780334074';
 
 export default function Header() {
+  const [mounted, setMounted] = useState(false);
   const { user, loading } = useUser();
   const auth = useAuth();
   const db = useFirestore();
@@ -32,19 +33,39 @@ export default function Header() {
   const [showResults, setShowResults] = useState(false);
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
   const searchRef = useRef<HTMLDivElement>(null);
-  const [mounted, setMounted] = useState(false);
 
-  // Scroll visibility logic
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [newOrdersCount, setNewOrdersCount] = useState(0);
 
   useEffect(() => {
     setMounted(true);
-    setIsVisible(true);
-    setLastScrollY(0);
-  }, [pathname]);
+  }, []);
+
+  // Real-time counter for pending orders
+  useEffect(() => {
+    if (!db || !mounted || !user) return;
+    
+    const isAdmin = user.email === ADMIN_EMAIL || user.phoneNumber === ADMIN_PHONE;
+    if (!isAdmin) return;
+
+    const ordersQuery = query(
+      collection(db, 'orders'),
+      where('status', '==', 'pending')
+    );
+
+    const unsubscribe = onSnapshot(ordersQuery, (snapshot) => {
+      setNewOrdersCount(snapshot.size);
+    }, (error) => {
+      console.error("Error listening to orders:", error);
+    });
+
+    return () => unsubscribe();
+  }, [db, mounted, user]);
 
   useEffect(() => {
+    if (!mounted) return;
+    
     const handleScroll = () => {
       const currentScrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
       
@@ -60,7 +81,7 @@ export default function Header() {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
+  }, [mounted, lastScrollY]);
 
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -137,10 +158,8 @@ export default function Header() {
   return (
     <header 
       className={cn(
-        "fixed top-0 left-0 right-0 w-full border-b transition-transform duration-300",
-        "bg-white/80 backdrop-blur-md border-[#D4AF37]/10",
-        "z-[9999]",
-        isVisible ? "translate-y-0" : "-translate-y-full"
+        "fixed top-0 left-0 right-0 w-full border-b transition-transform duration-300 bg-white/80 backdrop-blur-md border-[#D4AF37]/10 z-[9999]",
+        !isVisible && mounted ? "-translate-y-full" : "translate-y-0"
       )}
     >
       <div className="container mx-auto px-4">
@@ -154,7 +173,7 @@ export default function Header() {
                   <Menu className="h-5 w-5 md:h-6 md:w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side={lang === 'ar' ? 'right' : 'left'} className="w-[85%] sm:w-[350px] bg-white border-primary/10 flex flex-col z-[10000]">
+              <SheetContent side={mounted && lang === 'ar' ? 'right' : 'left'} className="w-[85%] sm:w-[350px] bg-white border-primary/10 flex flex-col z-[10000]">
                 <SheetHeader className="pb-6 border-b">
                   <SheetTitle className="text-primary text-start font-headline text-xl md:text-2xl font-black">
                     HarirBoutiqueUSA
@@ -162,12 +181,12 @@ export default function Header() {
                 </SheetHeader>
                 
                 <nav className="flex flex-col gap-1 mt-6 text-start flex-1 overflow-y-auto">
-                  <p className="text-[10px] md:text-xs font-bold text-muted-foreground mb-3 uppercase tracking-widest">{t.shopByCategory}</p>
+                  <p className="text-[10px] md:text-xs font-bold text-muted-foreground mb-3 uppercase tracking-widest">{mounted ? t.shopByCategory : '...'}</p>
                   <button
                     onClick={() => navigateTo('/products')}
                     className="text-base md:text-lg font-bold hover:text-primary py-2 md:py-3 px-3 md:px-4 rounded-xl md:rounded-2xl hover:bg-primary/5 transition-all flex items-center justify-between group text-start"
                   >
-                    <span>{t.allProducts}</span>
+                    <span>{mounted ? t.allProducts : '...'}</span>
                   </button>
                   {categories?.map((cat: any) => (
                     <button
@@ -175,7 +194,7 @@ export default function Header() {
                       onClick={() => navigateTo(`/category/${cat.slug}`)}
                       className="text-base md:text-lg font-bold hover:text-primary py-2 md:py-3 px-3 md:px-4 rounded-xl md:rounded-2xl hover:bg-primary/5 transition-all flex items-center justify-between group text-start"
                     >
-                      <span>{lang === 'ar' ? cat.nameAr : (cat.nameEn || cat.slug.charAt(0).toUpperCase() + cat.slug.slice(1))}</span>
+                      <span>{mounted && lang === 'ar' ? cat.nameAr : (cat.nameEn || cat.slug.charAt(0).toUpperCase() + cat.slug.slice(1))}</span>
                     </button>
                   ))}
                   
@@ -191,9 +210,16 @@ export default function Header() {
                         </button>
                         <button 
                           onClick={() => navigateTo('/admin/orders')}
-                          className="w-full text-base md:text-lg font-black text-[#D4AF37] py-2 md:py-3 px-3 md:px-4 rounded-xl md:rounded-2xl bg-[#D4AF37]/5 flex items-center gap-2 justify-start hover:bg-[#D4AF37]/10"
+                          className="w-full text-base md:text-lg font-black text-[#D4AF37] py-2 md:py-3 px-3 md:px-4 rounded-xl md:rounded-2xl bg-[#D4AF37]/5 flex items-center justify-between group hover:bg-[#D4AF37]/10"
                         >
-                          <ClipboardList className="h-4 w-4 md:h-5 md:w-5" /> {t.manageOrders}
+                          <div className="flex items-center gap-2">
+                            <ClipboardList className="h-4 w-4 md:h-5 md:w-5" /> {t.manageOrders}
+                          </div>
+                          {newOrdersCount > 0 && (
+                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[10px] font-black text-white shadow-md animate-in zoom-in duration-300">
+                              {newOrdersCount}
+                            </span>
+                          )}
                         </button>
                         <button 
                           onClick={() => navigateTo('/admin/shipping')}
@@ -241,7 +267,7 @@ export default function Header() {
               <Search className="absolute start-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-[#D4AF37] transition-colors" />
               <input
                 type="text"
-                placeholder={t.search}
+                placeholder={mounted ? t.search : '...'}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -263,7 +289,7 @@ export default function Header() {
                 </button>
               )}
 
-              {showResults && searchQuery.length > 0 && (
+              {mounted && showResults && searchQuery.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-3 bg-white rounded-2xl shadow-2xl border border-primary/5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 z-[10000]">
                   <div className="p-3 border-b bg-primary/5">
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2">
@@ -348,12 +374,12 @@ export default function Header() {
         </div>
 
         {/* Mobile Search Input Expansion */}
-        {mobileSearchOpen && (
+        {mounted && mobileSearchOpen && (
           <div className="lg:hidden pb-4 px-1 animate-in slide-in-from-top duration-300">
             <div className="relative">
               <input
                 type="text"
-                placeholder={t.search}
+                placeholder={mounted ? t.search : '...'}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
