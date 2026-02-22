@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -32,12 +33,14 @@ export default function Header() {
   const [showResults, setShowResults] = useState(false);
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
   const searchRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
 
   // Scroll visibility logic
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {
+    setMounted(true);
     setIsVisible(true);
     setLastScrollY(0);
   }, [pathname]);
@@ -132,6 +135,9 @@ export default function Header() {
     }
   };
 
+  // Prevent hydration error by waiting for mount
+  if (!mounted) return null;
+
   return (
     <header 
       className={cn(
@@ -145,7 +151,7 @@ export default function Header() {
         <div className="flex h-16 md:h-20 items-center justify-between gap-4">
           
           {/* Left Section: Menu + Logo */}
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5 h-9 w-9 md:h-10 md:w-10">
@@ -233,40 +239,36 @@ export default function Header() {
             </Link>
           </div>
 
-          {/* Right Section: Search, Language, Cart, Profile */}
-          <div className="flex items-center gap-1 sm:gap-3">
-            
-            {/* Desktop Search Bar */}
-            <div className="hidden lg:flex items-center relative mx-2" ref={searchRef}>
-              <form onSubmit={handleSearchSubmit} className="relative group">
-                <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-[#D4AF37] transition-colors" />
-                <input
-                  type="text"
-                  placeholder={t.search}
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setShowResults(true);
+          {/* Middle Section: Expansive Search Bar */}
+          <div className="hidden lg:flex flex-1 items-center justify-center max-w-xl mx-auto px-4" ref={searchRef}>
+            <form onSubmit={handleSearchSubmit} className="relative group w-full">
+              <Search className="absolute start-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-[#D4AF37] transition-colors" />
+              <input
+                type="text"
+                placeholder={t.search}
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setShowResults(true);
+                }}
+                onFocus={() => setShowResults(true)}
+                className="w-full h-10 ps-11 pe-10 rounded-full border-2 border-[#F8C8DC] bg-white text-sm focus:outline-none focus:border-[#D4AF37] transition-all shadow-sm"
+              />
+              {searchQuery && (
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setShowResults(false);
                   }}
-                  onFocus={() => setShowResults(true)}
-                  className="w-32 xl:w-48 h-9 ps-9 pe-8 rounded-full border-2 border-[#F8C8DC] bg-white text-sm focus:outline-none focus:border-[#D4AF37] transition-all shadow-sm"
-                />
-                {searchQuery && (
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      setSearchQuery('');
-                      setShowResults(false);
-                    }}
-                    className="absolute end-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                )}
-              </form>
+                  className="absolute end-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
 
               {showResults && searchQuery.length > 0 && (
-                <div className="absolute top-full right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl border border-primary/5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 z-[10000]">
+                <div className="absolute top-full left-0 right-0 mt-3 bg-white rounded-2xl shadow-2xl border border-primary/5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 z-[10000]">
                   <div className="p-3 border-b bg-primary/5">
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2">
                       {filteredProducts.length > 0 ? t.latestProducts : t.noProductsFound}
@@ -276,6 +278,7 @@ export default function Header() {
                     {filteredProducts.map((product) => (
                       <button
                         key={product.id}
+                        type="button"
                         onClick={() => navigateTo(`/product/${product.id}`)}
                         className="w-full flex items-center gap-3 p-3 hover:bg-primary/5 transition-all group text-start"
                       >
@@ -291,8 +294,12 @@ export default function Header() {
                   </div>
                 </div>
               )}
-            </div>
+            </form>
+          </div>
 
+          {/* Right Section: Language, Cart, Profile */}
+          <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
+            
             {/* Language Toggle Button */}
             <Button 
               onClick={toggleLang}
@@ -374,7 +381,7 @@ export default function Header() {
                     onClick={() => navigateTo(`/product/${product.id}`)}
                     className="w-full flex items-center gap-3 p-3 hover:bg-primary/5 border-b last:border-0 text-start"
                   >
-                    <img src={product.imageUrl} className="h-10 w-10 rounded-lg object-cover" />
+                    <img src={product.imageUrl} className="h-10 w-10 rounded-lg object-cover" alt={product.name} />
                     <div className="flex-1">
                       <p className="text-xs font-bold line-clamp-1">{lang === 'ar' ? product.name : (product.nameEn || product.name)}</p>
                       <p className="text-[10px] text-muted-foreground">${product.price?.toFixed(2)}</p>
