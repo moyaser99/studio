@@ -6,6 +6,7 @@ const categoryMapping: Record<string, string> = {
   'مكياج': 'Makeup',
   'المكياج': 'Makeup',
   'العناية بالبشرة': 'Skincare',
+  'العناية بالبشرة': 'Skincare',
   'العناية بالشعر': 'Haircare',
   'الفيتامينات': 'Vitamins',
   'الحقائب': 'Bags',
@@ -224,6 +225,12 @@ const translations = {
     privacyCCPAContent: 'يحق للمقيمين في ولاية كاليفورنيا الوصول إلى المعلومات الشخصية التي نحتفظ بها، وطلب تصحيحها أو تحديثها أو حذفها.',
     privacyCOPPATitle: '5. حماية الأطفال (COPPA)',
     privacyCOPPAContent: 'لا يقوم متجر HarirBoutiqueUSA بجمع أي معلومات شخصية من الأطفال دون سن 13 عاماً بشكل متعمد.',
+    privacyCookiesTitle: '6. ملفات تعريف الارتباط (Cookies)',
+    privacyCookiesContent: 'نحن نستخدم ملفات تعريف الارتباط لتحسين تجربة التصفح وتذكر تفضيلاتك وسلة التسوق الخاصة بك لضمان تجربة تسوق سلسة وفاخرة.',
+    privacyThirdPartyTitle: '7. مشاركة البيانات مع أطراف ثالثة',
+    privacyThirdPartyContent: 'نحن نستخدم خدمات Google Firebase لإدارة المصادقة وقواعد البيانات والتخزين بشكل آمن. نؤكد أننا لا نبيع بياناتك الشخصية لأي جهات تسويقية خارجية.',
+    privacyContactTitle: '8. معلومات التواصل',
+    privacyContactContent: 'إذا كان لديك أي أسئلة حول سياسة الخصوصية هذه، يرجى التواصل معنا عبر البريد الإلكتروني المخصص للدعم: support@harirboutiqueusa.com',
   },
   en: {
     home: 'Home',
@@ -433,6 +440,12 @@ const translations = {
     privacyCCPAContent: 'Residents of California have the right to access the personal information we hold about them, and to ask that their personal information be corrected, updated, or deleted.',
     privacyCOPPATitle: '5. Children\'s Privacy (COPPA)',
     privacyCOPPAContent: 'HarirBoutiqueUSA does not knowingly collect any personal information from children under the age of 13.',
+    privacyCookiesTitle: '6. Cookies',
+    privacyCookiesContent: 'We use cookies to enhance your browsing experience, remember your preferences, and manage your shopping cart to ensure a seamless and luxury shopping experience.',
+    privacyThirdPartyTitle: '7. Third-party Data Sharing',
+    privacyThirdPartyContent: 'We use Google Firebase to securely manage authentication, databases, and storage. We do not sell your personal data to any third-party marketers.',
+    privacyContactTitle: '8. Contact Information',
+    privacyContactContent: 'If you have any questions about this Privacy Policy, please contact us at our dedicated support email: support@harirboutiqueusa.com',
   }
 };
 
