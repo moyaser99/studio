@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -26,7 +25,7 @@ export default function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const { t, lang, toggleLang, getTranslatedCategory } = useTranslation();
+  const { t, lang, toggleLang } = useTranslation();
   const { totalItems } = useCart();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -135,9 +134,6 @@ export default function Header() {
     }
   };
 
-  // Prevent hydration error by waiting for mount
-  if (!mounted) return null;
-
   return (
     <header 
       className={cn(
@@ -183,7 +179,7 @@ export default function Header() {
                     </button>
                   ))}
                   
-                  {isAdmin && (
+                  {mounted && isAdmin && (
                     <div className="mt-6 pt-6 border-t">
                       <p className="text-[10px] md:text-xs font-bold text-primary mb-3 uppercase tracking-widest">{t.administration}</p>
                       <div className="space-y-2">
@@ -211,7 +207,7 @@ export default function Header() {
                 </nav>
 
                 <div className="mt-auto pt-6 border-t space-y-3 pb-6">
-                  {user ? (
+                  {mounted && user ? (
                     <Button 
                       variant="ghost" 
                       onClick={handleLogout} 
@@ -219,7 +215,7 @@ export default function Header() {
                     >
                       <LogOut className="h-4 w-4 md:h-5 md:w-5" /> {t.logout}
                     </Button>
-                  ) : (
+                  ) : mounted ? (
                     <Button 
                       variant="default" 
                       onClick={() => navigateTo('/login')} 
@@ -227,7 +223,7 @@ export default function Header() {
                     >
                       <LogIn className="h-4 w-4 md:h-5 md:w-5" /> {t.login}
                     </Button>
-                  )}
+                  ) : null}
                 </div>
               </SheetContent>
             </Sheet>
@@ -308,7 +304,7 @@ export default function Header() {
               variant="ghost"
             >
               <Globe className="h-3.5 w-3.5 text-[#D4AF37]" />
-              {t.langToggle}
+              {mounted ? t.langToggle : '...'}
             </Button>
 
             {/* Mobile Search Toggle */}
@@ -325,7 +321,7 @@ export default function Header() {
             <Link href="/cart">
               <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-primary/5 h-8 w-8 sm:h-9 sm:w-9">
                 <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 text-[#D4AF37]" />
-                {totalItems > 0 && (
+                {mounted && totalItems > 0 && (
                   <span 
                     key={totalItems}
                     className="absolute -top-0.5 -right-0.5 h-4 w-4 bg-[#D4AF37] text-white text-[8px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-sm"
@@ -337,12 +333,12 @@ export default function Header() {
             </Link>
 
             {/* User Profile Icon */}
-            {loading ? (
+            {mounted && loading ? (
               <div className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <Link href={user ? "/profile-completion" : "/login"}>
+              <Link href={mounted && user ? "/profile-completion" : "/login"}>
                 <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5 h-8 w-8 sm:h-9 sm:w-9">
                   <User className="h-4 w-4 sm:h-5 sm:w-5 text-[#D4AF37]" />
                 </Button>

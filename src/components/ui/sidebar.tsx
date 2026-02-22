@@ -654,6 +654,7 @@ const SidebarMenuSkeleton = React.forwardRef<
   const [width, setWidth] = React.useState("70%")
 
   React.useEffect(() => {
+    // We only set a random width after mount to ensure structural stability during hydration
     setWidth(`${Math.floor(Math.random() * 40) + 50}%`)
   }, [])
 
