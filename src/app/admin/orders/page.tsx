@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -49,7 +50,8 @@ import {
   Search,
   X,
   PackageSearch,
-  Printer
+  Printer,
+  ShieldCheck
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
@@ -259,7 +261,7 @@ export default function AdminOrdersPage() {
             </tbody>
           </table>
 
-          <div className="flex justify-end">
+          <div className="flex justify-end mb-10">
             <div className="w-64 space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">{t.subtotal}</span>
@@ -275,6 +277,14 @@ export default function AdminOrdersPage() {
                 <span className="text-primary">${printingOrder.totalPrice?.toFixed(2)}</span>
               </div>
             </div>
+          </div>
+
+          {/* Consent Documentation Note */}
+          <div className="bg-muted/20 p-4 rounded-xl border border-dashed flex items-center gap-3 text-start mb-10">
+            <ShieldCheck className="h-5 w-5 text-[#D4AF37]" />
+            <p className="text-[10px] text-muted-foreground italic font-medium">
+              {t.orderConsentNote}
+            </p>
           </div>
 
           <div className="mt-20 pt-10 border-t border-dashed text-center space-y-2">
@@ -430,6 +440,15 @@ export default function AdminOrdersPage() {
                                     <span>{t.total}</span>
                                     <span className="text-[#D4AF37]">${order.totalPrice?.toFixed(2)}</span>
                                   </div>
+                                  
+                                  {/* Legal Consent Tracking */}
+                                  <div className="mt-4 pt-4 border-t border-dashed flex items-center gap-2 text-muted-foreground">
+                                    <ShieldCheck className="h-4 w-4 text-[#D4AF37]" />
+                                    <p className="text-[10px] italic">
+                                      {t.orderConsentNote}
+                                    </p>
+                                  </div>
+                                  
                                   <p className="text-sm text-muted-foreground text-start mt-2">
                                     {lang === 'ar' ? 'طريقة الدفع: الدفع عند الاستلام' : 'Payment Method: Cash on Delivery'}
                                   </p>

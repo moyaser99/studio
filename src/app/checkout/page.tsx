@@ -120,6 +120,7 @@ export default function CheckoutPage() {
     setLoading(true);
 
     try {
+      // Check stock first
       for (const item of cartItems) {
         const productRef = doc(db, 'products', item.id);
         const productSnap = await getDoc(productRef);
@@ -161,53 +162,72 @@ export default function CheckoutPage() {
         status: 'pending',
         paymentMethod: 'Cash on Delivery',
         createdAt: serverTimestamp(),
-        userId: user?.uid || 'guest'
+        userId: user?.uid || 'guest',
+        legal_consent: {
+          agreedToTerms: true,
+          version: 'Feb-2026-v1',
+          timestamp: serverTimestamp()
+        }
       };
 
-      const orderRef = await addDoc(collection(db, 'orders'), orderData);
+      // Add order
+      addDoc(collection(db, 'orders'), orderData)
+        .then((orderRef) => {
+          // Update stock for each item
+          cartItems.forEach(item => {
+            const productRef = doc(db, 'products', item.id);
+            updateDoc(productRef, {
+              stock: increment(-item.quantity)
+            }).catch(async () => {
+              errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: productRef.path,
+                operation: 'update',
+                requestResourceData: { stock: increment(-item.quantity) }
+              }));
+            });
+          });
 
-      for (const item of cartItems) {
-        const productRef = doc(db, 'products', item.id);
-        updateDoc(productRef, {
-          stock: increment(-item.quantity)
+          // EmailJS Integration
+          const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
+          const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
+          const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
+
+          if (serviceId && templateId && publicKey) {
+            emailjs.init(publicKey);
+            const orderDetailsString = cartItems
+              .map(item => `${lang === 'ar' ? item.name : (item.nameEn || item.name)} (x${item.quantity})`)
+              .join(', ');
+
+            const templateParams = {
+              order_id: orderRef.id,
+              customer_name: formData.fullName,
+              customer_phone: finalPhone,
+              total_price: grandTotal.toFixed(2),
+              order_details: orderDetailsString,
+            };
+
+            emailjs.send(serviceId, templateId, templateParams, publicKey)
+              .catch(err => console.error('EmailJS failure:', err));
+          }
+
+          toast({
+            title: lang === 'ar' ? 'شكراً لك' : 'Thank You',
+            description: lang === 'ar' ? 'تم استلام طلبك بنجاح' : 'Your order has been received.',
+          });
+          
+          clearCart();
+          router.push('/checkout/success');
+        })
+        .catch(async (err) => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: 'orders',
+            operation: 'create',
+            requestResourceData: orderData
+          }));
+          setLoading(false);
         });
-      }
-
-      const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
-      const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
-      const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
-
-      if (serviceId && templateId && publicKey) {
-        emailjs.init(publicKey);
-        const orderDetailsString = cartItems
-          .map(item => `${lang === 'ar' ? item.name : (item.nameEn || item.name)} (x${item.quantity})`)
-          .join(', ');
-
-        const templateParams = {
-          order_id: orderRef.id,
-          customer_name: formData.fullName,
-          customer_phone: finalPhone,
-          total_price: grandTotal.toFixed(2),
-          order_details: orderDetailsString,
-        };
-
-        emailjs.send(serviceId, templateId, templateParams, publicKey)
-          .catch(err => console.error('EmailJS failure:', err));
-      }
-
-      toast({
-        title: lang === 'ar' ? 'شكراً لك' : 'Thank You',
-        description: lang === 'ar' ? 'تم استلام طلبك بنجاح' : 'Your order has been received.',
-      });
-      
-      clearCart();
-      router.push('/checkout/success');
 
     } catch (err: any) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: 'orders',
-        operation: 'create',
-      }));
       setLoading(false);
     }
   };

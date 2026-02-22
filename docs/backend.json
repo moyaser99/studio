@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Product": {
@@ -192,7 +193,15 @@
         },
         "paymentMethod": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
-        "userId": { "type": "string" }
+        "userId": { "type": "string" },
+        "legal_consent": {
+          "type": "object",
+          "properties": {
+            "agreedToTerms": { "type": "boolean" },
+            "version": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" }
+          }
+        }
       }
     }
   },

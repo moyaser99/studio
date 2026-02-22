@@ -6,7 +6,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { useTranslation } from '@/hooks/use-translation';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, ShoppingBag, ArrowLeft, ArrowRight } from 'lucide-react';
+import { CheckCircle2, ShoppingBag, ArrowLeft, ArrowRight, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 
 export default function OrderSuccessPage() {
@@ -30,6 +30,14 @@ export default function OrderSuccessPage() {
               {lang === 'ar' 
                 ? 'تم استلام طلبك بنجاح. سنقوم بالتواصل معك قريباً لتأكيد الشحن.' 
                 : 'Your order has been successfully placed. We will contact you soon to confirm shipping.'}
+            </p>
+          </div>
+
+          {/* Legal Consent Note */}
+          <div className="bg-[#D4AF37]/5 p-4 rounded-2xl border border-[#D4AF37]/20 flex items-center gap-3 justify-center">
+            <ShieldCheck className="h-5 w-5 text-[#D4AF37] shrink-0" />
+            <p className="text-[10px] md:text-xs text-[#D4AF37] font-bold text-start leading-relaxed">
+              {t.orderConsentNote}
             </p>
           </div>
 
