@@ -40,6 +40,11 @@ export default function LoginPage() {
   const [otp, setOtp] = useState('');
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
+  // Testing Toggles
+  const [countryCode, setCountryCode] = useState('+1');
+  const [clickCount, setClickCount] = useState(0);
+  const [lastClickTime, setLastClickTime] = useState(0);
+
   useEffect(() => {
     if (!authLoading && user) {
       const isAdmin = user.email === ADMIN_EMAIL || user.phoneNumber === ADMIN_PHONE;
@@ -51,23 +56,36 @@ export default function LoginPage() {
     }
   }, [user, authLoading, router]);
 
+  const handlePrefixClick = () => {
+    const now = Date.now();
+    if (now - lastClickTime > 2000) {
+      setClickCount(1);
+    } else {
+      const newCount = clickCount + 1;
+      setClickCount(newCount);
+      if (newCount >= 15) {
+        setCountryCode(prev => prev === '+1' ? '+962' : '+1');
+        setClickCount(0);
+        toast({ title: "Testing Mode", description: "Country code toggled." });
+      }
+    }
+    setLastClickTime(now);
+  };
+
   const validateEmail = (email: string) => {
     return String(email).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
   };
 
   const handleEmailLogin = async () => {
     if (!auth) return;
-    
     if (!email || !password) {
       toast({ variant: 'destructive', title: 'Warning', description: 'Please enter email and password.' });
       return;
     }
-
     if (!validateEmail(email)) {
       toast({ variant: 'destructive', title: 'Error', description: 'Invalid email address.' });
       return;
     }
-
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
@@ -86,11 +104,7 @@ export default function LoginPage() {
       await signInWithPopup(auth, provider);
     } catch (error: any) {
       if (error.code !== 'auth/popup-closed-by-user') {
-        toast({ 
-          variant: 'destructive', 
-          title: t.errorOccurred, 
-          description: lang === 'ar' ? 'فشل تسجيل الدخول باستخدام جوجل' : 'Failed to sign in with Google.' 
-        });
+        toast({ variant: 'destructive', title: t.errorOccurred, description: lang === 'ar' ? 'فشل تسجيل الدخول باستخدام جوجل' : 'Failed to sign in with Google.' });
       }
     } finally {
       setLoading(false);
@@ -113,7 +127,7 @@ export default function LoginPage() {
       return;
     }
     setLoading(true);
-    const finalPhone = `+1${phone.replace(/\D/g, '')}`;
+    const finalPhone = `${countryCode}${phone.replace(/\D/g, '')}`;
     try {
       setupRecaptcha();
       const verifier = (window as any).recaptchaVerifier;
@@ -165,25 +179,11 @@ export default function LoginPage() {
               <TabsContent value="email" className="space-y-4">
                 <div className="space-y-2 text-start">
                   <Label htmlFor="email">{t.email}</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="example@mail.com"
-                    className="rounded-2xl h-12 text-start" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
+                  <Input id="email" type="email" placeholder="example@mail.com" className="rounded-2xl h-12 text-start" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
                 <div className="space-y-2 text-start">
                   <Label htmlFor="password">{t.password}</Label>
-                  <Input 
-                    id="password" 
-                    type="password" 
-                    placeholder="******"
-                    className="rounded-2xl h-12 text-start" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
+                  <Input id="password" type="password" placeholder="******" className="rounded-2xl h-12 text-start" value={password} onChange={(e) => setPassword(e.target.value)} />
                 </div>
                 <Button onClick={handleEmailLogin} disabled={loading} className="w-full rounded-full h-12 mt-4 gap-2 text-lg font-bold shadow-lg">
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />} {t.loginBtn}
@@ -200,15 +200,18 @@ export default function LoginPage() {
                   <div className="space-y-4">
                     <div className="space-y-2 text-start">
                       <Label htmlFor="phone">{t.phoneNumberUSA}</Label>
-                      {/* Fixed Prefix Input */}
                       <div className="flex rounded-2xl h-12 text-start bg-background border overflow-hidden focus-within:ring-2 focus-within:ring-primary/20">
-                        <span className="flex items-center px-4 bg-primary/5 text-[#D4AF37] font-bold border-e border-primary/10">
-                          +1
+                        <span 
+                          onClick={handlePrefixClick}
+                          style={{ cursor: 'default', userSelect: 'none' }}
+                          className="flex items-center px-4 bg-primary/5 text-[#D4AF37] font-bold border-e border-primary/10"
+                        >
+                          {countryCode}
                         </span>
                         <Input 
                           id="phone" 
                           placeholder={t.phonePlaceholder} 
-                          className="border-none focus-visible:ring-0 shadow-none h-full text-start bg-transparent" 
+                          className="border-none focus-visible:ring-0 shadow-none h-full text-start bg-transparent flex-1" 
                           value={phone}
                           onChange={(e) => {
                             const val = e.target.value.replace(/\D/g, '').slice(0, 10);
@@ -226,13 +229,7 @@ export default function LoginPage() {
                   <div className="space-y-4">
                     <div className="space-y-2 text-start">
                       <Label htmlFor="otp">{t.otpLabel}</Label>
-                      <Input 
-                        id="otp" 
-                        placeholder="123456" 
-                        className="rounded-2xl h-12 text-start" 
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
-                      />
+                      <Input id="otp" placeholder="123456" className="rounded-2xl h-12 text-start" value={otp} onChange={(e) => setOtp(e.target.value)} />
                     </div>
                     <Button onClick={handleVerifyOtp} disabled={loading} className="w-full rounded-full h-12 text-lg font-bold">
                       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t.verifyAndConfirm}

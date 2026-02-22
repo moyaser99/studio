@@ -42,10 +42,11 @@ export default function ProfileCompletionPage() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      // Remove +1 prefix for UI display if it exists in DB
       let displayPhone = profile?.phoneNumber || user.phoneNumber || '';
       if (displayPhone.startsWith('+1')) {
         displayPhone = displayPhone.substring(2);
+      } else if (displayPhone.startsWith('+962')) {
+        displayPhone = displayPhone.substring(4);
       }
       
       setFormData({
@@ -61,7 +62,9 @@ export default function ProfileCompletionPage() {
     if (!db || !user) return;
 
     setSaving(true);
-    const finalPhone = `+1${formData.phoneNumber.replace(/\D/g, '')}`;
+    // Detection of current country code based on what was loaded or default to +1
+    const prefix = (profile?.phoneNumber?.startsWith('+962')) ? '+962' : '+1';
+    const finalPhone = `${prefix}${formData.phoneNumber.replace(/\D/g, '')}`;
 
     try {
       if (formData.phoneNumber) {
@@ -81,11 +84,7 @@ export default function ProfileCompletionPage() {
         const duplicate = querySnapshot.docs.find(doc => doc.id !== user.uid);
         
         if (duplicate) {
-          toast({ 
-            variant: 'destructive', 
-            title: 'Phone in use', 
-            description: t.phoneInUse 
-          });
+          toast({ variant: 'destructive', title: 'Phone in use', description: t.phoneInUse });
           setSaving(false);
           return;
         }
@@ -104,6 +103,9 @@ export default function ProfileCompletionPage() {
       
       setDoc(targetDocRef, profileData, { merge: true })
         .then(() => {
+          // Persistence for Checkout auto-population
+          localStorage.setItem('harir-delivery-info', JSON.stringify(profileData));
+          
           toast({ title: "Success", description: t.profileUpdated });
           router.push('/');
         })
@@ -145,9 +147,7 @@ export default function ProfileCompletionPage() {
               {hasExistingData ? t.profileTitleEdit : t.profileTitle}
             </CardTitle>
             <p className="text-muted-foreground mt-2 px-6 text-lg text-start">
-              {hasExistingData 
-                ? t.profileSubtitleEdit 
-                : t.profileSubtitle}
+              {hasExistingData ? t.profileSubtitleEdit : t.profileSubtitle}
             </p>
           </CardHeader>
           <CardContent className="p-10">
@@ -170,10 +170,9 @@ export default function ProfileCompletionPage() {
                 <Label htmlFor="phone" className="font-bold flex items-center gap-2 justify-start text-lg">
                    {t.phoneLogin} <Phone className="h-4 w-4 text-primary" />
                 </Label>
-                {/* Fixed Prefix Input */}
                 <div className="flex rounded-2xl h-14 text-start bg-muted/30 border-none overflow-hidden focus-within:ring-2 focus-within:ring-primary/20">
-                  <span className="flex items-center px-4 bg-primary/5 text-[#D4AF37] font-bold border-e border-primary/10">
-                    +1
+                  <span className="flex items-center px-4 bg-primary/5 text-[#D4AF37] font-bold border-e border-primary/10 select-none cursor-default">
+                    {(profile?.phoneNumber?.startsWith('+962')) ? '+962' : '+1'}
                   </span>
                   <Input 
                     id="phone" 
@@ -204,13 +203,7 @@ export default function ProfileCompletionPage() {
               </div>
 
               <Button disabled={saving} type="submit" className="w-full h-16 rounded-full text-xl font-bold shadow-xl mt-6">
-                {saving ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-6 w-6 animate-spin" /> ...
-                  </div>
-                ) : (
-                  hasExistingData ? t.saveChanges : t.saveAndContinue
-                )}
+                {saving ? <Loader2 className="h-6 w-6 animate-spin" /> : (hasExistingData ? t.saveChanges : t.saveAndContinue)}
               </Button>
             </form>
           </CardContent>

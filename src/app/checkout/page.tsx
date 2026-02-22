@@ -87,6 +87,44 @@ export default function CheckoutPage() {
 
   const [dynamicRates, setDynamicRates] = useState<Record<string, number>>(DEFAULT_US_STATES);
 
+  // Sync data from localStorage and Auth Provider
+  useEffect(() => {
+    // 1. Check if user is logged in via Phone
+    if (user) {
+      const isPhoneAuth = user.providerData.some(p => p.providerId === 'phone');
+      if (isPhoneAuth) {
+        setIsVerified(true);
+        // Strip prefix for input display
+        let cleanPhone = user.phoneNumber || '';
+        if (cleanPhone.startsWith('+1')) {
+          setCountryCode('+1');
+          cleanPhone = cleanPhone.substring(2);
+        } else if (cleanPhone.startsWith('+962')) {
+          setCountryCode('+962');
+          cleanPhone = cleanPhone.substring(4);
+        }
+        setFormData(prev => ({ ...prev, phone: cleanPhone, fullName: user.displayName || prev.fullName }));
+      }
+    }
+
+    // 2. Load from localStorage if not already set
+    const savedProfile = localStorage.getItem('harir-delivery-info');
+    if (savedProfile) {
+      try {
+        const parsed = JSON.parse(savedProfile);
+        setFormData(prev => ({
+          ...prev,
+          fullName: prev.fullName || parsed.fullName || '',
+          phone: prev.phone || parsed.phoneNumber?.replace(/^\+\d+/, '') || '',
+          address: prev.address || parsed.address || ''
+        }));
+        if (parsed.phoneNumber?.startsWith('+962')) setCountryCode('+962');
+      } catch (e) {
+        console.error("Failed to sync profile data", e);
+      }
+    }
+  }, [user]);
+
   const shippingRef = useMemoFirebase(() => {
     if (!db) return null;
     return doc(db, 'siteSettings', 'shipping');
@@ -106,7 +144,6 @@ export default function CheckoutPage() {
     }
   }, [shippingData]);
 
-  // Hidden Jordan Trigger Logic
   const handlePrefixClick = () => {
     const now = Date.now();
     if (now - lastClickTime > 2000) {
@@ -176,53 +213,31 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async () => {
     if (!formData.fullName || !formData.phone || !formData.state || !formData.address) {
-      toast({
-        variant: "destructive",
-        title: t.errorOccurred,
-        description: t.completeFields
-      });
+      toast({ variant: "destructive", title: t.errorOccurred, description: t.completeFields });
       return;
     }
 
     if (!agreed) {
-      toast({
-        variant: "destructive",
-        title: t.errorOccurred,
-        description: lang === 'ar' ? 'يرجى الموافقة على الشروط والسياسات' : 'Please agree to terms and policies'
-      });
+      toast({ variant: "destructive", title: t.errorOccurred, description: lang === 'ar' ? 'يرجى الموافقة على الشروط والسياسات' : 'Please agree to terms and policies' });
       return;
     }
 
     if (!isVerified) {
-      toast({
-        variant: "destructive",
-        title: t.errorOccurred,
-        description: lang === 'ar' ? 'يرجى التحقق من رقم الهاتف أولاً' : 'Please verify your phone number first'
-      });
+      toast({ variant: "destructive", title: t.errorOccurred, description: lang === 'ar' ? 'يرجى التحقق من رقم الهاتف أولاً' : 'Please verify your phone number first' });
       return;
     }
 
     if (!db) return;
-
     setLoading(true);
 
     try {
-      // Check stock first
       for (const item of cartItems) {
         const productRef = doc(db, 'products', item.id);
         const productSnap = await getDoc(productRef);
-        
         if (productSnap.exists()) {
           const productData = productSnap.data();
-          const currentStock = productData.stock || 0;
-          
-          if (currentStock < item.quantity) {
-            toast({
-              variant: "destructive",
-              title: lang === 'ar' ? 'عذراً' : 'Sorry',
-              description: `${lang === 'ar' ? item.name : (item.nameEn || item.name)}: ${t.outOfStockError}`,
-              duration: 5000,
-            });
+          if ((productData.stock || 0) < item.quantity) {
+            toast({ variant: "destructive", title: lang === 'ar' ? 'عذراً' : 'Sorry', description: `${lang === 'ar' ? item.name : (item.nameEn || item.name)}: ${t.outOfStockError}` });
             setLoading(false);
             return;
           }
@@ -237,83 +252,46 @@ export default function CheckoutPage() {
           city: formData.state,
           address: formData.address
         },
-        items: cartItems.map(item => ({
-          id: item.id,
-          name: item.name,
-          nameEn: item.nameEn || '',
-          price: item.price,
-          quantity: item.quantity
-        })),
+        items: cartItems.map(item => ({ id: item.id, name: item.name, nameEn: item.nameEn || '', price: item.price, quantity: item.quantity })),
         totalPrice: grandTotal,
         shippingFee: shippingFee,
         status: 'pending',
         paymentMethod: 'Cash on Delivery',
         createdAt: serverTimestamp(),
         userId: user?.uid || 'guest',
-        legal_consent: {
-          agreedToTerms: true,
-          version: 'Feb-2026-v1',
-          timestamp: serverTimestamp()
-        }
+        legal_consent: { agreedToTerms: true, version: 'Feb-2026-v1', timestamp: serverTimestamp() }
       };
 
-      // Add order
       addDoc(collection(db, 'orders'), orderData)
         .then((orderRef) => {
-          // Update stock for each item
           cartItems.forEach(item => {
             const productRef = doc(db, 'products', item.id);
-            updateDoc(productRef, {
-              stock: increment(-item.quantity)
-            }).catch(async () => {
-              errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: productRef.path,
-                operation: 'update',
-                requestResourceData: { stock: increment(-item.quantity) }
-              }));
-            });
+            updateDoc(productRef, { stock: increment(-item.quantity) });
           });
 
-          // EmailJS Integration
+          // EmailJS
           const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
           const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
           const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
-
           if (serviceId && templateId && publicKey) {
             emailjs.init(publicKey);
-            const orderDetailsString = cartItems
-              .map(item => `${lang === 'ar' ? item.name : (item.nameEn || item.name)} (x${item.quantity})`)
-              .join(', ');
-
-            const templateParams = {
+            emailjs.send(serviceId, templateId, {
               order_id: orderRef.id,
               customer_name: formData.fullName,
               customer_phone: finalPhone,
               total_price: grandTotal.toFixed(2),
-              order_details: orderDetailsString,
-            };
-
-            emailjs.send(serviceId, templateId, templateParams, publicKey)
-              .catch(err => console.error('EmailJS failure:', err));
+              order_details: cartItems.map(item => `${item.name} (x${item.quantity})`).join(', ')
+            }, publicKey);
           }
 
-          toast({
-            title: lang === 'ar' ? 'شكراً لك' : 'Thank You',
-            description: lang === 'ar' ? 'تم استلام طلبك بنجاح' : 'Your order has been received.',
-          });
-          
+          toast({ title: lang === 'ar' ? 'شكراً لك' : 'Thank You', description: lang === 'ar' ? 'تم استلام طلبك بنجاح' : 'Your order has been received.' });
           clearCart();
           router.push('/checkout/success');
         })
         .catch(async (err) => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: 'orders',
-            operation: 'create',
-            requestResourceData: orderData
-          }));
+          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'orders', operation: 'create', requestResourceData: orderData }));
           setLoading(false);
         });
-
     } catch (err: any) {
       setLoading(false);
     }
@@ -321,16 +299,12 @@ export default function CheckoutPage() {
 
   if (totalItems === 0) {
     return (
-      <div className="min-h-screen flex flex-col overflow-x-hidden" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-        <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-          <div className="bg-primary/5 w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center mb-6">
-            <ShoppingBag className="h-8 w-8 md:h-10 md:w-10 text-primary/40" />
-          </div>
-          <h1 className="text-xl md:text-2xl font-bold mb-4">{t.cartEmpty}</h1>
-          <Link href="/products">
-            <Button className="rounded-full px-8">{t.startShopping}</Button>
-          </Link>
-        </main>
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+        <div className="bg-primary/5 w-20 h-20 rounded-full flex items-center justify-center mb-6">
+          <ShoppingBag className="h-8 w-8 text-primary/40" />
+        </div>
+        <h1 className="text-xl md:text-2xl font-bold mb-4">{t.cartEmpty}</h1>
+        <Link href="/products"><Button className="rounded-full px-8">{t.startShopping}</Button></Link>
       </div>
     );
   }
@@ -410,14 +384,12 @@ export default function CheckoutPage() {
 
                       {otpSent && !isVerified && (
                         <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-                          <div className="relative">
-                            <Input 
-                              placeholder={t.otpLabel}
-                              value={otp}
-                              onChange={(e) => setOtp(e.target.value)}
-                              className="h-12 rounded-xl border-2 border-[#D4AF37]/30 text-center font-bold tracking-[0.5em]"
-                            />
-                          </div>
+                          <Input 
+                            placeholder={t.otpLabel}
+                            value={otp}
+                            onChange={(e) => setOtp(e.target.value)}
+                            className="h-12 rounded-xl border-2 border-[#D4AF37]/30 text-center font-bold tracking-[0.5em]"
+                          />
                           <Button 
                             onClick={handleVerifyOtp} 
                             disabled={verifying || !otp}
@@ -427,7 +399,6 @@ export default function CheckoutPage() {
                           </Button>
                         </div>
                       )}
-                      
                       <div id="recaptcha-container"></div>
                     </div>
                   </div>
@@ -443,9 +414,7 @@ export default function CheckoutPage() {
                     </SelectTrigger>
                     <SelectContent className="z-[10001] rounded-2xl">
                       {Object.keys(dynamicRates).sort().map(state => (
-                        <SelectItem key={state} value={state} className="rounded-xl">
-                          {state}
-                        </SelectItem>
+                        <SelectItem key={state} value={state} className="rounded-xl">{state}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -472,87 +441,51 @@ export default function CheckoutPage() {
                 <h2 className="text-xl md:text-2xl font-bold font-headline text-start">{t.yourOrder}</h2>
               </div>
               <CardContent className="p-6 md:p-8 space-y-4 md:space-y-6">
-                <div className="max-h-[200px] md:max-h-[300px] overflow-y-auto space-y-4 pr-2">
+                <div className="max-h-[200px] overflow-y-auto space-y-4 pr-2">
                   {cartItems.map((item) => (
-                    <div key={item.id} className="flex items-center gap-3 md:gap-4">
-                      <div className="h-12 w-12 md:h-16 md:w-16 rounded-lg md:rounded-xl overflow-hidden bg-muted flex-shrink-0">
+                    <div key={item.id} className="flex items-center gap-3">
+                      <div className="h-12 w-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                         <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
                       </div>
                       <div className="flex-1 text-start">
-                        <p className="font-bold text-sm md:text-base line-clamp-1">{lang === 'ar' ? item.name : (item.nameEn || item.name)}</p>
-                        <p className="text-xs md:text-sm text-muted-foreground">{item.quantity} x ${item.price.toFixed(2)}</p>
+                        <p className="font-bold text-sm line-clamp-1">{lang === 'ar' ? item.name : (item.nameEn || item.name)}</p>
+                        <p className="text-xs text-muted-foreground">{item.quantity} x ${item.price.toFixed(2)}</p>
                       </div>
                     </div>
                   ))}
                 </div>
-
                 <Separator className="opacity-50" />
-                
-                <div className="space-y-2 md:space-y-3">
-                  <div className="flex justify-between text-base md:text-lg font-medium">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-base">
                     <span className="text-muted-foreground">{t.subtotal}</span>
                     <span className="font-bold">${totalPrice.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-base md:text-lg font-medium">
+                  <div className="flex justify-between text-base">
                     <span className="text-muted-foreground">{t.shippingFee}</span>
                     <span className={formData.state ? "text-[#D4AF37] font-bold" : "text-muted-foreground italic text-xs"}>
                       {formData.state ? `$${shippingFee.toFixed(2)}` : t.shippingCalcPending}
                     </span>
                   </div>
                   <Separator className="opacity-30" />
-                  <div className="flex justify-between text-2xl md:text-3xl font-black">
+                  <div className="flex justify-between text-2xl font-black">
                     <span>{t.total}</span>
                     <span className="text-[#D4AF37]">${grandTotal.toFixed(2)}</span>
                   </div>
                 </div>
-
-                {/* Terms Acceptance Checkbox */}
                 <div className="pt-4 flex items-start gap-3 text-start">
-                  <Checkbox 
-                    id="terms" 
-                    checked={agreed} 
-                    onCheckedChange={(val) => setAgreed(val as boolean)}
-                    className="mt-1 border-primary data-[state=checked]:bg-primary"
-                  />
+                  <Checkbox id="terms" checked={agreed} onCheckedChange={(val) => setAgreed(val as boolean)} className="mt-1 border-primary data-[state=checked]:bg-primary" />
                   <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer font-medium select-none">
                     {lang === 'ar' ? (
-                      <>
-                        لقد قرأت وأوافق على {' '}
-                        <Link href="/terms-of-use" target="_blank" className="text-[#D4AF37] font-bold hover:underline inline-flex items-center gap-0.5">شروط الاستخدام <ExternalLink className="h-3 w-3" /></Link>، {' '}
-                        <Link href="/privacy-policy" target="_blank" className="text-[#D4AF37] font-bold hover:underline inline-flex items-center gap-0.5">سياسة الخصوصية <ExternalLink className="h-3 w-3" /></Link>، {' '}
-                        و<Link href="/shipping-returns" target="_blank" className="text-[#D4AF37] font-bold hover:underline inline-flex items-center gap-0.5">سياسة الشحن والترجيع <ExternalLink className="h-3 w-3" /></Link>.
-                      </>
+                      <>لقد قرأت وأوافق على <Link href="/terms-of-use" target="_blank" className="text-[#D4AF37] font-bold hover:underline">شروط الاستخدام</Link>، <Link href="/privacy-policy" target="_blank" className="text-[#D4AF37] font-bold hover:underline">سياسة الخصوصية</Link>، و<Link href="/shipping-returns" target="_blank" className="text-[#D4AF37] font-bold hover:underline">سياسة الشحن</Link>.</>
                     ) : (
-                      <>
-                        I have read and agree to the {' '}
-                        <Link href="/terms-of-use" target="_blank" className="text-[#D4AF37] font-bold hover:underline inline-flex items-center gap-0.5">Terms of Use <ExternalLink className="h-3 w-3" /></Link>, {' '}
-                        <Link href="/privacy-policy" target="_blank" className="text-[#D4AF37] font-bold hover:underline inline-flex items-center gap-0.5">Privacy Policy <ExternalLink className="h-3 w-3" /></Link>, {' '}
-                        and <Link href="/shipping-returns" target="_blank" className="text-[#D4AF37] font-bold hover:underline inline-flex items-center gap-0.5">Shipping & Returns Policy <ExternalLink className="h-3 w-3" /></Link>.
-                      </>
+                      <>I have read and agree to the <Link href="/terms-of-use" target="_blank" className="text-[#D4AF37] font-bold hover:underline">Terms of Use</Link>, <Link href="/privacy-policy" target="_blank" className="text-[#D4AF37] font-bold hover:underline">Privacy Policy</Link>, and <Link href="/shipping-returns" target="_blank" className="text-[#D4AF37] font-bold hover:underline">Shipping Policy</Link>.</>
                     )}
                   </Label>
                 </div>
-                
-                <Button 
-                  onClick={handlePlaceOrder}
-                  disabled={loading || loadingShipping || !agreed || !isVerified}
-                  className="w-full h-14 md:h-16 rounded-full text-lg md:text-xl font-bold bg-[#D4AF37] hover:bg-[#B8962D] text-white shadow-xl gap-2 mt-2 md:mt-4 disabled:opacity-50"
-                >
-                  {loading ? (
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      {lang === 'ar' ? 'جاري التحقق...' : 'Verifying...'}
-                    </div>
-                  ) : (
-                    t.placeOrder
-                  )}
+                <Button onClick={handlePlaceOrder} disabled={loading || !agreed || !isVerified} className="w-full h-14 rounded-full text-lg font-bold bg-[#D4AF37] hover:bg-[#B8962D] text-white shadow-xl gap-2 mt-2">
+                  {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : t.placeOrder}
                 </Button>
-
-                {!isVerified && (
-                  <p className="text-[10px] text-center text-destructive font-bold animate-pulse mt-2">
-                    {lang === 'ar' ? '* يرجى التحقق من الهاتف للمتابعة' : '* Phone verification required'}
-                  </p>
-                )}
+                {!isVerified && <p className="text-[10px] text-center text-destructive font-bold mt-2">{lang === 'ar' ? '* يرجى التحقق من الهاتف للمتابعة' : '* Phone verification required'}</p>}
               </CardContent>
             </Card>
           </div>
