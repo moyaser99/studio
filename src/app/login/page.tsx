@@ -133,29 +133,47 @@ export default function LoginPage() {
 
   const handlePhoneSignIn = async () => {
     if (!auth) return;
-    const cleanPhone = phone.replace(/\D/g, '');
-    if (!cleanPhone) {
-      toast({ variant: 'destructive', title: 'Warning', description: 'Please enter phone number.' });
+    
+    // 1. Phone Number Sanitization
+    const sanitizedNumber = `${countryCode}${phone.replace(/\D/g, '')}`;
+    
+    if (!phone.replace(/\D/g, '') || sanitizedNumber.length < 10) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Warning', 
+        description: lang === 'ar' ? 'يرجى إدخال رقم هاتف صحيح.' : 'Please enter a valid phone number.' 
+      });
       return;
     }
     
     setLoading(true);
-    const finalPhone = `${countryCode}${cleanPhone}`;
 
     try {
+      // 2. ReCAPTCHA Management: Reset if already exists
+      if ((window as any).recaptchaVerifier) {
+        try { (window as any).recaptchaVerifier.clear(); } catch (e) {}
+      }
+      
       setupRecaptcha();
       const verifier = (window as any).recaptchaVerifier;
       if (!verifier) throw new Error("Recaptcha not ready");
 
-      // Safeguard: Ensure no database calls happen during SMS dispatch
-      const result = await signInWithPhoneNumber(auth, finalPhone, verifier);
+      // 4. State Sync: Using exactly sanitized combined number
+      const result = await signInWithPhoneNumber(auth, sanitizedNumber, verifier);
       setConfirmationResult(result);
-      toast({ title: 'Code Sent', description: 'Please check your phone.' });
+      toast({ 
+        title: lang === 'ar' ? 'تم إرسال الرمز' : 'Code Sent', 
+        description: lang === 'ar' ? 'يرجى التحقق من هاتفك.' : 'Please check your phone for verification code.' 
+      });
     } catch (error: any) {
       console.error("SMS Login Error:", error);
-      let msg = 'Failed to send verification code.';
-      if (error.code === 'auth/invalid-phone-number') msg = 'Invalid phone number format.';
-      if (error.code === 'auth/too-many-requests') msg = 'Too many requests. Please try later.';
+      // 3. Error Catching for specific Firebase errors
+      let msg = lang === 'ar' ? 'فشل إرسال كود التحقق.' : 'Failed to send verification code.';
+      if (error.code === 'auth/invalid-phone-number') {
+        msg = lang === 'ar' ? 'تنسيق رقم الهاتف غير صحيح.' : 'Invalid phone number format.';
+      } else if (error.code === 'auth/too-many-requests') {
+        msg = lang === 'ar' ? 'محاولات كثيرة جداً، يرجى المحاولة لاحقاً.' : 'Too many attempts. Please try again later.';
+      }
       
       toast({ variant: 'destructive', title: 'Error', description: msg });
     } finally {

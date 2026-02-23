@@ -178,30 +178,48 @@ export default function CheckoutPage() {
 
   const handleSendCode = async () => {
     if (!auth) return;
-    const cleanPhone = formData.phone.replace(/\D/g, '');
-    if (!cleanPhone || cleanPhone.length < 7) {
-      toast({ variant: 'destructive', title: t.errorOccurred, description: lang === 'ar' ? 'رقم الهاتف غير صحيح' : 'Invalid phone number.' });
+    
+    // 1. Phone Number Sanitization
+    const sanitizedNumber = `${countryCode}${formData.phone.replace(/\D/g, '')}`;
+    
+    if (!formData.phone.replace(/\D/g, '') || sanitizedNumber.length < 10) {
+      toast({ 
+        variant: 'destructive', 
+        title: t.errorOccurred, 
+        description: lang === 'ar' ? 'رقم الهاتف غير صحيح' : 'Invalid phone number format.' 
+      });
       return;
     }
 
     setVerifying(true);
-    const finalPhone = `${countryCode}${cleanPhone}`;
     
     try {
+      // 2. ReCAPTCHA Management: Reset if already exists
+      if ((window as any).recaptchaVerifier) {
+        try { (window as any).recaptchaVerifier.clear(); } catch(e) {}
+      }
+      
       setupRecaptcha();
       const verifier = (window as any).recaptchaVerifier;
       if (!verifier) throw new Error("Recaptcha not initialized");
 
-      // Safeguard: Ensure no premature database calls happen during verification
-      const result = await signInWithPhoneNumber(auth, finalPhone, verifier);
+      // 4. State Sync: Combined sanitized number
+      const result = await signInWithPhoneNumber(auth, sanitizedNumber, verifier);
       setConfirmationResult(result);
       setOtpSent(true);
-      toast({ title: lang === 'ar' ? 'تم إرسال الرمز' : 'OTP Sent', description: lang === 'ar' ? 'يرجى التحقق من هاتفك' : 'Check your phone for the code.' });
+      toast({ 
+        title: lang === 'ar' ? 'تم إرسال الرمز' : 'OTP Sent', 
+        description: lang === 'ar' ? 'يرجى التحقق من هاتفك' : 'Check your phone for the code.' 
+      });
     } catch (error: any) {
       console.error("SMS Error:", error);
+      // 3. Error Catching for specific Firebase errors
       let msg = t.verificationError;
-      if (error.code === 'auth/invalid-phone-number') msg = lang === 'ar' ? 'رقم الهاتف غير صحيح' : 'Invalid phone number format.';
-      if (error.code === 'auth/too-many-requests') msg = lang === 'ar' ? 'محاولات كثيرة جداً، يرجى المحاولة لاحقاً' : 'Too many requests. Please try later.';
+      if (error.code === 'auth/invalid-phone-number') {
+        msg = lang === 'ar' ? 'رقم الهاتف غير صحيح' : 'Invalid phone number format.';
+      } else if (error.code === 'auth/too-many-requests') {
+        msg = lang === 'ar' ? 'محاولات كثيرة جداً، يرجى المحاولة لاحقاً.' : 'Too many attempts. Please try again later.';
+      }
       
       toast({ variant: 'destructive', title: t.errorOccurred, description: msg });
     } finally {
