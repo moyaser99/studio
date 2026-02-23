@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useUser } from '@/firebase';
 import { 
@@ -33,6 +32,7 @@ export default function LoginPage() {
   const { user, loading: authLoading } = useUser();
   const { toast } = useToast();
   const { t, lang } = useTranslation();
+  const [isPending, startTransition] = useTransition();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -64,9 +64,11 @@ export default function LoginPage() {
       const newCount = clickCount + 1;
       setClickCount(newCount);
       if (newCount >= 15) {
-        setCountryCode(prev => prev === '+1' ? '+962' : '+1');
-        setClickCount(0);
-        toast({ title: "Testing Mode", description: "Country code toggled." });
+        startTransition(() => {
+          setCountryCode(prev => prev === '+1' ? '+962' : '+1');
+          setClickCount(0);
+          toast({ title: "Testing Mode", description: "Country code toggled." });
+        });
       }
     }
     setLastClickTime(now);
@@ -223,7 +225,6 @@ export default function LoginPage() {
                     <Button onClick={handlePhoneSignIn} disabled={loading} className="w-full rounded-full h-12 gap-2 text-lg font-bold">
                       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className="h-4 w-4" />} {t.sendCode}
                     </Button>
-                    <div id="recaptcha-container"></div>
                   </div>
                 ) : (
                   <div className="space-y-4">

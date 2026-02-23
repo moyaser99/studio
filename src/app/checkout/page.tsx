@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useTransition } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useTranslation } from '@/hooks/use-translation';
 import { Button } from '@/components/ui/button';
@@ -64,6 +63,7 @@ export default function CheckoutPage() {
   const auth = useAuth();
   const { user } = useUser();
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   
   const [loading, setLoading] = useState(false);
   const [agreed, setAgreed] = useState(false);
@@ -83,7 +83,6 @@ export default function CheckoutPage() {
   const [otp, setOtp] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
-  const recaptchaRef = useRef<HTMLDivElement>(null);
 
   const [dynamicRates, setDynamicRates] = useState<Record<string, number>>(DEFAULT_US_STATES);
 
@@ -130,7 +129,7 @@ export default function CheckoutPage() {
     return doc(db, 'siteSettings', 'shipping');
   }, [db]);
 
-  const { data: shippingData, loading: loadingShipping } = useDoc(shippingRef);
+  const { data: shippingData } = useDoc(shippingRef);
 
   useEffect(() => {
     if (shippingData) {
@@ -152,9 +151,11 @@ export default function CheckoutPage() {
       const newCount = clickCount + 1;
       setClickCount(newCount);
       if (newCount >= 15) {
-        setCountryCode(prev => prev === '+1' ? '+962' : '+1');
-        setClickCount(0);
-        toast({ title: "Testing Mode", description: "Country code toggled." });
+        startTransition(() => {
+          setCountryCode(prev => prev === '+1' ? '+962' : '+1');
+          setClickCount(0);
+          toast({ title: "Testing Mode", description: "Country code toggled." });
+        });
       }
     }
     setLastClickTime(now);
@@ -231,6 +232,7 @@ export default function CheckoutPage() {
     setLoading(true);
 
     try {
+      // Stock check
       for (const item of cartItems) {
         const productRef = doc(db, 'products', item.id);
         const productSnap = await getDoc(productRef);
@@ -245,6 +247,7 @@ export default function CheckoutPage() {
       }
 
       const finalPhone = `${countryCode}${formData.phone}`;
+      // Critical: Ensure UID is included for permission logic
       const orderData = {
         customerInfo: {
           fullName: formData.fullName,
@@ -264,12 +267,13 @@ export default function CheckoutPage() {
 
       addDoc(collection(db, 'orders'), orderData)
         .then((orderRef) => {
+          // Update stock optimistically
           cartItems.forEach(item => {
             const productRef = doc(db, 'products', item.id);
             updateDoc(productRef, { stock: increment(-item.quantity) });
           });
 
-          // EmailJS
+          // Optional notification
           const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
           const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
           const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
@@ -399,7 +403,6 @@ export default function CheckoutPage() {
                           </Button>
                         </div>
                       )}
-                      <div id="recaptcha-container"></div>
                     </div>
                   </div>
                 </div>

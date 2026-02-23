@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -59,10 +58,13 @@ export default function ProfileCompletionPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!db || !user) return;
+    // Safety check: Ensure user.uid is ready before writing
+    if (!db || !user || !user.uid) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Authentication not ready. Please wait.' });
+      return;
+    }
 
     setSaving(true);
-    // Detection of current country code based on what was loaded or default to +1
     const prefix = (profile?.phoneNumber?.startsWith('+962')) ? '+962' : '+1';
     const finalPhone = `${prefix}${formData.phoneNumber.replace(/\D/g, '')}`;
 
