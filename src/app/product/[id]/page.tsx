@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -169,7 +168,11 @@ export default function ProductPage() {
                     mainImage === img.url ? "border-[#D4AF37] shadow-[0_0_10px_rgba(212,175,55,0.3)] scale-95" : "border-transparent"
                   )}
                 >
-                  <img src={img.url} alt={`Thumb ${idx}`} className="h-full w-full object-cover" />
+                  {img.url ? (
+                    <img src={img.url} alt={`Thumb ${idx}`} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="h-full w-full bg-primary/10 animate-pulse" />
+                  )}
                 </button>
               ))}
             </div>
@@ -177,24 +180,30 @@ export default function ProductPage() {
 
           {/* Main Image */}
           <div className="relative flex-1 aspect-square overflow-hidden rounded-[3rem] bg-white shadow-2xl ring-1 ring-primary/5 transition-transform duration-500">
-            {optimized ? (
-              <Image
-                src={mainImage}
-                alt={displayName}
-                fill
-                priority
-                className="object-cover"
-                data-ai-hint="product detail image"
-              />
+            {mainImage ? (
+              optimized ? (
+                <Image
+                  src={mainImage}
+                  alt={displayName}
+                  fill
+                  priority
+                  className="object-cover"
+                  data-ai-hint="product detail image"
+                />
+              ) : (
+                <img
+                  src={mainImage}
+                  alt={displayName}
+                  className="absolute inset-0 h-full w-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/placeholder/800/800';
+                  }}
+                />
+              )
             ) : (
-              <img
-                src={mainImage}
-                alt={displayName}
-                className="absolute inset-0 h-full w-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/placeholder/800/800';
-                }}
-              />
+              <div className="absolute inset-0 bg-primary/5 animate-pulse flex items-center justify-center">
+                <Loader2 className="h-12 w-12 text-primary/20 animate-spin" />
+              </div>
             )}
             
             {isDiscounted && (

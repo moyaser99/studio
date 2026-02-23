@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -677,7 +676,11 @@ export default function AdminPage() {
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
                       {formData.images.map((img: any, idx: number) => (
                         <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border-2 border-primary/10 group bg-white">
-                          <img src={img.url} alt="Gallery" className="h-full w-full object-cover" />
+                          {img.url ? (
+                            <img src={img.url} alt="Gallery" className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="h-full w-full bg-primary/5 animate-pulse" />
+                          )}
                           <button 
                             onClick={() => removeImageFromGallery(idx)}
                             className="absolute top-1 right-1 h-6 w-6 bg-destructive text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -1016,14 +1019,20 @@ export default function AdminPage() {
                       <TableRow key={product.id} className={`hover:bg-primary/5 transition-colors ${product.isHidden ? 'opacity-60 grayscale-[0.5]' : ''}`}>
                         <TableCell>
                           <div className="h-16 w-16 rounded-2xl overflow-hidden bg-muted border">
-                            <img 
-                              src={product.imageUrl || PLACEHOLDER_IMAGE} 
-                              alt={product.name} 
-                              className="h-full w-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE;
-                              }}
-                            />
+                            {product.imageUrl ? (
+                              <img 
+                                src={product.imageUrl} 
+                                alt={product.name} 
+                                className="h-full w-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE;
+                                }}
+                              />
+                            ) : (
+                              <div className="h-full w-full bg-primary/5 flex items-center justify-center">
+                                <ImageIcon className="h-6 w-6 text-primary/20" />
+                              </div>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell className="font-bold text-start">
