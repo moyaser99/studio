@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -24,7 +25,6 @@ export default function CartPage() {
   const { t, lang } = useTranslation();
   const [mounted, setMounted] = useState(false);
 
-  // Fix hydration mismatch by waiting for component to mount
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -46,27 +46,37 @@ export default function CartPage() {
 
         {cartItems.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-10 items-start">
-            {/* Items List */}
             <div className="lg:col-span-2 space-y-4 md:space-y-6">
               {cartItems.map((item) => (
-                <Card key={item.id} className="rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden border-none shadow-lg bg-white hover:shadow-xl transition-all duration-300">
+                <Card key={item.id + (item.selectedColor?.id || '')} className="rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden border-none shadow-lg bg-white hover:shadow-xl transition-all duration-300">
                   <CardContent className="p-4 md:p-6">
                     <div className="flex flex-col sm:flex-row items-center gap-4 md:gap-6">
-                      <div className="relative h-24 w-24 md:h-32 md:w-32 rounded-2xl md:rounded-3xl overflow-hidden bg-muted flex-shrink-0">
-                        <img 
-                          src={item.image} 
-                          alt={item.name} 
-                          className="h-full w-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/placeholder/200/200';
-                          }}
-                        />
+                      <div className="relative h-24 w-24 md:h-32 md:w-32 rounded-2xl md:rounded-3xl overflow-hidden bg-muted flex-shrink-0 border">
+                        {item.image && (
+                          <img 
+                            src={item.image} 
+                            alt={item.name} 
+                            className="h-full w-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/placeholder/200/200';
+                            }}
+                          />
+                        )}
                       </div>
                       
                       <div className="flex-1 text-center sm:text-start space-y-1">
                         <h3 className="text-lg md:text-xl font-bold line-clamp-1">
                           {lang === 'ar' ? item.name : (item.nameEn || item.name)}
                         </h3>
+                        {/* PERSISTENCE FIX: Show color info in cart */}
+                        {item.selectedColor && (
+                          <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
+                            <div className="h-3 w-3 rounded-full border border-primary/20" style={{ backgroundColor: item.selectedColor.hex }} />
+                            <span className="text-xs font-bold text-[#D4AF37] uppercase">
+                              {lang === 'ar' ? item.selectedColor.nameAr : item.selectedColor.nameEn}
+                            </span>
+                          </div>
+                        )}
                         <p className="text-xl md:text-2xl font-black text-primary">
                           ${item.price.toFixed(2)}
                         </p>
@@ -77,7 +87,7 @@ export default function CartPage() {
                           variant="ghost" 
                           size="icon" 
                           className="rounded-full h-8 w-8 md:h-10 md:w-10 hover:bg-white"
-                          onClick={() => updateQuantity(item.id, -1)}
+                          onClick={() => updateQuantity(item.id, -1, item.selectedColor?.id)}
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
@@ -86,7 +96,7 @@ export default function CartPage() {
                           variant="ghost" 
                           size="icon" 
                           className="rounded-full h-8 w-8 md:h-10 md:w-10 hover:bg-white"
-                          onClick={() => updateQuantity(item.id, 1)}
+                          onClick={() => updateQuantity(item.id, 1, item.selectedColor?.id)}
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
@@ -96,7 +106,7 @@ export default function CartPage() {
                         variant="ghost" 
                         size="icon" 
                         className="rounded-full text-destructive hover:bg-destructive/10"
-                        onClick={() => removeFromCart(item.id)}
+                        onClick={() => removeFromCart(item.id, item.selectedColor?.id)}
                       >
                         <Trash2 className="h-5 w-5 md:h-6 md:w-6" />
                       </Button>
@@ -106,7 +116,6 @@ export default function CartPage() {
               ))}
             </div>
 
-            {/* Summary Box */}
             <div className="lg:col-span-1">
               <Card className="rounded-[2rem] md:rounded-[3rem] border-none shadow-xl bg-white overflow-hidden sticky top-24 md:top-32">
                 <div className="bg-primary/5 p-6 md:p-8 border-b">

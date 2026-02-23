@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -85,10 +86,12 @@ export default function ProductPage() {
 
     const colorObj = product.colors?.find((c: any) => c.id === selectedColorId);
 
+    // PERSISTENCE FIX: Pass current image and color object
     addToCart({
       ...product,
       price: price,
-      selectedColor: colorObj ? (lang === 'ar' ? colorObj.nameAr : colorObj.nameEn) : null
+      image: mainImage,
+      selectedColor: colorObj || null
     });
     
     toast({
@@ -100,7 +103,6 @@ export default function ProductPage() {
 
   const handleColorClick = (colorId: string) => {
     setSelectedColorId(colorId);
-    // Find image linked to this color
     const linkedImage = product.images?.find((img: any) => img.colorId === colorId);
     if (linkedImage) {
       setMainImage(linkedImage.url);
@@ -282,7 +284,7 @@ export default function ProductPage() {
                         ? "border-[#D4AF37] scale-110 shadow-[0_0_15px_rgba(212,175,55,0.5)]" 
                         : "border-transparent hover:border-primary/30"
                     )}
-                    style={{ backgroundColor: color.hex + 'CC' }} // 80% opacity
+                    style={{ backgroundColor: color.hex + 'CC' }}
                     title={lang === 'ar' ? color.nameAr : color.nameEn}
                   >
                     {selectedColorId === color.id && (

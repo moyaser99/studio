@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useTransition } from 'react';
@@ -178,10 +179,7 @@ export default function CheckoutPage() {
 
   const handleSendCode = async () => {
     if (!auth) return;
-    
-    // 1. Phone Number Sanitization
     const sanitizedNumber = `${countryCode}${formData.phone.replace(/\D/g, '')}`;
-    
     if (!formData.phone.replace(/\D/g, '') || sanitizedNumber.length < 10) {
       toast({ 
         variant: 'destructive', 
@@ -190,20 +188,14 @@ export default function CheckoutPage() {
       });
       return;
     }
-
     setVerifying(true);
-    
     try {
-      // 2. ReCAPTCHA Management: Reset if already exists
       if ((window as any).recaptchaVerifier) {
         try { (window as any).recaptchaVerifier.clear(); } catch(e) {}
       }
-      
       setupRecaptcha();
       const verifier = (window as any).recaptchaVerifier;
       if (!verifier) throw new Error("Recaptcha not initialized");
-
-      // 4. State Sync: Combined sanitized number
       const result = await signInWithPhoneNumber(auth, sanitizedNumber, verifier);
       setConfirmationResult(result);
       setOtpSent(true);
@@ -213,14 +205,12 @@ export default function CheckoutPage() {
       });
     } catch (error: any) {
       console.error("SMS Error:", error);
-      // 3. Error Catching for specific Firebase errors
       let msg = t.verificationError;
       if (error.code === 'auth/invalid-phone-number') {
         msg = lang === 'ar' ? 'رقم الهاتف غير صحيح' : 'Invalid phone number format.';
       } else if (error.code === 'auth/too-many-requests') {
         msg = lang === 'ar' ? 'محاولات كثيرة جداً، يرجى المحاولة لاحقاً.' : 'Too many attempts. Please try again later.';
       }
-      
       toast({ variant: 'destructive', title: t.errorOccurred, description: msg });
     } finally {
       setVerifying(false);
@@ -250,26 +240,21 @@ export default function CheckoutPage() {
       toast({ variant: "destructive", title: t.errorOccurred, description: t.completeFields });
       return;
     }
-
     if (!agreed) {
       toast({ variant: "destructive", title: t.errorOccurred, description: lang === 'ar' ? 'يرجى الموافقة على الشروط والسياسات' : 'Please agree to terms and policies' });
       return;
     }
-
     if (!isVerified) {
       toast({ variant: "destructive", title: t.errorOccurred, description: lang === 'ar' ? 'يرجى التحقق من رقم الهاتف أولاً' : 'Please verify your phone number first' });
       return;
     }
-
     if (!db) return;
     setLoading(true);
-
     try {
-      // Final security check: confirm auth state is ready before writing
       const currentUser = auth?.currentUser;
       const userId = currentUser?.uid || 'guest';
-
       const finalPhone = `${countryCode}${formData.phone.replace(/\D/g, '')}`;
+      
       const orderData = {
         customerInfo: {
           fullName: formData.fullName,
@@ -277,7 +262,17 @@ export default function CheckoutPage() {
           city: formData.state,
           address: formData.address
         },
-        items: cartItems.map(item => ({ id: item.id, name: item.name, nameEn: item.nameEn || '', price: item.price, quantity: item.quantity })),
+        // PERSISTENCE FIX: Include color and specific image in Firestore
+        items: cartItems.map(item => ({ 
+          id: item.id, 
+          name: item.name, 
+          nameEn: item.nameEn || '', 
+          price: item.price, 
+          quantity: item.quantity,
+          color: item.selectedColor ? (lang === 'ar' ? item.selectedColor.nameAr : item.selectedColor.nameEn) : null,
+          colorId: item.selectedColor?.id || null,
+          image: item.image
+        })),
         totalPrice: grandTotal,
         shippingFee: shippingFee,
         status: 'pending',
@@ -289,12 +284,10 @@ export default function CheckoutPage() {
 
       addDoc(collection(db, 'orders'), orderData)
         .then((orderRef) => {
-          // Optimistic stock update
           cartItems.forEach(item => {
             const productRef = doc(db, 'products', item.id);
             updateDoc(productRef, { stock: increment(-item.quantity) }).catch(() => {});
           });
-
           const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
           const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
           const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
@@ -305,10 +298,9 @@ export default function CheckoutPage() {
               customer_name: formData.fullName,
               customer_phone: finalPhone,
               total_price: grandTotal.toFixed(2),
-              order_details: cartItems.map(item => `${item.name} (x${item.quantity})`).join(', ')
+              order_details: cartItems.map(item => `${item.name} (x${item.quantity})${item.selectedColor ? ` [${item.selectedColor.nameEn}]` : ''}`).join(', ')
             }, publicKey).catch(() => {});
           }
-
           toast({ title: lang === 'ar' ? 'شكراً لك' : 'Thank You', description: lang === 'ar' ? 'تم استلام طلبك بنجاح' : 'Your order has been received.' });
           clearCart();
           router.push('/checkout/success');
@@ -396,7 +388,6 @@ export default function CheckoutPage() {
                           </div>
                         )}
                       </div>
-
                       {!isVerified && !otpSent && (
                         <Button 
                           onClick={handleSendCode} 
@@ -406,7 +397,6 @@ export default function CheckoutPage() {
                           {verifying ? <Loader2 className="h-4 w-4 animate-spin" /> : t.verifyPhone}
                         </Button>
                       )}
-
                       {otpSent && !isVerified && (
                         <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
                           <Input 
@@ -427,7 +417,6 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                 </div>
-
                 <div className="space-y-2 text-start">
                   <Label className="text-base md:text-lg font-bold flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-[#D4AF37]" /> {t.stateLabel}
@@ -443,7 +432,6 @@ export default function CheckoutPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div className="space-y-2 text-start">
                   <Label className="text-base md:text-lg font-bold flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-[#D4AF37]" /> {t.detailedAddressLabel}
@@ -465,14 +453,23 @@ export default function CheckoutPage() {
                 <h2 className="text-xl md:text-2xl font-bold font-headline text-start">{t.yourOrder}</h2>
               </div>
               <CardContent className="p-6 md:p-8 space-y-4 md:space-y-6">
-                <div className="max-h-[200px] overflow-y-auto space-y-4 pr-2">
+                <div className="max-h-[300px] overflow-y-auto space-y-4 pr-2 scrollbar-hide">
                   {cartItems.map((item) => (
-                    <div key={item.id} className="flex items-center gap-3">
-                      <div className="h-12 w-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                        <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
+                    <div key={item.id + (item.selectedColor?.id || '')} className="flex items-center gap-3">
+                      <div className="h-12 w-12 rounded-lg overflow-hidden bg-muted flex-shrink-0 border">
+                        {item.image && <img src={item.image} alt={item.name} className="h-full w-full object-cover" />}
                       </div>
                       <div className="flex-1 text-start">
                         <p className="font-bold text-sm line-clamp-1">{lang === 'ar' ? item.name : (item.nameEn || item.name)}</p>
+                        {/* PERSISTENCE UI: Show selected color swatch/text */}
+                        {item.selectedColor && (
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <div className="h-2.5 w-2.5 rounded-full border border-primary/20" style={{ backgroundColor: item.selectedColor.hex }} />
+                            <p className="text-[10px] text-[#D4AF37] font-bold uppercase">
+                              {lang === 'ar' ? item.selectedColor.nameAr : item.selectedColor.nameEn}
+                            </p>
+                          </div>
+                        )}
                         <p className="text-xs text-muted-foreground">{item.quantity} x ${item.price.toFixed(2)}</p>
                       </div>
                     </div>

@@ -10,13 +10,14 @@ export interface CartItem {
   price: number;
   image: string;
   quantity: number;
+  selectedColor?: any;
 }
 
 interface CartContextType {
   cartItems: CartItem[];
   addToCart: (product: any) => void;
-  updateQuantity: (productId: string, delta: number) => void;
-  removeFromCart: (productId: string) => void;
+  updateQuantity: (productId: string, delta: number, variantId?: string) => void;
+  removeFromCart: (productId: string, variantId?: string) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
@@ -29,7 +30,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Load cart from localStorage on mount
   useEffect(() => {
     const savedCart = localStorage.getItem('app-cart');
     if (savedCart) {
@@ -42,7 +42,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setIsInitialized(true);
   }, []);
 
-  // Save cart to localStorage whenever it changes
   useEffect(() => {
     if (isInitialized) {
       localStorage.setItem('app-cart', JSON.stringify(cartItems));
@@ -51,9 +50,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = (product: any) => {
     setCartItems((prevItems) => {
-      const existingItem = prevItems.find((item) => item.id === product.id);
+      // Check for same ID AND same color variant to avoid merging different colors
+      const existingItemIndex = prevItems.findIndex((item) => 
+        item.id === product.id && 
+        item.selectedColor?.id === product.selectedColor?.id
+      );
       
-      // Calculate final price based on current discount status
       const getCalculatedPrice = () => {
         if (product.discountType === 'permanent' && product.discountPrice) {
           return product.discountPrice;
@@ -64,7 +66,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
             return product.discountPrice;
           }
         }
-        // Legacy support for percentage
         if (product.discountPercentage && product.discountPercentage > 0) {
           return product.price * (1 - product.discountPercentage / 100);
         }
@@ -73,12 +74,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       const finalPrice = getCalculatedPrice();
 
-      if (existingItem) {
-        return prevItems.map((item) =>
-          item.id === product.id 
-            ? { ...item, quantity: item.quantity + 1, price: finalPrice } 
-            : item
-        );
+      if (existingItemIndex > -1) {
+        const newItems = [...prevItems];
+        newItems[existingItemIndex] = {
+          ...newItems[existingItemIndex],
+          quantity: newItems[existingItemIndex].quantity + 1,
+          price: finalPrice,
+          image: product.image || product.imageUrl // Update image to latest choice if matched
+        };
+        return newItems;
       }
       
       return [
@@ -88,18 +92,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
           name: product.name,
           nameEn: product.nameEn,
           price: finalPrice,
-          image: product.imageUrl || product.image,
+          image: product.image || product.imageUrl,
           quantity: 1,
+          selectedColor: product.selectedColor
         },
       ];
     });
   };
 
-  const updateQuantity = (productId: string, delta: number) => {
+  const updateQuantity = (productId: string, delta: number, variantId?: string) => {
     setCartItems((prevItems) =>
       prevItems
         .map((item) =>
-          item.id === productId
+          item.id === productId && (variantId === undefined || item.selectedColor?.id === variantId)
             ? { ...item, quantity: Math.max(0, item.quantity + delta) }
             : item
         )
@@ -107,8 +112,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const removeFromCart = (productId: string) => {
-    setCartItems((prevItems) => prevItems.filter((item) => item.id !== productId));
+  const removeFromCart = (productId: string, variantId?: string) => {
+    setCartItems((prevItems) => 
+      prevItems.filter((item) => 
+        !(item.id === productId && (variantId === undefined || item.selectedColor?.id === variantId))
+      )
+    );
   };
 
   const clearCart = () => {
