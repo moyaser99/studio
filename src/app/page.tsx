@@ -139,7 +139,8 @@ export default function Home() {
 
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
-    return query(collection(db, 'products'), limit(20));
+    // FETCH ALL RELEVANT FIELDS FOR DISCOUNTS
+    return query(collection(db, 'products'), limit(20), orderBy('createdAt', 'desc'));
   }, [db]);
   
   const { data: rawProducts, loading: productsLoading } = useCollection(productsQuery);
@@ -286,6 +287,9 @@ export default function Home() {
                     name: product.name,
                     nameEn: product.nameEn,
                     price: product.price,
+                    discountType: product.discountType || 'none',
+                    discountPrice: product.discountPrice,
+                    discountEndDate: product.discountEndDate,
                     discountPercentage: product.discountPercentage,
                     categoryName: product.categoryName,
                     categoryNameEn: product.categoryNameEn,

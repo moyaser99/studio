@@ -1,9 +1,10 @@
+
 'use client';
 
 import React from 'react';
 import ProductCard from '@/components/product/ProductCard';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/use-memo-firebase';
 import { Loader2, PackageSearch } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
@@ -14,7 +15,7 @@ export default function AllProductsPage() {
 
   const allProductsQuery = useMemoFirebase(() => {
     if (!db) return null;
-    return query(collection(db, 'products'));
+    return query(collection(db, 'products'), orderBy('createdAt', 'desc'));
   }, [db]);
 
   const { data: rawProducts, loading, error } = useCollection(allProductsQuery);
@@ -56,6 +57,9 @@ export default function AllProductsPage() {
                     name: product.name,
                     nameEn: product.nameEn,
                     price: product.price,
+                    discountType: product.discountType || 'none',
+                    discountPrice: product.discountPrice,
+                    discountEndDate: product.discountEndDate,
                     discountPercentage: product.discountPercentage,
                     categoryName: product.categoryName,
                     categoryNameEn: product.categoryNameEn,

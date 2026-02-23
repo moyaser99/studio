@@ -125,7 +125,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           {displayCategory}
         </Badge>
 
-        {/* Floating Timer or Static Badge */}
+        {/* Floating Timer or Static Badge with Readability Fix */}
         <div className="absolute bottom-4 left-0 right-0 px-4 z-10 flex justify-center">
           {product.discountType === 'timed' ? (
             <DiscountCountdown 
@@ -154,11 +154,11 @@ export default function ProductCard({ product }: ProductCardProps) {
             {displayName}
           </h3>
           <div className="flex items-center gap-3 mb-4 sm:mb-6">
-            <p className="text-xl sm:text-2xl font-black text-primary">
+            <p className="text-xl sm:text-2xl font-black text-[#D4AF37]">
               ${finalPrice.toFixed(2)}
             </p>
             {isDiscounted && (
-              <p className="text-sm sm:text-base text-muted-foreground line-through font-medium">
+              <p className="text-sm sm:text-base text-muted-foreground line-through font-medium opacity-60">
                 ${product.price.toFixed(2)}
               </p>
             )}

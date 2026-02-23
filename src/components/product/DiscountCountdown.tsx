@@ -50,7 +50,6 @@ export default function DiscountCountdown({ endDate, className, isFloating = fal
       const active = calculateTime();
       if (!active) {
         clearInterval(timer);
-        // Force a page refresh or state update to revert price could be handled here or by the consumer
       }
     }, 1000);
 
@@ -65,14 +64,15 @@ export default function DiscountCountdown({ endDate, className, isFloating = fal
     <div 
       className={cn(
         "flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-lg backdrop-blur-md transition-all duration-500 animate-in fade-in zoom-in-95",
+        // Visual Readability Fix: Higher contrast colors and Glassmorphism
         isFloating 
-          ? "bg-primary/20 border-[#D4AF37]/30 text-[#D4AF37]" 
+          ? "bg-[#F48FB1]/90 border-[#D4AF37]/40 text-white" 
           : "bg-primary/10 border-primary/20 text-primary",
         className
       )}
       dir={lang === 'ar' ? 'rtl' : 'ltr'}
     >
-      <Clock className={cn("h-3.5 w-3.5 animate-pulse", isFloating ? "text-[#D4AF37]" : "text-[#D4AF37]")} />
+      <Clock className={cn("h-3.5 w-3.5 animate-pulse", isFloating ? "text-white" : "text-primary")} />
       <span className="text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
         {t.endsIn}:
       </span>
