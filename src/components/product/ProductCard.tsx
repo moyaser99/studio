@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -9,13 +10,17 @@ import { ShoppingCart } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/hooks/use-toast';
+import DiscountCountdown from './DiscountCountdown';
 
 interface ProductCardProps {
   product: {
     id: string;
     name: string;
     nameEn?: string;
-    price: number;
+    price: number; // This is originalPrice
+    discountType?: 'none' | 'permanent' | 'timed';
+    discountPrice?: number;
+    discountEndDate?: any;
     discountPercentage?: number;
     categoryName: string;
     categoryNameEn?: string;
@@ -56,17 +61,34 @@ export default function ProductCard({ product }: ProductCardProps) {
   const displayName = lang === 'ar' ? product.name : (product.nameEn || product.name);
   const displayCategory = lang === 'ar' ? product.categoryName : (product.categoryNameEn || getTranslatedCategory(product.categoryName));
 
-  const hasDiscount = product.discountPercentage && product.discountPercentage > 0;
-  const finalPrice = hasDiscount 
-    ? product.price * (1 - (product.discountPercentage || 0) / 100) 
-    : product.price;
+  // Pricing Logic
+  const getCalculatedPrice = () => {
+    if (product.discountType === 'permanent' && product.discountPrice) {
+      return product.discountPrice;
+    }
+    if (product.discountType === 'timed' && product.discountPrice && product.discountEndDate) {
+      const targetDate = product.discountEndDate.toDate ? product.discountEndDate.toDate().getTime() : new Date(product.discountEndDate).getTime();
+      if (new Date().getTime() < targetDate) {
+        return product.discountPrice;
+      }
+    }
+    // Fallback to legacy percentage or original price
+    if (product.discountPercentage && product.discountPercentage > 0) {
+      return product.price * (1 - product.discountPercentage / 100);
+    }
+    return product.price;
+  };
+
+  const finalPrice = getCalculatedPrice();
+  const isDiscounted = finalPrice < product.price;
+  const calculatedPercentage = isDiscounted ? Math.round(((product.price - finalPrice) / product.price) * 100) : 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     addToCart({
       ...product,
-      price: finalPrice // Ensure correct discounted price is sent to cart
+      price: finalPrice
     });
     toast({
       title: lang === 'ar' ? 'تمت الإضافة' : 'Added to Cart',
@@ -98,21 +120,22 @@ export default function ProductCard({ product }: ProductCardProps) {
         )}
         <div className="absolute inset-0 bg-black/5 group-hover:bg-black/0 transition-colors duration-300" />
         
-        {/* Category Badge */}
         <Badge className="absolute start-4 top-4 bg-white/90 backdrop-blur-md text-primary hover:bg-white rounded-full px-4 py-1.5 shadow-sm font-bold border-none transition-all duration-300">
           {displayCategory}
         </Badge>
 
-        {/* Discount Badge - Pink Circle Style */}
-        {hasDiscount && (
+        {isDiscounted && (
           <Badge className="absolute end-4 top-4 bg-primary text-white h-12 w-12 sm:h-14 sm:w-14 rounded-full flex items-center justify-center text-xs sm:text-sm font-black shadow-xl animate-in fade-in zoom-in duration-500 ring-2 ring-white/20">
-            -{product.discountPercentage}%
+            -{calculatedPercentage}%
           </Badge>
         )}
       </Link>
       
       <CardContent className="p-4 sm:p-6 text-start flex flex-col flex-1">
         <Link href={`/product/${product.id}`} className="block group-hover:text-primary transition-colors flex-1">
+          <div className="mb-2">
+            {product.discountType === 'timed' && <DiscountCountdown endDate={product.discountEndDate} />}
+          </div>
           <h3 className="line-clamp-2 font-bold text-foreground text-lg sm:text-xl leading-snug mb-2">
             {displayName}
           </h3>
@@ -120,7 +143,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             <p className="text-xl sm:text-2xl font-black text-primary">
               ${finalPrice.toFixed(2)}
             </p>
-            {hasDiscount && (
+            {isDiscounted && (
               <p className="text-sm sm:text-base text-muted-foreground line-through font-medium">
                 ${product.price.toFixed(2)}
               </p>

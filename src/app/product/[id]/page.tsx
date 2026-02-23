@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Loader2, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, ShoppingCart, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useFirestore, useDoc } from '@/firebase';
@@ -15,6 +16,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import ProductSchema from '@/components/seo/ProductSchema';
+import DiscountCountdown from '@/components/product/DiscountCountdown';
 
 export default function ProductPage() {
   const { id } = useParams();
@@ -52,16 +54,30 @@ export default function ProductPage() {
     }
   };
 
+  const getCalculatedPrice = () => {
+    if (!product) return 0;
+    if (product.discountType === 'permanent' && product.discountPrice) {
+      return product.discountPrice;
+    }
+    if (product.discountType === 'timed' && product.discountPrice && product.discountEndDate) {
+      const targetDate = product.discountEndDate.toDate ? product.discountEndDate.toDate().getTime() : new Date(product.discountEndDate).getTime();
+      if (new Date().getTime() < targetDate) {
+        return product.discountPrice;
+      }
+    }
+    if (product.discountPercentage && product.discountPercentage > 0) {
+      return product.price * (1 - product.discountPercentage / 100);
+    }
+    return product.price;
+  };
+
   const handleAddToCart = () => {
     if (!product) return;
-    const hasDiscount = product.discountPercentage && product.discountPercentage > 0;
-    const finalPrice = hasDiscount 
-      ? product.price * (1 - product.discountPercentage / 100) 
-      : product.price;
+    const price = getCalculatedPrice();
 
     addToCart({
       ...product,
-      price: finalPrice
+      price: price
     });
     
     toast({
@@ -92,6 +108,10 @@ export default function ProductPage() {
     );
   }
 
+  const finalPrice = getCalculatedPrice();
+  const isDiscounted = finalPrice < product.price;
+  const calculatedPercentage = isDiscounted ? Math.round(((product.price - finalPrice) / product.price) * 100) : 0;
+
   const isValidUrl = product.imageUrl && (product.imageUrl.startsWith('http://') || product.imageUrl.startsWith('https://'));
   const optimized = isImageOptimizable(product.imageUrl);
   const displayImage = isValidUrl ? product.imageUrl : 'https://picsum.photos/seed/placeholder/800/800';
@@ -100,18 +120,12 @@ export default function ProductPage() {
   const displayDescription = lang === 'ar' ? product.description : (product.descriptionEn || product.description);
   const displayCategory = lang === 'ar' ? product.categoryName : (product.categoryNameEn || getTranslatedCategory(product.categoryName));
 
-  const hasDiscount = product.discountPercentage && product.discountPercentage > 0;
-  const finalPrice = hasDiscount 
-    ? product.price * (1 - product.discountPercentage / 100) 
-    : product.price;
-
   const threshold = 200;
   const shouldTruncate = displayDescription?.length > threshold;
   const truncatedText = isExpanded ? displayDescription : (displayDescription?.slice(0, threshold) + '...');
 
   return (
     <div className="container mx-auto px-4 py-12 md:px-6">
-      {/* Product Schema for SEO Search Visibility */}
       <ProductSchema product={product as any} />
       
       <div className="grid gap-12 lg:grid-cols-2 items-start">
@@ -134,18 +148,21 @@ export default function ProductPage() {
               }}
             />
           )}
-          {hasDiscount && (
+          {isDiscounted && (
             <Badge className="absolute top-8 end-8 bg-primary text-white h-16 w-16 rounded-full flex items-center justify-center text-lg font-black shadow-2xl animate-pulse">
-              -{product.discountPercentage}%
+              -{calculatedPercentage}%
             </Badge>
           )}
         </div>
 
         <div className="flex flex-col space-y-8 text-start">
           <div className="space-y-4">
-            <Badge variant="secondary" className="px-6 py-2 rounded-full text-sm font-bold tracking-wide bg-primary/10 text-primary border-none shadow-sm">
-              {displayCategory}
-            </Badge>
+            <div className="flex items-center justify-between">
+              <Badge variant="secondary" className="px-6 py-2 rounded-full text-sm font-bold tracking-wide bg-primary/10 text-primary border-none shadow-sm">
+                {displayCategory}
+              </Badge>
+              {product.discountType === 'timed' && <DiscountCountdown endDate={product.discountEndDate} />}
+            </div>
             <h1 className="text-4xl md:text-5xl font-black text-foreground font-headline leading-tight">
               {displayName}
             </h1>
@@ -154,7 +171,7 @@ export default function ProductPage() {
                 <p className="text-5xl font-black text-primary">
                   ${finalPrice.toFixed(2)}
                 </p>
-                {hasDiscount && (
+                {isDiscounted && (
                   <p className="text-xl text-muted-foreground line-through font-bold mt-1">
                     ${product.price.toFixed(2)}
                   </p>

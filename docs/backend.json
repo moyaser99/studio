@@ -16,11 +16,25 @@
         },
         "price": {
           "type": "number",
-          "description": "The original price of the product"
+          "description": "The original base price of the product"
+        },
+        "discountType": {
+          "type": "string",
+          "enum": ["none", "permanent", "timed"],
+          "default": "none"
+        },
+        "discountPrice": {
+          "type": "number",
+          "description": "The discounted price"
+        },
+        "discountEndDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the timed discount ends"
         },
         "discountPercentage": {
           "type": "number",
-          "description": "The discount percentage (0-100)",
+          "description": "Legacy field: The discount percentage (0-100)",
           "default": 0
         },
         "category": {

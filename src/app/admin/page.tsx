@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -59,7 +60,8 @@ import {
   X,
   ClipboardList,
   Truck,
-  Percent
+  Percent,
+  Timer
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow';
@@ -93,6 +95,9 @@ export default function AdminPage() {
     name: '',
     nameEn: '',
     price: '',
+    discountType: 'none',
+    discountPrice: '',
+    discountEndDate: '',
     discountPercentage: '0',
     category: '',
     imageUrl: '',
@@ -281,6 +286,7 @@ export default function AdminPage() {
     const payload: any = {
       ...formData,
       price: parseFloat(formData.price) || 0,
+      discountPrice: parseFloat(formData.discountPrice) || 0,
       discountPercentage: parseFloat(formData.discountPercentage) || 0,
       stock: parseInt(formData.stock) || 0,
       categoryName,
@@ -288,6 +294,11 @@ export default function AdminPage() {
       updatedAt: serverTimestamp(),
       isHidden: formData.hasOwnProperty('isHidden') ? (formData as any).isHidden : false,
     };
+
+    // Convert date string to Timestamp for Firestore
+    if (formData.discountEndDate) {
+      payload.discountEndDate = Timestamp.fromDate(new Date(formData.discountEndDate));
+    }
 
     if (isEditing) {
       const docRef = doc(db, 'products', isEditing);
@@ -355,6 +366,9 @@ export default function AdminPage() {
       name: '', 
       nameEn: '', 
       price: '', 
+      discountType: 'none',
+      discountPrice: '',
+      discountEndDate: '',
       discountPercentage: '0',
       category: categories?.[0]?.slug || '', 
       imageUrl: '', 
@@ -382,6 +396,12 @@ export default function AdminPage() {
       .catch(async () => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update' }));
       });
+  };
+
+  const formatDateForInput = (timestamp: any) => {
+    if (!timestamp) return '';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toISOString().slice(0, 16);
   };
 
   return (
@@ -447,9 +467,9 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2 text-start">
-                    <Label className="text-lg font-bold">{t.productPrice}</Label>
+                    <Label className="text-lg font-bold">{t.originalPrice}</Label>
                     <div className="relative">
                       <DollarSign className="absolute start-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                       <input 
@@ -457,19 +477,6 @@ export default function AdminPage() {
                         value={formData.price} 
                         onChange={e => setFormData({...formData, price: e.target.value})}
                         placeholder="0.00" 
-                        className="flex h-14 w-full rounded-2xl border-2 border-primary/10 bg-background ps-11 pe-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2 text-start">
-                    <Label className="text-lg font-bold">{t.discountLabel}</Label>
-                    <div className="relative">
-                      <Percent className="absolute start-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                      <input 
-                        type="number"
-                        value={formData.discountPercentage} 
-                        onChange={e => setFormData({...formData, discountPercentage: e.target.value})}
-                        placeholder="0" 
                         className="flex h-14 w-full rounded-2xl border-2 border-primary/10 bg-background ps-11 pe-4 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
                       />
                     </div>
@@ -495,6 +502,58 @@ export default function AdminPage() {
                       {categories?.map((c: any) => <option key={c.id} value={c.slug}>{lang === 'ar' ? c.nameAr : (c.nameEn || getTranslatedCategory(c.nameAr))}</option>)}
                     </select>
                   </div>
+                </div>
+
+                {/* Discount Section */}
+                <div className="bg-primary/5 p-6 rounded-[2rem] border-2 border-dashed border-primary/20 space-y-6">
+                  <h3 className="text-xl font-bold flex items-center gap-2 text-primary">
+                    <Percent className="h-6 w-6" /> {t.discountLabel}
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2 text-start">
+                      <Label className="font-bold">{t.discountType}</Label>
+                      <select 
+                        className="w-full h-12 rounded-xl border-2 border-primary/10 bg-background px-4 text-start focus-visible:outline-none"
+                        value={formData.discountType}
+                        onChange={e => setFormData({...formData, discountType: e.target.value})}
+                      >
+                        <option value="none">{t.none}</option>
+                        <option value="permanent">{t.permanent}</option>
+                        <option value="timed">{t.timed}</option>
+                      </select>
+                    </div>
+
+                    {formData.discountType !== 'none' && (
+                      <div className="space-y-2 text-start">
+                        <Label className="font-bold">{t.discountPrice}</Label>
+                        <div className="relative">
+                          <DollarSign className="absolute start-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <input 
+                            type="number"
+                            value={formData.discountPrice} 
+                            onChange={e => setFormData({...formData, discountPrice: e.target.value})}
+                            placeholder="0.00" 
+                            className="flex h-12 w-full rounded-xl border-2 border-primary/10 bg-background ps-10 pe-4 text-start focus-visible:outline-none"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {formData.discountType === 'timed' && (
+                    <div className="space-y-2 text-start animate-in slide-in-from-top-2 duration-300">
+                      <Label className="font-bold flex items-center gap-2">
+                        <Timer className="h-4 w-4 text-[#D4AF37]" /> {t.discountEndDate}
+                      </Label>
+                      <input 
+                        type="datetime-local"
+                        value={formData.discountEndDate} 
+                        onChange={e => setFormData({...formData, discountEndDate: e.target.value})}
+                        className="flex h-12 w-full rounded-xl border-2 border-primary/10 bg-background px-4 text-start focus-visible:outline-none"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -728,6 +787,9 @@ export default function AdminPage() {
                                     name: p.name,
                                     nameEn: p.nameEn || '',
                                     price: p.price.toString(),
+                                    discountType: p.discountType || 'none',
+                                    discountPrice: p.discountPrice?.toString() || '',
+                                    discountEndDate: formatDateForInput(p.discountEndDate),
                                     discountPercentage: p.discountPercentage?.toString() || '0',
                                     category: p.category,
                                     imageUrl: p.imageUrl,
@@ -817,8 +879,8 @@ export default function AdminPage() {
                             <span>{lang === 'ar' ? product.name : (product.nameEn || product.name)}</span>
                             <div className="flex gap-2 mt-1">
                               {product.isHidden && <Badge variant="secondary" className="w-fit text-[10px]">{t.hidden}</Badge>}
-                              {product.discountPercentage > 0 && (
-                                <Badge className="w-fit text-[10px] bg-primary text-white">-{product.discountPercentage}%</Badge>
+                              {product.discountType !== 'none' && (
+                                <Badge className="w-fit text-[10px] bg-primary text-white">{t.off}</Badge>
                               )}
                               <Badge 
                                 variant={parseInt(product.stock) === 0 ? "destructive" : parseInt(product.stock) < 5 ? "secondary" : "outline"} 
@@ -834,9 +896,9 @@ export default function AdminPage() {
                         </TableCell>
                         <TableCell className="text-start">
                           <div className="flex flex-col">
-                            {product.discountPercentage > 0 ? (
+                            {product.discountType !== 'none' ? (
                               <>
-                                <span className="font-bold text-primary">${(product.price * (1 - product.discountPercentage / 100)).toFixed(2)}</span>
+                                <span className="font-bold text-primary">${product.discountPrice?.toFixed(2)}</span>
                                 <span className="text-xs text-muted-foreground line-through">${product.price.toFixed(2)}</span>
                               </>
                             ) : (
@@ -865,6 +927,9 @@ export default function AdminPage() {
                                   name: product.name,
                                   nameEn: product.nameEn || '',
                                   price: product.price.toString(),
+                                  discountType: product.discountType || 'none',
+                                  discountPrice: product.discountPrice?.toString() || '',
+                                  discountEndDate: formatDateForInput(product.discountEndDate),
                                   discountPercentage: product.discountPercentage?.toString() || '0',
                                   category: product.category,
                                   imageUrl: product.imageUrl,

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -52,11 +53,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setCartItems((prevItems) => {
       const existingItem = prevItems.find((item) => item.id === product.id);
       
-      // Calculate final price based on discount at the moment of adding to cart
-      const hasDiscount = product.discountPercentage && product.discountPercentage > 0;
-      const finalPrice = hasDiscount 
-        ? product.price * (1 - (product.discountPercentage || 0) / 100) 
-        : (product.price || 0);
+      // Calculate final price based on current discount status
+      const getCalculatedPrice = () => {
+        if (product.discountType === 'permanent' && product.discountPrice) {
+          return product.discountPrice;
+        }
+        if (product.discountType === 'timed' && product.discountPrice && product.discountEndDate) {
+          const targetDate = product.discountEndDate.toDate ? product.discountEndDate.toDate().getTime() : new Date(product.discountEndDate).getTime();
+          if (new Date().getTime() < targetDate) {
+            return product.discountPrice;
+          }
+        }
+        // Legacy support for percentage
+        if (product.discountPercentage && product.discountPercentage > 0) {
+          return product.price * (1 - product.discountPercentage / 100);
+        }
+        return product.price || 0;
+      };
+
+      const finalPrice = getCalculatedPrice();
 
       if (existingItem) {
         return prevItems.map((item) =>
