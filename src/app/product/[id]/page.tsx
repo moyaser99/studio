@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Loader2, ShoppingCart, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { Loader2, ShoppingCart, ChevronLeft, ChevronRight, Sparkles, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useFirestore, useDoc } from '@/firebase';
@@ -17,6 +17,7 @@ import { useCart } from '@/context/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import ProductSchema from '@/components/seo/ProductSchema';
 import DiscountCountdown from '@/components/product/DiscountCountdown';
+import { cn } from '@/lib/utils';
 
 export default function ProductPage() {
   const { id } = useParams();
@@ -25,6 +26,8 @@ export default function ProductPage() {
   const { addToCart } = useCart();
   const { toast } = useToast();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
+  const [mainImage, setMainImage] = useState<string>('');
   
   const productRef = useMemoFirebase(() => {
     if (!db || !id) return null;
@@ -32,6 +35,12 @@ export default function ProductPage() {
   }, [db, id]);
 
   const { data: product, loading } = useDoc(productRef);
+
+  useEffect(() => {
+    if (product) {
+      setMainImage(product.imageUrl || 'https://picsum.photos/seed/placeholder/800/800');
+    }
+  }, [product]);
 
   const isImageOptimizable = (url: string) => {
     if (!url) return false;
@@ -75,9 +84,12 @@ export default function ProductPage() {
     if (!product) return;
     const price = getCalculatedPrice();
 
+    const colorObj = product.colors?.find((c: any) => c.id === selectedColorId);
+
     addToCart({
       ...product,
-      price: price
+      price: price,
+      selectedColor: colorObj ? (lang === 'ar' ? colorObj.nameAr : colorObj.nameEn) : null
     });
     
     toast({
@@ -85,6 +97,15 @@ export default function ProductPage() {
       description: `${lang === 'ar' ? product.name : (product.nameEn || product.name)} ${lang === 'ar' ? 'أصبح في سلتك الآن' : 'is now in your cart'}.`,
       duration: 2000,
     });
+  };
+
+  const handleColorClick = (colorId: string) => {
+    setSelectedColorId(colorId);
+    // Find image linked to this color
+    const linkedImage = product.images?.find((img: any) => img.colorId === colorId);
+    if (linkedImage) {
+      setMainImage(linkedImage.url);
+    }
   };
 
   if (loading) {
@@ -112,10 +133,7 @@ export default function ProductPage() {
   const isDiscounted = finalPrice < product.price;
   const calculatedPercentage = isDiscounted ? Math.round(((product.price - finalPrice) / product.price) * 100) : 0;
 
-  const isValidUrl = product.imageUrl && (product.imageUrl.startsWith('http://') || product.imageUrl.startsWith('https://'));
-  const optimized = isImageOptimizable(product.imageUrl);
-  const displayImage = isValidUrl ? product.imageUrl : 'https://picsum.photos/seed/placeholder/800/800';
-
+  const optimized = isImageOptimizable(mainImage);
   const displayName = lang === 'ar' ? product.name : (product.nameEn || product.name);
   const displayDescription = lang === 'ar' ? product.description : (product.descriptionEn || product.description);
   const displayCategory = lang === 'ar' ? product.categoryName : (product.categoryNameEn || getTranslatedCategory(product.categoryName));
@@ -124,49 +142,81 @@ export default function ProductPage() {
   const shouldTruncate = displayDescription?.length > threshold;
   const truncatedText = isExpanded ? displayDescription : (displayDescription?.slice(0, threshold) + '...');
 
+  const galleryImages = [
+    { url: product.imageUrl, colorId: null },
+    ...(product.images || [])
+  ].slice(0, 7);
+
   return (
     <div className="container mx-auto px-4 py-12 md:px-6">
       <ProductSchema product={product as any} />
       
-      <div className="grid gap-12 lg:grid-cols-2 items-start">
-        <div className="relative aspect-square overflow-hidden rounded-[3rem] bg-white shadow-2xl ring-1 ring-primary/5 transition-transform hover:scale-[1.01] duration-500">
-          {optimized ? (
-            <Image
-              src={displayImage}
-              alt={displayName}
-              fill
-              className="object-cover"
-              data-ai-hint="product detail image"
-            />
-          ) : (
-            <img
-              src={displayImage}
-              alt={displayName}
-              className="absolute inset-0 h-full w-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/placeholder/800/800';
-              }}
-            />
-          )}
-          {isDiscounted && (
-            <Badge className="absolute top-8 end-8 bg-primary text-white h-16 w-16 rounded-full flex items-center justify-center text-lg font-black shadow-2xl animate-pulse z-10">
-              -{calculatedPercentage}%
-            </Badge>
-          )}
-          
-          {/* Detailed Floating Timer for Product Details */}
-          {product.discountType === 'timed' && (
-            <div className="absolute bottom-8 left-0 right-0 flex justify-center z-10">
-              <DiscountCountdown 
-                endDate={product.discountEndDate} 
-                isFloating={true} 
-                className="scale-125 shadow-2xl border-white/40 px-6 py-2" 
-              />
+      <div className="grid gap-12 lg:grid-cols-12 items-start">
+        {/* Gallery Column */}
+        <div className={cn(
+          "lg:col-span-7 flex flex-col md:flex-row gap-4",
+          lang === 'ar' ? "md:flex-row-reverse" : "md:flex-row"
+        )}>
+          {/* Thumbnails */}
+          {galleryImages.length > 1 && (
+            <div className="flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto max-h-[500px] scrollbar-hide py-2 px-1 md:w-24 shrink-0">
+              {galleryImages.map((img, idx) => (
+                <button 
+                  key={idx}
+                  onClick={() => setMainImage(img.url)}
+                  className={cn(
+                    "relative aspect-square w-20 md:w-full rounded-2xl overflow-hidden border-2 transition-all flex-shrink-0",
+                    mainImage === img.url ? "border-[#D4AF37] shadow-[0_0_10px_rgba(212,175,55,0.3)] scale-95" : "border-transparent"
+                  )}
+                >
+                  <img src={img.url} alt={`Thumb ${idx}`} className="h-full w-full object-cover" />
+                </button>
+              ))}
             </div>
           )}
+
+          {/* Main Image */}
+          <div className="relative flex-1 aspect-square overflow-hidden rounded-[3rem] bg-white shadow-2xl ring-1 ring-primary/5 transition-transform duration-500">
+            {optimized ? (
+              <Image
+                src={mainImage}
+                alt={displayName}
+                fill
+                priority
+                className="object-cover"
+                data-ai-hint="product detail image"
+              />
+            ) : (
+              <img
+                src={mainImage}
+                alt={displayName}
+                className="absolute inset-0 h-full w-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/placeholder/800/800';
+                }}
+              />
+            )}
+            
+            {isDiscounted && (
+              <Badge className="absolute top-8 end-8 bg-primary text-white h-16 w-16 rounded-full flex items-center justify-center text-lg font-black shadow-2xl animate-pulse z-10">
+                -{calculatedPercentage}%
+              </Badge>
+            )}
+            
+            {product.discountType === 'timed' && (
+              <div className="absolute bottom-8 left-0 right-0 flex justify-center z-10">
+                <DiscountCountdown 
+                  endDate={product.discountEndDate} 
+                  isFloating={true} 
+                  className="scale-125 shadow-2xl border-white/40 px-6 py-2" 
+                />
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-col space-y-8 text-start">
+        {/* Info Column */}
+        <div className="lg:col-span-5 flex flex-col space-y-8 text-start">
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-4">
               <Badge variant="secondary" className="px-6 py-2 rounded-full text-sm font-bold tracking-wide bg-primary/10 text-primary border-none shadow-sm">
@@ -198,6 +248,42 @@ export default function ProductPage() {
               )}
             </div>
           </div>
+
+          {/* Color Selection */}
+          {product.colors && product.colors.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-lg">{lang === 'ar' ? 'اختر اللون' : 'Select Color'}</h3>
+                {selectedColorId && (
+                  <p className="text-sm text-[#D4AF37] font-bold">
+                    {lang === 'ar' 
+                      ? product.colors.find((c: any) => c.id === selectedColorId)?.nameAr 
+                      : product.colors.find((c: any) => c.id === selectedColorId)?.nameEn}
+                  </p>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-4">
+                {product.colors.map((color: any) => (
+                  <button
+                    key={color.id}
+                    onClick={() => handleColorClick(color.id)}
+                    className={cn(
+                      "group relative h-12 w-12 rounded-full border-2 transition-all duration-300 backdrop-blur-md",
+                      selectedColorId === color.id 
+                        ? "border-[#D4AF37] scale-110 shadow-[0_0_15px_rgba(212,175,55,0.5)]" 
+                        : "border-transparent hover:border-primary/30"
+                    )}
+                    style={{ backgroundColor: color.hex + 'CC' }} // 80% opacity
+                    title={lang === 'ar' ? color.nameAr : color.nameEn}
+                  >
+                    {selectedColorId === color.id && (
+                      <Check className="absolute inset-0 m-auto h-5 w-5 text-white drop-shadow-md" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           
           <Separator className="opacity-50" />
           

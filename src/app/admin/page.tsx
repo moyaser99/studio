@@ -61,7 +61,9 @@ import {
   ClipboardList,
   Truck,
   Percent,
-  Timer
+  Timer,
+  Palette,
+  Check
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateProductDescription } from '@/ai/flows/generate-product-description-flow';
@@ -91,7 +93,7 @@ export default function AdminPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<any>({
     name: '',
     nameEn: '',
     price: '',
@@ -101,6 +103,8 @@ export default function AdminPage() {
     discountPercentage: '0',
     category: '',
     imageUrl: '',
+    images: [], // [{url, colorId}]
+    colors: [], // [{id, hex, nameAr, nameEn}]
     description: '',
     descriptionEn: '',
     details: '',
@@ -263,7 +267,7 @@ export default function AdminPage() {
         category: categoryName,
         keyFeatures: ['Exclusive product', 'High quality', 'Imported from USA']
       });
-      setFormData(prev => ({ 
+      setFormData((prev: any) => ({ 
         ...prev, 
         description: res.descriptionAr,
         descriptionEn: res.descriptionEn 
@@ -295,7 +299,6 @@ export default function AdminPage() {
       isHidden: formData.hasOwnProperty('isHidden') ? (formData as any).isHidden : false,
     };
 
-    // Convert date string to Timestamp for Firestore
     if (formData.discountEndDate) {
       payload.discountEndDate = Timestamp.fromDate(new Date(formData.discountEndDate));
     }
@@ -372,6 +375,8 @@ export default function AdminPage() {
       discountPercentage: '0',
       category: categories?.[0]?.slug || '', 
       imageUrl: '', 
+      images: [],
+      colors: [],
       description: '',
       descriptionEn: '',
       details: '',
@@ -402,6 +407,55 @@ export default function AdminPage() {
     if (!timestamp) return '';
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return date.toISOString().slice(0, 16);
+  };
+
+  const addColor = () => {
+    if (formData.colors.length >= 7) {
+      toast({ variant: 'destructive', title: 'Limit Reached', description: 'Max 7 colors allowed.' });
+      return;
+    }
+    const newColor = { id: Date.now().toString(), hex: '#000000', nameAr: '', nameEn: '' };
+    setFormData((prev: any) => ({ ...prev, colors: [...prev.colors, newColor] }));
+  };
+
+  const removeColor = (id: string) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      colors: prev.colors.filter((c: any) => c.id !== id),
+      images: prev.images.map((img: any) => img.colorId === id ? { ...img, colorId: null } : img)
+    }));
+  };
+
+  const updateColor = (id: string, field: string, value: string) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      colors: prev.colors.map((c: any) => c.id === id ? { ...c, [field]: value } : c)
+    }));
+  };
+
+  const addImageToGallery = (url: string) => {
+    if (formData.images.length >= 7) {
+      toast({ variant: 'destructive', title: 'Limit Reached', description: 'Max 7 images allowed.' });
+      return;
+    }
+    setFormData((prev: any) => ({
+      ...prev,
+      images: [...prev.images, { url, colorId: null }]
+    }));
+  };
+
+  const removeImageFromGallery = (index: number) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      images: prev.images.filter((_: any, i: number) => i !== index)
+    }));
+  };
+
+  const linkImageToColor = (imgIndex: number, colorId: string | null) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      images: prev.images.map((img: any, i: number) => i === imgIndex ? { ...img, colorId } : img)
+    }));
   };
 
   return (
@@ -438,7 +492,7 @@ export default function AdminPage() {
                 <Plus className="h-6 w-6" /> {t.addNewProduct}
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl rounded-[2.5rem] overflow-y-auto max-h-[90vh] z-[1100]" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+            <DialogContent className="max-w-5xl rounded-[2.5rem] overflow-y-auto max-h-[90vh] z-[1100]" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
               <DialogHeader>
                 <DialogTitle className="text-3xl font-black font-headline text-start text-primary flex items-center gap-2">
                   {isEditing ? t.editProduct : t.addNewProduct}
@@ -474,6 +528,7 @@ export default function AdminPage() {
                       <DollarSign className="absolute start-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                       <input 
                         type="number"
+                        step="0.01"
                         value={formData.price} 
                         onChange={e => setFormData({...formData, price: e.target.value})}
                         placeholder="0.00" 
@@ -504,7 +559,6 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Discount Section */}
                 <div className="bg-primary/5 p-6 rounded-[2rem] border-2 border-dashed border-primary/20 space-y-6">
                   <h3 className="text-xl font-bold flex items-center gap-2 text-primary">
                     <Percent className="h-6 w-6" /> {t.discountLabel}
@@ -531,6 +585,7 @@ export default function AdminPage() {
                           <DollarSign className="absolute start-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                           <input 
                             type="number"
+                            step="0.01"
                             value={formData.discountPrice} 
                             onChange={e => setFormData({...formData, discountPrice: e.target.value})}
                             placeholder="0.00" 
@@ -556,12 +611,107 @@ export default function AdminPage() {
                   )}
                 </div>
 
+                {/* Variants & Gallery Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Colors Management */}
+                  <div className="space-y-4 p-6 bg-muted/20 rounded-[2rem] border-2 border-primary/5">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xl font-bold flex items-center gap-2 text-primary">
+                        <Palette className="h-6 w-6" /> {lang === 'ar' ? 'الألوان (بحد أقصى 7)' : 'Colors (Max 7)'}
+                      </h3>
+                      <Button onClick={addColor} variant="outline" size="sm" className="rounded-full gap-1 border-primary/20 text-primary">
+                        <Plus className="h-4 w-4" /> {t.add}
+                      </Button>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {formData.colors.map((color: any) => (
+                        <div key={color.id} className="flex flex-col gap-3 p-4 bg-white rounded-2xl shadow-sm border border-primary/10">
+                          <div className="flex items-center gap-3">
+                            <input 
+                              type="color" 
+                              value={color.hex} 
+                              onChange={(e) => updateColor(color.id, 'hex', e.target.value)}
+                              className="h-10 w-10 rounded-lg cursor-pointer border-none p-0"
+                            />
+                            <div className="flex-1 grid grid-cols-2 gap-2">
+                              <input 
+                                placeholder="الاسم (AR)" 
+                                value={color.nameAr}
+                                onChange={(e) => updateColor(color.id, 'nameAr', e.target.value)}
+                                className="h-9 rounded-lg border px-2 text-xs"
+                              />
+                              <input 
+                                placeholder="Name (EN)" 
+                                value={color.nameEn}
+                                onChange={(e) => updateColor(color.id, 'nameEn', e.target.value)}
+                                className="h-9 rounded-lg border px-2 text-xs"
+                              />
+                            </div>
+                            <Button variant="ghost" size="icon" onClick={() => removeColor(color.id)} className="h-8 w-8 text-destructive rounded-full hover:bg-destructive/5">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      {formData.colors.length === 0 && (
+                        <p className="text-sm text-muted-foreground italic py-4 text-center">
+                          {lang === 'ar' ? 'لم يتم إضافة ألوان لهذا المنتج.' : 'No colors added yet.'}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Gallery Management */}
+                  <div className="space-y-4 p-6 bg-muted/20 rounded-[2rem] border-2 border-primary/5">
+                    <h3 className="text-xl font-bold flex items-center gap-2 text-primary">
+                      <ImageIcon className="h-6 w-6" /> {lang === 'ar' ? 'معرض الصور (بحد أقصى 7)' : 'Image Gallery (Max 7)'}
+                    </h3>
+                    
+                    <ImageUpload 
+                      folder="gallery"
+                      onUploadComplete={(url) => addImageToGallery(url)}
+                      label={lang === 'ar' ? 'أضف صورة للمعرض' : 'Add to Gallery'}
+                    />
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
+                      {formData.images.map((img: any, idx: number) => (
+                        <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border-2 border-primary/10 group bg-white">
+                          <img src={img.url} alt="Gallery" className="h-full w-full object-cover" />
+                          <button 
+                            onClick={() => removeImageFromGallery(idx)}
+                            className="absolute top-1 right-1 h-6 w-6 bg-destructive text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                          
+                          {/* Color Linker Dropdown */}
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1">
+                            <select 
+                              className="w-full h-6 text-[10px] bg-transparent text-white border-none focus:ring-0"
+                              value={img.colorId || ''}
+                              onChange={(e) => linkImageToColor(idx, e.target.value || null)}
+                            >
+                              <option value="" className="text-black">{lang === 'ar' ? 'عام' : 'General'}</option>
+                              {formData.colors.map((c: any) => (
+                                <option key={c.id} value={c.id} className="text-black">
+                                  {lang === 'ar' ? c.nameAr : c.nameEn}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <ImageUpload 
                     folder="products"
                     initialUrl={formData.imageUrl}
-                    onUploadComplete={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
-                    label={t.imageLabel}
+                    onUploadComplete={(url) => setFormData((prev: any) => ({ ...prev, imageUrl: url }))}
+                    label={t.imageLabel + " (رئيسية)"}
                   />
                 </div>
 
@@ -793,6 +943,8 @@ export default function AdminPage() {
                                     discountPercentage: p.discountPercentage?.toString() || '0',
                                     category: p.category,
                                     imageUrl: p.imageUrl,
+                                    images: p.images || [],
+                                    colors: p.colors || [],
                                     description: p.description || '',
                                     descriptionEn: p.descriptionEn || '',
                                     details: p.details || '',
@@ -933,6 +1085,8 @@ export default function AdminPage() {
                                   discountPercentage: product.discountPercentage?.toString() || '0',
                                   category: product.category,
                                   imageUrl: product.imageUrl,
+                                  images: product.images || [],
+                                  colors: product.colors || [],
                                   description: product.description || '',
                                   descriptionEn: product.descriptionEn || '',
                                   details: product.details || '',

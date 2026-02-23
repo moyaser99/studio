@@ -51,7 +51,31 @@
         },
         "imageUrl": {
           "type": "string",
-          "description": "The URL of the product image"
+          "description": "The primary URL of the product image"
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "url": { "type": "string" },
+              "colorId": { "type": "string" }
+            }
+          },
+          "description": "Gallery of up to 7 images, optionally linked to colors"
+        },
+        "colors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "hex": { "type": "string" },
+              "nameAr": { "type": "string" },
+              "nameEn": { "type": "string" }
+            }
+          },
+          "description": "Up to 7 color variants"
         },
         "description": {
           "type": "string",
