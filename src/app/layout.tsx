@@ -80,8 +80,11 @@ export default function RootLayout({
                 <Footer />
               </div>
               <Toaster />
-              {/* Global stable recaptcha container to prevent initialization timeouts */}
-              <div id="recaptcha-container" className="hidden pointer-events-none" />
+              {/* Global stable recaptcha container - hidden securely to avoid layout shifts and permissions lag */}
+              <div 
+                id="recaptcha-container" 
+                style={{ opacity: 0, position: 'absolute', pointerEvents: 'none', zIndex: -1, bottom: 0 }} 
+              />
             </CartProvider>
           </LanguageProvider>
         </FirebaseClientProvider>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useTransition } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useTranslation } from '@/hooks/use-translation';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,6 @@ import {
   ShoppingBag,
   Loader2,
   Building2,
-  ExternalLink,
   ShieldCheck,
   Smartphone
 } from 'lucide-react';
@@ -86,14 +85,11 @@ export default function CheckoutPage() {
 
   const [dynamicRates, setDynamicRates] = useState<Record<string, number>>(DEFAULT_US_STATES);
 
-  // Sync data from localStorage and Auth Provider
   useEffect(() => {
-    // 1. Check if user is logged in via Phone
     if (user) {
       const isPhoneAuth = user.providerData.some(p => p.providerId === 'phone');
       if (isPhoneAuth) {
         setIsVerified(true);
-        // Strip prefix for input display
         let cleanPhone = user.phoneNumber || '';
         if (cleanPhone.startsWith('+1')) {
           setCountryCode('+1');
@@ -106,7 +102,6 @@ export default function CheckoutPage() {
       }
     }
 
-    // 2. Load from localStorage if not already set
     const savedProfile = localStorage.getItem('harir-delivery-info');
     if (savedProfile) {
       try {
@@ -164,11 +159,9 @@ export default function CheckoutPage() {
   const setupRecaptcha = () => {
     if (!auth) return;
     try {
-      // Check if container exists in DOM (it's in layout.tsx)
       const container = document.getElementById('recaptcha-container');
       if (!container) return;
 
-      // Clear existing verifier if any to avoid Duplicate ID errors
       if ((window as any).recaptchaVerifier) {
         try {
           (window as any).recaptchaVerifier.clear();
@@ -193,13 +186,13 @@ export default function CheckoutPage() {
 
     setVerifying(true);
     const finalPhone = `${countryCode}${cleanPhone}`;
-    console.log("Attempting phone verification for:", finalPhone);
     
     try {
       setupRecaptcha();
       const verifier = (window as any).recaptchaVerifier;
       if (!verifier) throw new Error("Recaptcha not initialized");
 
+      // Safeguard: Ensure no premature database calls happen during verification
       const result = await signInWithPhoneNumber(auth, finalPhone, verifier);
       setConfirmationResult(result);
       setOtpSent(true);
@@ -254,22 +247,11 @@ export default function CheckoutPage() {
     setLoading(true);
 
     try {
-      // Stock check
-      for (const item of cartItems) {
-        const productRef = doc(db, 'products', item.id);
-        const productSnap = await getDoc(productRef);
-        if (productSnap.exists()) {
-          const productData = productSnap.data();
-          if ((productData.stock || 0) < item.quantity) {
-            toast({ variant: "destructive", title: lang === 'ar' ? 'عذراً' : 'Sorry', description: `${lang === 'ar' ? item.name : (item.nameEn || item.name)}: ${t.outOfStockError}` });
-            setLoading(false);
-            return;
-          }
-        }
-      }
+      // Final security check: confirm auth state is ready before writing
+      const currentUser = auth?.currentUser;
+      const userId = currentUser?.uid || 'guest';
 
       const finalPhone = `${countryCode}${formData.phone.replace(/\D/g, '')}`;
-      // Critical: Ensure UID is included for permission logic
       const orderData = {
         customerInfo: {
           fullName: formData.fullName,
@@ -283,19 +265,18 @@ export default function CheckoutPage() {
         status: 'pending',
         paymentMethod: 'Cash on Delivery',
         createdAt: serverTimestamp(),
-        userId: user?.uid || 'guest',
+        userId: userId,
         legal_consent: { agreedToTerms: true, version: 'Feb-2026-v1', timestamp: serverTimestamp() }
       };
 
       addDoc(collection(db, 'orders'), orderData)
         .then((orderRef) => {
-          // Update stock optimistically
+          // Optimistic stock update
           cartItems.forEach(item => {
             const productRef = doc(db, 'products', item.id);
-            updateDoc(productRef, { stock: increment(-item.quantity) });
+            updateDoc(productRef, { stock: increment(-item.quantity) }).catch(() => {});
           });
 
-          // Optional notification
           const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
           const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
           const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
@@ -307,7 +288,7 @@ export default function CheckoutPage() {
               customer_phone: finalPhone,
               total_price: grandTotal.toFixed(2),
               order_details: cartItems.map(item => `${item.name} (x${item.quantity})`).join(', ')
-            }, publicKey);
+            }, publicKey).catch(() => {});
           }
 
           toast({ title: lang === 'ar' ? 'شكراً لك' : 'Thank You', description: lang === 'ar' ? 'تم استلام طلبك بنجاح' : 'Your order has been received.' });

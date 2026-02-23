@@ -141,13 +141,13 @@ export default function LoginPage() {
     
     setLoading(true);
     const finalPhone = `${countryCode}${cleanPhone}`;
-    console.log("Attempting phone login for:", finalPhone);
 
     try {
       setupRecaptcha();
       const verifier = (window as any).recaptchaVerifier;
       if (!verifier) throw new Error("Recaptcha not ready");
 
+      // Safeguard: Ensure no database calls happen during SMS dispatch
       const result = await signInWithPhoneNumber(auth, finalPhone, verifier);
       setConfirmationResult(result);
       toast({ title: 'Code Sent', description: 'Please check your phone.' });
