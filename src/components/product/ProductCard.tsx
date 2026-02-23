@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/hooks/use-toast';
@@ -120,12 +120,29 @@ export default function ProductCard({ product }: ProductCardProps) {
         )}
         <div className="absolute inset-0 bg-black/5 group-hover:bg-black/0 transition-colors duration-300" />
         
-        <Badge className="absolute start-4 top-4 bg-white/90 backdrop-blur-md text-primary hover:bg-white rounded-full px-4 py-1.5 shadow-sm font-bold border-none transition-all duration-300">
+        {/* Floating Category Badge */}
+        <Badge className="absolute start-4 top-4 bg-white/90 backdrop-blur-md text-primary hover:bg-white rounded-full px-4 py-1.5 shadow-sm font-bold border-none transition-all duration-300 z-10">
           {displayCategory}
         </Badge>
 
+        {/* Floating Timer or Static Badge */}
+        <div className="absolute bottom-4 left-0 right-0 px-4 z-10 flex justify-center">
+          {product.discountType === 'timed' ? (
+            <DiscountCountdown 
+              endDate={product.discountEndDate} 
+              isFloating={true} 
+              className="w-full max-w-[180px] shadow-2xl"
+            />
+          ) : product.discountType === 'permanent' ? (
+            <div className="bg-[#D4AF37]/90 backdrop-blur-sm text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-xl border border-white/20">
+              <Sparkles className="h-3 w-3" />
+              {lang === 'ar' ? 'عرض خاص' : 'Special Offer'}
+            </div>
+          ) : null}
+        </div>
+
         {isDiscounted && (
-          <Badge className="absolute end-4 top-4 bg-primary text-white h-12 w-12 sm:h-14 sm:w-14 rounded-full flex items-center justify-center text-xs sm:text-sm font-black shadow-xl animate-in fade-in zoom-in duration-500 ring-2 ring-white/20">
+          <Badge className="absolute end-4 top-4 bg-primary text-white h-12 w-12 sm:h-14 sm:w-14 rounded-full flex items-center justify-center text-xs sm:text-sm font-black shadow-xl animate-in fade-in zoom-in duration-500 ring-2 ring-white/20 z-10">
             -{calculatedPercentage}%
           </Badge>
         )}
@@ -133,10 +150,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       
       <CardContent className="p-4 sm:p-6 text-start flex flex-col flex-1">
         <Link href={`/product/${product.id}`} className="block group-hover:text-primary transition-colors flex-1">
-          <div className="mb-2">
-            {product.discountType === 'timed' && <DiscountCountdown endDate={product.discountEndDate} />}
-          </div>
-          <h3 className="line-clamp-2 font-bold text-foreground text-lg sm:text-xl leading-snug mb-2">
+          <h3 className="line-clamp-2 font-bold text-foreground text-lg sm:text-xl leading-snug mb-3">
             {displayName}
           </h3>
           <div className="flex items-center gap-3 mb-4 sm:mb-6">

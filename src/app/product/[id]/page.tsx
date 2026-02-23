@@ -149,19 +149,35 @@ export default function ProductPage() {
             />
           )}
           {isDiscounted && (
-            <Badge className="absolute top-8 end-8 bg-primary text-white h-16 w-16 rounded-full flex items-center justify-center text-lg font-black shadow-2xl animate-pulse">
+            <Badge className="absolute top-8 end-8 bg-primary text-white h-16 w-16 rounded-full flex items-center justify-center text-lg font-black shadow-2xl animate-pulse z-10">
               -{calculatedPercentage}%
             </Badge>
+          )}
+          
+          {/* Detailed Floating Timer for Product Details */}
+          {product.discountType === 'timed' && (
+            <div className="absolute bottom-8 left-0 right-0 flex justify-center z-10">
+              <DiscountCountdown 
+                endDate={product.discountEndDate} 
+                isFloating={true} 
+                className="scale-125 shadow-2xl border-white/40 px-6 py-2" 
+              />
+            </div>
           )}
         </div>
 
         <div className="flex flex-col space-y-8 text-start">
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4">
               <Badge variant="secondary" className="px-6 py-2 rounded-full text-sm font-bold tracking-wide bg-primary/10 text-primary border-none shadow-sm">
                 {displayCategory}
               </Badge>
-              {product.discountType === 'timed' && <DiscountCountdown endDate={product.discountEndDate} />}
+              {product.discountType === 'permanent' && (
+                <div className="bg-[#D4AF37]/10 text-[#D4AF37] px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-2 border border-[#D4AF37]/20">
+                  <Sparkles className="h-3 w-3" />
+                  {lang === 'ar' ? 'عرض خاص' : 'Special Offer'}
+                </div>
+              )}
             </div>
             <h1 className="text-4xl md:text-5xl font-black text-foreground font-headline leading-tight">
               {displayName}

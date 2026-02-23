@@ -4,17 +4,25 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/use-translation';
 import { Clock } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface DiscountCountdownProps {
   endDate: string | any; // Supports ISO string or Firestore Timestamp
+  className?: string;
+  isFloating?: boolean;
 }
 
-export default function DiscountCountdown({ endDate }: DiscountCountdownProps) {
+export default function DiscountCountdown({ endDate, className, isFloating = false }: DiscountCountdownProps) {
   const { t, lang } = useTranslation();
   const [timeLeft, setTimeLeft] = useState<{ h: number; m: number; s: number } | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (!endDate) return;
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!endDate || !mounted) return;
 
     const targetDate = endDate.toDate ? endDate.toDate().getTime() : new Date(endDate).getTime();
 
@@ -40,32 +48,40 @@ export default function DiscountCountdown({ endDate }: DiscountCountdownProps) {
 
     const timer = setInterval(() => {
       const active = calculateTime();
-      if (!active) clearInterval(timer);
+      if (!active) {
+        clearInterval(timer);
+        // Force a page refresh or state update to revert price could be handled here or by the consumer
+      }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [endDate]);
+  }, [endDate, mounted]);
 
-  if (!timeLeft) return null;
+  if (!mounted || !timeLeft) return null;
+
+  const formatNum = (num: number) => num.toString().padStart(2, '0');
 
   return (
     <div 
-      className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border-2 border-primary/20 animate-in fade-in slide-in-from-top-1 duration-500 shadow-sm"
+      className={cn(
+        "flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-lg backdrop-blur-md transition-all duration-500 animate-in fade-in zoom-in-95",
+        isFloating 
+          ? "bg-primary/20 border-[#D4AF37]/30 text-[#D4AF37]" 
+          : "bg-primary/10 border-primary/20 text-primary",
+        className
+      )}
       dir={lang === 'ar' ? 'rtl' : 'ltr'}
     >
-      <Clock className="h-4 w-4 text-[#D4AF37] animate-pulse" />
-      <span className="text-[10px] sm:text-xs font-bold text-primary whitespace-nowrap">
+      <Clock className={cn("h-3.5 w-3.5 animate-pulse", isFloating ? "text-[#D4AF37]" : "text-[#D4AF37]")} />
+      <span className="text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
         {t.endsIn}:
       </span>
-      <div className="flex items-center gap-1 font-mono text-xs sm:text-sm font-black text-[#D4AF37]">
-        <span className="bg-white px-1.5 py-0.5 rounded shadow-inner min-w-[2ch] text-center">{timeLeft.h}</span>
-        <span className="text-[10px] font-bold text-primary">{t.hours}</span>
-        <span className="opacity-50">:</span>
-        <span className="bg-white px-1.5 py-0.5 rounded shadow-inner min-w-[2ch] text-center">{timeLeft.m}</span>
-        <span className="text-[10px] font-bold text-primary">{t.minutes}</span>
-        <span className="opacity-50">:</span>
-        <span className="bg-white px-1.5 py-0.5 rounded shadow-inner min-w-[2ch] text-center">{timeLeft.s}</span>
-        <span className="text-[10px] font-bold text-primary">{t.seconds}</span>
+      <div className="flex items-center gap-1 font-mono text-sm font-black tracking-tighter">
+        <span className="min-w-[2ch] text-center">{formatNum(timeLeft.h)}</span>
+        <span className="opacity-50 text-[10px]">:</span>
+        <span className="min-w-[2ch] text-center">{formatNum(timeLeft.m)}</span>
+        <span className="opacity-50 text-[10px]">:</span>
+        <span className="min-w-[2ch] text-center">{formatNum(timeLeft.s)}</span>
       </div>
     </div>
   );
