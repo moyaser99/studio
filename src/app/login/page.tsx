@@ -115,29 +115,49 @@ export default function LoginPage() {
 
   const setupRecaptcha = () => {
     if (!auth) return;
-    if (!(window as any).recaptchaVerifier) {
+    try {
+      const container = document.getElementById('recaptcha-container');
+      if (!container) return;
+
+      if ((window as any).recaptchaVerifier) {
+        try { (window as any).recaptchaVerifier.clear(); } catch (e) {}
+      }
+
       (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
       });
+    } catch (error) {
+      console.error("Recaptcha setup error:", error);
     }
   };
 
   const handlePhoneSignIn = async () => {
     if (!auth) return;
-    if (!phone) {
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (!cleanPhone) {
       toast({ variant: 'destructive', title: 'Warning', description: 'Please enter phone number.' });
       return;
     }
+    
     setLoading(true);
-    const finalPhone = `${countryCode}${phone.replace(/\D/g, '')}`;
+    const finalPhone = `${countryCode}${cleanPhone}`;
+    console.log("Attempting phone login for:", finalPhone);
+
     try {
       setupRecaptcha();
       const verifier = (window as any).recaptchaVerifier;
+      if (!verifier) throw new Error("Recaptcha not ready");
+
       const result = await signInWithPhoneNumber(auth, finalPhone, verifier);
       setConfirmationResult(result);
       toast({ title: 'Code Sent', description: 'Please check your phone.' });
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to send verification code.' });
+      console.error("SMS Login Error:", error);
+      let msg = 'Failed to send verification code.';
+      if (error.code === 'auth/invalid-phone-number') msg = 'Invalid phone number format.';
+      if (error.code === 'auth/too-many-requests') msg = 'Too many requests. Please try later.';
+      
+      toast({ variant: 'destructive', title: 'Error', description: msg });
     } finally {
       setLoading(false);
     }

@@ -163,32 +163,54 @@ export default function CheckoutPage() {
 
   const setupRecaptcha = () => {
     if (!auth) return;
-    if (!(window as any).recaptchaVerifier) {
+    try {
+      // Check if container exists in DOM (it's in layout.tsx)
+      const container = document.getElementById('recaptcha-container');
+      if (!container) return;
+
+      // Clear existing verifier if any to avoid Duplicate ID errors
+      if ((window as any).recaptchaVerifier) {
+        try {
+          (window as any).recaptchaVerifier.clear();
+        } catch (e) {}
+      }
+
       (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
       });
+    } catch (error) {
+      console.error("Recaptcha setup error:", error);
     }
   };
 
   const handleSendCode = async () => {
     if (!auth) return;
-    if (!formData.phone || formData.phone.length < 7) {
-      toast({ variant: 'destructive', title: t.errorOccurred, description: 'Invalid phone number.' });
+    const cleanPhone = formData.phone.replace(/\D/g, '');
+    if (!cleanPhone || cleanPhone.length < 7) {
+      toast({ variant: 'destructive', title: t.errorOccurred, description: lang === 'ar' ? 'رقم الهاتف غير صحيح' : 'Invalid phone number.' });
       return;
     }
 
     setVerifying(true);
-    const finalPhone = `${countryCode}${formData.phone}`;
+    const finalPhone = `${countryCode}${cleanPhone}`;
+    console.log("Attempting phone verification for:", finalPhone);
     
     try {
       setupRecaptcha();
       const verifier = (window as any).recaptchaVerifier;
+      if (!verifier) throw new Error("Recaptcha not initialized");
+
       const result = await signInWithPhoneNumber(auth, finalPhone, verifier);
       setConfirmationResult(result);
       setOtpSent(true);
       toast({ title: lang === 'ar' ? 'تم إرسال الرمز' : 'OTP Sent', description: lang === 'ar' ? 'يرجى التحقق من هاتفك' : 'Check your phone for the code.' });
     } catch (error: any) {
-      toast({ variant: 'destructive', title: t.errorOccurred, description: t.verificationError });
+      console.error("SMS Error:", error);
+      let msg = t.verificationError;
+      if (error.code === 'auth/invalid-phone-number') msg = lang === 'ar' ? 'رقم الهاتف غير صحيح' : 'Invalid phone number format.';
+      if (error.code === 'auth/too-many-requests') msg = lang === 'ar' ? 'محاولات كثيرة جداً، يرجى المحاولة لاحقاً' : 'Too many requests. Please try later.';
+      
+      toast({ variant: 'destructive', title: t.errorOccurred, description: msg });
     } finally {
       setVerifying(false);
     }
@@ -246,7 +268,7 @@ export default function CheckoutPage() {
         }
       }
 
-      const finalPhone = `${countryCode}${formData.phone}`;
+      const finalPhone = `${countryCode}${formData.phone.replace(/\D/g, '')}`;
       // Critical: Ensure UID is included for permission logic
       const orderData = {
         customerInfo: {
