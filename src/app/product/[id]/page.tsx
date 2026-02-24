@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -28,6 +27,7 @@ export default function ProductPage() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
   const [mainImage, setMainImage] = useState<string>('');
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   const productRef = useMemoFirebase(() => {
     if (!db || !id) return null;
@@ -86,7 +86,6 @@ export default function ProductPage() {
 
     const colorObj = product.colors?.find((c: any) => c.id === selectedColorId);
 
-    // PERSISTENCE FIX: Pass current image and color object
     addToCart({
       ...product,
       price: price,
@@ -106,7 +105,36 @@ export default function ProductPage() {
     const linkedImage = product.images?.find((img: any) => img.colorId === colorId);
     if (linkedImage) {
       setMainImage(linkedImage.url);
+      
+      // Attempt to scroll to the thumbnail if it exists in the list
+      const thumbIndex = galleryImages.findIndex(img => img.url === linkedImage.url);
+      if (thumbIndex !== -1 && scrollContainerRef.current) {
+        const container = scrollContainerRef.current;
+        const thumbElement = container.children[thumbIndex] as HTMLElement;
+        if (thumbElement) {
+          container.scrollTo({
+            left: thumbElement.offsetLeft - (container.offsetWidth / 2) + (thumbElement.offsetWidth / 2),
+            behavior: 'smooth'
+          });
+        }
+      }
     }
+  };
+
+  const scrollGallery = (direction: 'next' | 'prev') => {
+    if (!scrollContainerRef.current) return;
+    const container = scrollContainerRef.current;
+    const scrollAmount = 200;
+    
+    // Reverse logic for RTL
+    const isRTL = lang === 'ar';
+    const modifier = isRTL ? -1 : 1;
+    const finalDirection = direction === 'next' ? 1 : -1;
+
+    container.scrollBy({
+      left: finalDirection * scrollAmount * modifier,
+      behavior: 'smooth'
+    });
   };
 
   if (loading) {
@@ -153,35 +181,11 @@ export default function ProductPage() {
       <ProductSchema product={product as any} />
       
       <div className="grid gap-12 lg:grid-cols-12 items-start">
-        {/* Gallery Column */}
-        <div className={cn(
-          "lg:col-span-7 flex flex-col md:flex-row gap-4",
-          lang === 'ar' ? "md:flex-row-reverse" : "md:flex-row"
-        )}>
-          {/* Thumbnails */}
-          {galleryImages.length > 1 && (
-            <div className="flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto max-h-[500px] scrollbar-hide py-2 px-1 md:w-24 shrink-0">
-              {galleryImages.map((img, idx) => (
-                <button 
-                  key={idx}
-                  onClick={() => setMainImage(img.url)}
-                  className={cn(
-                    "relative aspect-square w-20 md:w-full rounded-2xl overflow-hidden border-2 transition-all flex-shrink-0",
-                    mainImage === img.url ? "border-[#D4AF37] shadow-[0_0_10px_rgba(212,175,55,0.3)] scale-95" : "border-transparent"
-                  )}
-                >
-                  {img.url ? (
-                    <img src={img.url} alt={`Thumb ${idx}`} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="h-full w-full bg-primary/10 animate-pulse" />
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-
+        {/* Gallery Column - REDESIGNED: Thumbnails at Bottom */}
+        <div className="lg:col-span-7 flex flex-col gap-6">
+          
           {/* Main Image */}
-          <div className="relative flex-1 aspect-square overflow-hidden rounded-[3rem] bg-white shadow-2xl ring-1 ring-primary/5 transition-transform duration-500">
+          <div className="relative aspect-square overflow-hidden rounded-[3rem] bg-white shadow-2xl ring-1 ring-primary/5 transition-transform duration-500">
             {mainImage ? (
               optimized ? (
                 <Image
@@ -224,6 +228,52 @@ export default function ProductPage() {
               </div>
             )}
           </div>
+
+          {/* Horizontal Thumbnails Row with Navigation Arrows */}
+          {galleryImages.length > 1 && (
+            <div className="relative group/gallery px-10">
+              {/* Navigation Arrows */}
+              <button 
+                onClick={() => scrollGallery('prev')}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-full shadow-lg border border-[#D4AF37]/20 text-[#D4AF37] hover:text-primary hover:shadow-[0_0_15px_rgba(255,192,203,0.5)] transition-all active:scale-95"
+              >
+                {lang === 'ar' ? <ChevronRight className="h-6 w-6" /> : <ChevronLeft className="h-6 w-6" />}
+              </button>
+
+              <div 
+                ref={scrollContainerRef}
+                className="flex gap-4 overflow-x-auto scrollbar-hide py-2"
+                style={{ scrollSnapType: 'x mandatory' }}
+              >
+                {galleryImages.map((img, idx) => (
+                  <button 
+                    key={idx}
+                    onClick={() => setMainImage(img.url)}
+                    className={cn(
+                      "relative aspect-square w-24 md:w-32 flex-shrink-0 rounded-2xl overflow-hidden border-2 transition-all duration-300",
+                      mainImage === img.url 
+                        ? "border-[#D4AF37] shadow-xl -translate-y-1 scale-105" 
+                        : "border-transparent opacity-70 hover:opacity-100"
+                    )}
+                    style={{ scrollSnapAlign: 'start' }}
+                  >
+                    {img.url ? (
+                      <img src={img.url} alt={`Thumb ${idx}`} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="h-full w-full bg-primary/10 animate-pulse" />
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              <button 
+                onClick={() => scrollGallery('next')}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-full shadow-lg border border-[#D4AF37]/20 text-[#D4AF37] hover:text-primary hover:shadow-[0_0_15px_rgba(255,192,203,0.5)] transition-all active:scale-95"
+              >
+                {lang === 'ar' ? <ChevronLeft className="h-6 w-6" /> : <ChevronRight className="h-6 w-6" />}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Info Column */}
