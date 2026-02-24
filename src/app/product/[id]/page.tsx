@@ -38,7 +38,7 @@ export default function ProductPage() {
 
   useEffect(() => {
     if (product) {
-      setMainImage(product.imageUrl || 'https://picsum.photos/seed/placeholder/800/800');
+      setMainImage(product.imageUrl || '');
     }
   }, [product]);
 
@@ -106,7 +106,6 @@ export default function ProductPage() {
     if (linkedImage) {
       setMainImage(linkedImage.url);
       
-      // Attempt to scroll to the thumbnail if it exists in the list
       const thumbIndex = galleryImages.findIndex(img => img.url === linkedImage.url);
       if (thumbIndex !== -1 && scrollContainerRef.current) {
         const container = scrollContainerRef.current;
@@ -126,7 +125,6 @@ export default function ProductPage() {
     const container = scrollContainerRef.current;
     const scrollAmount = 200;
     
-    // Reverse logic for RTL
     const isRTL = lang === 'ar';
     const modifier = isRTL ? -1 : 1;
     const finalDirection = direction === 'next' ? 1 : -1;
@@ -174,18 +172,18 @@ export default function ProductPage() {
   const galleryImages = [
     { url: product.imageUrl, colorId: null },
     ...(product.images || [])
-  ].slice(0, 7);
+  ].filter(img => img.url).slice(0, 7);
 
   return (
-    <div className="container mx-auto px-4 py-12 md:px-6">
+    <div className="container mx-auto px-4 py-8 md:py-12 md:px-6">
       <ProductSchema product={product as any} />
       
-      <div className="grid gap-12 lg:grid-cols-12 items-start">
-        {/* Gallery Column - REDESIGNED: Thumbnails at Bottom */}
-        <div className="lg:col-span-7 flex flex-col gap-6">
+      <div className="grid gap-8 lg:grid-cols-2 items-start">
+        {/* Gallery Column */}
+        <div className="flex flex-col gap-4 md:gap-6">
           
-          {/* Main Image */}
-          <div className="relative aspect-square overflow-hidden rounded-[3rem] bg-white shadow-2xl ring-1 ring-primary/5 transition-transform duration-500">
+          {/* Main Image Container - Optimized Height & Aspect */}
+          <div className="relative aspect-square md:aspect-[4/5] w-full overflow-hidden rounded-[2rem] md:rounded-[3rem] bg-white shadow-xl ring-1 ring-primary/5 transition-transform duration-500 max-h-[400px] md:max-h-[600px]">
             {mainImage ? (
               optimized ? (
                 <Image
@@ -213,36 +211,35 @@ export default function ProductPage() {
             )}
             
             {isDiscounted && (
-              <Badge className="absolute top-8 end-8 bg-primary text-white h-16 w-16 rounded-full flex items-center justify-center text-lg font-black shadow-2xl animate-pulse z-10">
+              <Badge className="absolute top-4 end-4 md:top-8 md:end-8 bg-primary text-white h-12 w-12 md:h-16 md:w-16 rounded-full flex items-center justify-center text-sm md:text-lg font-black shadow-2xl animate-pulse z-10">
                 -{calculatedPercentage}%
               </Badge>
             )}
             
             {product.discountType === 'timed' && (
-              <div className="absolute bottom-8 left-0 right-0 flex justify-center z-10">
+              <div className="absolute bottom-4 end-4 z-10">
                 <DiscountCountdown 
                   endDate={product.discountEndDate} 
                   isFloating={true} 
-                  className="scale-125 shadow-2xl border-white/40 px-6 py-2" 
+                  className="scale-90 md:scale-110 shadow-xl border-white/40 px-4 py-1.5" 
                 />
               </div>
             )}
           </div>
 
-          {/* Horizontal Thumbnails Row with Navigation Arrows */}
+          {/* Thumbnails row with small margin */}
           {galleryImages.length > 1 && (
-            <div className="relative group/gallery px-10">
-              {/* Navigation Arrows */}
+            <div className="relative group/gallery px-8 md:px-10 mt-2">
               <button 
                 onClick={() => scrollGallery('prev')}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-full shadow-lg border border-[#D4AF37]/20 text-[#D4AF37] hover:text-primary hover:shadow-[0_0_15px_rgba(255,192,203,0.5)] transition-all active:scale-95"
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 md:h-10 md:w-10 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-full shadow-md border border-[#D4AF37]/20 text-[#D4AF37] hover:text-primary transition-all active:scale-95"
               >
-                {lang === 'ar' ? <ChevronRight className="h-6 w-6" /> : <ChevronLeft className="h-6 w-6" />}
+                {lang === 'ar' ? <ChevronRight className="h-5 w-5 md:h-6 md:w-6" /> : <ChevronLeft className="h-5 w-5 md:h-6 md:w-6" />}
               </button>
 
               <div 
                 ref={scrollContainerRef}
-                className="flex gap-4 overflow-x-auto scrollbar-hide py-2"
+                className="flex gap-3 md:gap-4 overflow-x-auto scrollbar-hide py-1"
                 style={{ scrollSnapType: 'x mandatory' }}
               >
                 {galleryImages.map((img, idx) => (
@@ -250,56 +247,52 @@ export default function ProductPage() {
                     key={idx}
                     onClick={() => setMainImage(img.url)}
                     className={cn(
-                      "relative aspect-square w-24 md:w-32 flex-shrink-0 rounded-2xl overflow-hidden border-2 transition-all duration-300",
+                      "relative aspect-square w-16 md:w-24 flex-shrink-0 rounded-xl md:rounded-2xl overflow-hidden border transition-all duration-300",
                       mainImage === img.url 
-                        ? "border-[#D4AF37] shadow-xl -translate-y-1 scale-105" 
+                        ? "border-[#D4AF37] ring-2 ring-[#D4AF37]/20 shadow-lg -translate-y-0.5" 
                         : "border-transparent opacity-70 hover:opacity-100"
                     )}
                     style={{ scrollSnapAlign: 'start' }}
                   >
-                    {img.url ? (
-                      <img src={img.url} alt={`Thumb ${idx}`} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="h-full w-full bg-primary/10 animate-pulse" />
-                    )}
+                    {img.url && <img src={img.url} alt={`Thumb ${idx}`} className="h-full w-full object-cover" />}
                   </button>
                 ))}
               </div>
 
               <button 
                 onClick={() => scrollGallery('next')}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-full shadow-lg border border-[#D4AF37]/20 text-[#D4AF37] hover:text-primary hover:shadow-[0_0_15px_rgba(255,192,203,0.5)] transition-all active:scale-95"
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 md:h-10 md:w-10 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-full shadow-md border border-[#D4AF37]/20 text-[#D4AF37] hover:text-primary transition-all active:scale-95"
               >
-                {lang === 'ar' ? <ChevronLeft className="h-6 w-6" /> : <ChevronRight className="h-6 w-6" />}
+                {lang === 'ar' ? <ChevronLeft className="h-5 w-5 md:h-6 md:w-6" /> : <ChevronRight className="h-5 w-5 md:h-6 md:w-6" />}
               </button>
             </div>
           )}
         </div>
 
-        {/* Info Column */}
-        <div className="lg:col-span-5 flex flex-col space-y-8 text-start">
-          <div className="space-y-4">
+        {/* Info Column - Sticky on Desktop */}
+        <div className="flex flex-col space-y-6 md:space-y-8 text-start lg:sticky lg:top-32 h-fit">
+          <div className="space-y-3 md:space-y-4">
             <div className="flex items-center justify-between gap-4">
-              <Badge variant="secondary" className="px-6 py-2 rounded-full text-sm font-bold tracking-wide bg-primary/10 text-primary border-none shadow-sm">
+              <Badge variant="secondary" className="px-4 md:px-6 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-bold tracking-wide bg-primary/10 text-primary border-none shadow-sm">
                 {displayCategory}
               </Badge>
               {product.discountType === 'permanent' && (
-                <div className="bg-[#D4AF37]/10 text-[#D4AF37] px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-2 border border-[#D4AF37]/20">
+                <div className="bg-[#D4AF37]/10 text-[#D4AF37] px-3 md:px-4 py-1.5 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest flex items-center gap-2 border border-[#D4AF37]/20">
                   <Sparkles className="h-3 w-3" />
                   {lang === 'ar' ? 'عرض خاص' : 'Special Offer'}
                 </div>
               )}
             </div>
-            <h1 className="text-4xl md:text-5xl font-black text-foreground font-headline leading-tight">
+            <h1 className="text-3xl md:text-5xl font-black text-foreground font-headline leading-tight">
               {displayName}
             </h1>
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4 md:gap-6">
               <div className="flex flex-col">
-                <p className="text-5xl font-black text-primary">
+                <p className="text-4xl md:text-5xl font-black text-primary">
                   ${finalPrice.toFixed(2)}
                 </p>
                 {isDiscounted && (
-                  <p className="text-xl text-muted-foreground line-through font-bold mt-1">
+                  <p className="text-lg md:text-xl text-muted-foreground line-through font-bold mt-1 opacity-60">
                     ${product.price.toFixed(2)}
                   </p>
                 )}
@@ -312,33 +305,33 @@ export default function ProductPage() {
 
           {/* Color Selection */}
           {product.colors && product.colors.length > 0 && (
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-lg">{lang === 'ar' ? 'اختر اللون' : 'Select Color'}</h3>
+                <h3 className="font-bold text-base md:text-lg">{lang === 'ar' ? 'اختر اللون' : 'Select Color'}</h3>
                 {selectedColorId && (
-                  <p className="text-sm text-[#D4AF37] font-bold">
+                  <p className="text-xs md:text-sm text-[#D4AF37] font-bold">
                     {lang === 'ar' 
                       ? product.colors.find((c: any) => c.id === selectedColorId)?.nameAr 
                       : product.colors.find((c: any) => c.id === selectedColorId)?.nameEn}
                   </p>
                 )}
               </div>
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-3 md:gap-4">
                 {product.colors.map((color: any) => (
                   <button
                     key={color.id}
                     onClick={() => handleColorClick(color.id)}
                     className={cn(
-                      "group relative h-12 w-12 rounded-full border-2 transition-all duration-300 backdrop-blur-md",
+                      "group relative h-10 w-10 md:h-12 md:w-12 rounded-full border-2 transition-all duration-300 backdrop-blur-md",
                       selectedColorId === color.id 
-                        ? "border-[#D4AF37] scale-110 shadow-[0_0_15px_rgba(212,175,55,0.5)]" 
+                        ? "border-[#D4AF37] scale-110 shadow-[0_0_15px_rgba(212,175,55,0.4)]" 
                         : "border-transparent hover:border-primary/30"
                     )}
                     style={{ backgroundColor: color.hex + 'CC' }}
                     title={lang === 'ar' ? color.nameAr : color.nameEn}
                   >
                     {selectedColorId === color.id && (
-                      <Check className="absolute inset-0 m-auto h-5 w-5 text-white drop-shadow-md" />
+                      <Check className="absolute inset-0 m-auto h-4 w-4 md:h-5 md:w-5 text-white drop-shadow-md" />
                     )}
                   </button>
                 ))}
@@ -346,21 +339,21 @@ export default function ProductPage() {
             </div>
           )}
           
-          <Separator className="opacity-50" />
+          <Separator className="opacity-30" />
           
-          <div className="space-y-6">
-            <h3 className="font-black text-2xl font-headline flex items-center gap-2">
-              <span className="w-2 h-8 bg-[#D4AF37] rounded-full inline-block"></span>
+          <div className="space-y-4 md:space-y-6">
+            <h3 className="font-black text-xl md:text-2xl font-headline flex items-center gap-2">
+              <span className="w-1.5 md:w-2 h-6 md:h-8 bg-[#D4AF37] rounded-full inline-block"></span>
               {t.aboutProduct}
             </h3>
             <div className="space-y-2">
-              <p className="text-xl text-muted-foreground leading-relaxed whitespace-pre-wrap font-medium">
+              <p className="text-base md:text-xl text-muted-foreground leading-relaxed whitespace-pre-wrap font-medium">
                 {shouldTruncate ? truncatedText : displayDescription}
               </p>
               {shouldTruncate && (
                 <button 
                   onClick={() => setIsExpanded(!isExpanded)}
-                  className="text-primary font-bold hover:underline decoration-2 underline-offset-4 transition-all"
+                  className="text-primary font-bold hover:underline decoration-2 underline-offset-4 transition-all text-sm md:text-base"
                 >
                   {isExpanded ? t.showLess : t.readMore}
                 </button>
@@ -368,17 +361,17 @@ export default function ProductPage() {
             </div>
           </div>
 
-          <div className="pt-8 flex flex-col gap-5">
+          <div className="pt-4 md:pt-8 flex flex-col gap-4 md:gap-5">
             <Button 
               onClick={handleAddToCart}
-              className="w-full h-16 rounded-full text-xl font-bold shadow-xl border-2 border-pink-300 bg-primary text-white hover:bg-[#D4AF37] hover:border-[#D4AF37] gap-3 transition-all hover:scale-[1.02] animate-pulse-luxury flex items-center justify-center px-4"
+              className="w-full h-14 md:h-16 rounded-full text-lg md:text-xl font-bold shadow-xl border-2 border-pink-300/30 bg-primary text-white hover:bg-[#D4AF37] hover:border-[#D4AF37] gap-3 transition-all hover:scale-[1.01] animate-pulse-luxury flex items-center justify-center px-4"
             >
-              <ShoppingCart className="h-6 w-6" />
-              <span className="whitespace-normal leading-tight">{t.addToCart}</span>
+              <ShoppingCart className="h-5 w-5 md:h-6 md:w-6" />
+              <span>{t.addToCart}</span>
             </Button>
           </div>
           
-          <p className="text-sm text-muted-foreground font-medium bg-muted/30 p-4 rounded-2xl border border-dashed text-center md:text-start">
+          <p className="text-[10px] md:text-sm text-muted-foreground font-medium bg-muted/30 p-3 md:p-4 rounded-2xl border border-dashed text-center md:text-start">
             {t.secureContact}
           </p>
         </div>
